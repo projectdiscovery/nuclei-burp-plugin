@@ -25,7 +25,10 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
 public class Requests {
@@ -43,11 +46,16 @@ public class Requests {
     }
 
     public void setRaw(List<String> raw) {
-        this.raw = raw;
+        this.raw = normalizeRawRequest(raw.stream());
     }
 
     public void setRaw(String... raw) {
-        this.raw = List.of(raw);
+        this.raw = normalizeRawRequest(Arrays.stream(raw));
+    }
+
+    public void setRaw(byte[]... raw) {
+        // needed otherwise the dumped raw request will be shown in-line, between double quotes
+        this.raw = normalizeRawRequest(Arrays.stream(raw).map(String::new));
     }
 
     public List<Matcher> getMatchers() {
@@ -68,5 +76,9 @@ public class Requests {
 
     public MatchersCondition getMatchersCondition() {
         return matchersCondition;
+    }
+
+    private List<String> normalizeRawRequest(Stream<String> content) {
+        return content.map(s -> s.replaceAll("\r", "")).collect(Collectors.toList());
     }
 }

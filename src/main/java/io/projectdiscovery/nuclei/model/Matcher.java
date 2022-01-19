@@ -31,4 +31,6 @@ public interface Matcher {
     String getType();
 
     void setType(String type);
+
+    // TODO add matcher condition
 }
