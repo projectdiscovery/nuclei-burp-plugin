@@ -29,7 +29,7 @@ import io.projectdiscovery.nuclei.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class YamlUtilTest {
+class UtilTest {
 
     @Test
     void testDumpYaml() {
@@ -57,7 +57,7 @@ class YamlUtilTest {
                                 "    Host: {{Hostname}}\n" +
                                 "    Accept: */*\n";
 
-        Assertions.assertEquals(expected, YamlUtil.dumpYaml(template));
+        Assertions.assertEquals(expected, Utils.dumpYaml(template));
     }
 
     private Template createTemplate() {
