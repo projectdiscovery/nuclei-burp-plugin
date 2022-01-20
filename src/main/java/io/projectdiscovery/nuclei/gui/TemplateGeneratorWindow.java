@@ -30,14 +30,14 @@ public class TemplateGeneratorWindow extends JFrame {
 
     public TemplateGeneratorWindow(URL targetUrl, String templateYaml, IBurpExtenderCallbacks callbacks) {
         super("Nuclei Template Generator"); // TODO setIconImage
+        this.setLayout(new GridBagLayout());
 
         this.callbacks = callbacks;
-
-        this.setLayout(new GridBagLayout());
 
         setCloseWithKeyboardShortcut();
 
         String command = createCommand(targetUrl);
+        cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
         createControlPanel(command, contentPane);
@@ -50,6 +50,22 @@ public class TemplateGeneratorWindow extends JFrame {
         this.setMinimumSize(this.getSize());
         this.setVisible(true);
         this.pack();
+    }
+
+    private void cleanupOnClose() {
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    Files.deleteIfExists(temporaryTemplatePath);
+                } catch (IOException ex) {
+                    logError(String.format("Could not delete temporary file:  %s", temporaryTemplatePath));
+                    logError(ex.getMessage());
+                }
+
+                super.windowClosing(e);
+            }
+        });
     }
 
     private String createCommand(URL targetUrl) {
