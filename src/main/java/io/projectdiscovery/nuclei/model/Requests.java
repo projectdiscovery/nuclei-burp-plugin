@@ -25,8 +25,7 @@
 
 package io.projectdiscovery.nuclei.model;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,8 +36,14 @@ public class Requests {
         and, or
     }
 
+    public enum AttackTypes {
+        batteringram, pitchfork, clusterbomb
+    }
+
     private MatchersCondition matchersCondition = MatchersCondition.and;
     private List<String> raw;
+    private AttackTypes attack;
+    private Map<String, List<String>> payloads;
     private List<Matcher> matchers;
 
     public List<String> getRaw() {
@@ -80,5 +85,37 @@ public class Requests {
 
     private List<String> normalizeRawRequest(Stream<String> content) {
         return content.map(s -> s.replaceAll("\r", "")).collect(Collectors.toList());
+    }
+
+    public void setAttack(AttackTypes attack) {
+        this.attack = attack;
+    }
+
+    public AttackTypes getAttack() {
+        return attack;
+    }
+
+    public Map<String, List<String>> getPayloads() {
+        return payloads;
+    }
+
+    public void setPayloads(Map<String, List<String>> payloads) {
+        if (Objects.isNull(attack)) {
+            attack = AttackTypes.batteringram;
+        }
+        this.payloads = payloads;
+    }
+
+    public void addPayloads(String key, String... payloads) {
+        if (Objects.nonNull(payloads)) {
+            if (Objects.isNull(this.payloads)) {
+                setPayloads(new LinkedHashMap<>(Map.of(key, List.of(payloads))));
+            } else {
+                this.payloads.merge(key, List.of(payloads), (v1, v2) -> {
+                    v1.addAll(v2);
+                    return v1;
+                });
+            }
+        }
     }
 }

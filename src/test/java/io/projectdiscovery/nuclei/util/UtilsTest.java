@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 class UtilTest {
 
     @Test
-    void testDumpYaml() {
+    void testSimpleYaml() {
         final Template template = createTemplate();
         final String expected = "id: template-id\n" +
                                 "info:\n" +
@@ -60,16 +60,82 @@ class UtilTest {
         Assertions.assertEquals(expected, Utils.dumpYaml(template));
     }
 
+    @Test
+    void testExtensiveYamlGeneration() {
+        final Template template = createExtensiveTemplate();
+
+        final String expected = "id: template-id\n" +
+                                "info:\n" +
+                                "  author: forgedhallpass\n" +
+                                "  name: Template Name\n" +
+                                "  severity: info\n" +
+                                "requests:\n" +
+                                "- matchers-condition: or\n" +
+                                "  attack: clusterbomb\n" +
+                                "  matchers:\n" +
+                                "  - part: all\n" +
+                                "    type: word\n" +
+                                "    words:\n" +
+                                "    - word1\n" +
+                                "    - word2\n" +
+                                "  - status:\n" +
+                                "    - 200\n" +
+                                "    - 500\n" +
+                                "    type: status\n" +
+                                "  payloads:\n" +
+                                "    headerOne:\n" +
+                                "    - one\n" +
+                                "    - two\n" +
+                                "    headerTwo:\n" +
+                                "    - three\n" +
+                                "    - four\n" +
+                                "  raw:\n" +
+                                "  - |-\n" +
+                                "    GET / HTTP/1.1\n" +
+                                "    Host: {{Hostname}}\n" +
+                                "    Accept: */*\n" +
+                                "    HeaderOne: {{headerOne}}\n" +
+                                "    HeaderTwo: {{headerTwo}}\n";
+
+        Assertions.assertEquals(expected, Utils.dumpYaml(template));
+    }
+
     private Template createTemplate() {
         final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
 
-        final Requests requests = new Requests();
-        requests.setMatchersCondition(Requests.MatchersCondition.or);
-        requests.setRaw("GET / HTTP/1.1\nHost: {{Hostname}}\nAccept: */*");
+        final Requests requests = createRequests("GET / HTTP/1.1\n" +
+                                                 "Host: {{Hostname}}\n" +
+                                                 "Accept: */*");
+
+        return new Template("template-id", info, requests);
+    }
+
+    private Template createExtensiveTemplate() {
+        final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
+
+        final Requests requests = createRequests("GET / HTTP/1.1\n" +
+                                                 "Host: {{Hostname}}\n" +
+                                                 "Accept: */*\n" +
+                                                 "HeaderOne: {{headerOne}}\n" +
+                                                 "HeaderTwo: {{headerTwo}}");
+
+        requests.setAttack(Requests.AttackTypes.clusterbomb);
+        requests.addPayloads("headerOne", "one", "two");
+        requests.addPayloads("headerTwo", "three", "four");
 
         requests.setMatchers(new Word("word1", "word2"),
                              new Status(200, 500));
 
         return new Template("template-id", info, requests);
+    }
+
+    private Requests createRequests(String rawRequest) {
+        final Requests requests = new Requests();
+        requests.setMatchersCondition(Requests.MatchersCondition.or);
+        requests.setRaw(rawRequest);
+
+        requests.setMatchers(new Word("word1", "word2"),
+                             new Status(200, 500));
+        return requests;
     }
 }
