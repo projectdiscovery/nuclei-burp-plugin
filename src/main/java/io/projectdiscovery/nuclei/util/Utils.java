@@ -5,6 +5,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
@@ -31,16 +32,22 @@ public class Utils {
                 }
                 return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
             }
+
+            @Override
+            protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
+                if (!classTags.containsKey(javaBean.getClass())) {
+                    addClassTag(javaBean.getClass(), Tag.MAP);
+                }
+
+                return super.representJavaBean(properties, javaBean);
+            }
         };
 
         final TypeDescription typeDescription = new TypeDescription(Requests.class, Tag.MAP);
         // TODO isn't there a more elegant way to remap field names?
         typeDescription.substituteProperty("matchers-condition", Requests.class, "getMatchersCondition", "setMatchersCondition");
         typeDescription.setExcludes("matchersCondition");
-
         representer.addTypeDescription(typeDescription);
-        representer.addClassTag(Word.class, Tag.MAP);
-        representer.addClassTag(Status.class, Tag.MAP);
 
         final DumperOptions options = new DumperOptions();
         options.setIndent(2);
