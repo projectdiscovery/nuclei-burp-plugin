@@ -22,3 +22,4 @@ jobs:
         with:
           name: nuclei-burp-plugin-SNAPSHOT-build
           path: target/nuclei-burp-plugin-1.0.0-SNAPSHOT-jar-with-dependencies.jar
+          retention-days: 3
