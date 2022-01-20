@@ -76,8 +76,10 @@ public class BurpExtender implements burp.IBurpExtender {
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
-        final Matcher contentMatcher = Utils.createContentMatcher(responseBytes, selectionBounds);
-        final int statusCode = helpers.analyzeResponse(responseBytes).getStatusCode();
+        final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
+
+        final Matcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds);
+        final int statusCode = responseInfo.getStatusCode();
 
         final Requests requests = new Requests();
         requests.setRaw(requestBytes);

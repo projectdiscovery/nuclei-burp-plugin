@@ -1,5 +1,6 @@
 package io.projectdiscovery.nuclei.util;
 
+import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.model.*;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
@@ -113,31 +114,21 @@ public class Utils {
         }
     }
 
-    public static String byteToSubString(byte[] input, int fromPosition, int toPosition) {
-        final int messageLength = toPosition - fromPosition;
-        byte[] destination = new byte[messageLength];
-        System.arraycopy(input, fromPosition, destination, 0, messageLength);
-        return new String(destination);
-    }
-
     public static boolean isAsciiPrintableNewLine(byte[] input) {
         return IntStream.range(0, input.length).map(i -> input[i]).allMatch(b -> b == CR || b == LF || (b >= 20 && b < 0x7F));
     }
 
-    public static Matcher.Part getSelectionPart(byte[] responseBytes, int fromIndex) {
-        final String messageBodySeparator = CRLF + CRLF;
-
-        final String response = new String(responseBytes);
-        final int messageBodyIndex = response.indexOf(messageBodySeparator);
-        return (messageBodyIndex != -1) && (fromIndex < messageBodyIndex) ? Matcher.Part.header : Matcher.Part.body;
+    public static Matcher.Part getSelectionPart(IResponseInfo responseInfo, int fromIndex) {
+        final int bodyOffset = responseInfo.getBodyOffset();
+        return (bodyOffset != -1) && (fromIndex < bodyOffset) ? Matcher.Part.header : Matcher.Part.body;
     }
 
-    public static Matcher createContentMatcher(byte[] responseBytes, int[] selectionBounds) {
+    public static Matcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
 
-        final Matcher.Part selectionPart = getSelectionPart(responseBytes, fromIndex);
         final byte[] selectedBytes = Arrays.copyOfRange(responseBytes, fromIndex, toIndex);
+        final Matcher.Part selectionPart = Utils.getSelectionPart(responseInfo, fromIndex);
 
         final Matcher contentMatcher;
         if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
@@ -152,7 +143,7 @@ public class Utils {
     }
 
     private static Matcher createWordMatcher(byte[] responseBytes, int fromIndex, int toIndex, Matcher.Part selectionPart) {
-        final String selectedString = byteToSubString(responseBytes, fromIndex, toIndex);
+        final String selectedString = new String(Arrays.copyOfRange(responseBytes, fromIndex, toIndex)); // TODO charset Charset.defaultCharset() vs UTF-8
 
         final Word wordMatcher;
         if (selectionPart == Matcher.Part.header) {
