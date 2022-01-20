@@ -28,9 +28,17 @@ package io.projectdiscovery.nuclei.model;
 @SuppressWarnings("unused")
 public interface Matcher {
 
+    enum Part {
+        header, body, all
+    }
+
     String getType();
 
     void setType(String type);
+
+    Part getPart();
+
+    void setPart(Part part);
 
     // TODO add matcher condition
 }

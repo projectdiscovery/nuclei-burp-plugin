@@ -56,13 +56,13 @@ public class BurpExtender implements burp.IBurpExtender {
         };
     }
 
-    private JMenuItem messageEditorContextMenu(IBurpExtenderCallbacks iBurpExtenderCallbacks, IContextMenuInvocation invocation) {
+    private JMenuItem messageEditorContextMenu(IBurpExtenderCallbacks burpCallbacks, IContextMenuInvocation invocation) {
         final JMenuItem menuItem = new JMenuItem("Generate template");
 
         menuItem.addActionListener((ActionEvent e) -> {
             final IHttpRequestResponse[] selectedMessages = invocation.getSelectedMessages();
             if (selectedMessages.length != 0) {
-                generateTemplate(iBurpExtenderCallbacks, selectedMessages[0], invocation.getSelectionBounds());
+                generateTemplate(burpCallbacks, selectedMessages[0], invocation.getSelectionBounds());
             }
         });
 
@@ -76,12 +76,12 @@ public class BurpExtender implements burp.IBurpExtender {
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
-        final Matcher wordMatcher = Utils.createWordMatcher(responseBytes, selectionBounds);
+        final Matcher contentMatcher = Utils.createContentMatcher(responseBytes, selectionBounds);
         final int statusCode = helpers.analyzeResponse(responseBytes).getStatusCode();
 
         final Requests requests = new Requests();
         requests.setRaw(requestBytes);
-        requests.setMatchers(wordMatcher, new Status(statusCode));
+        requests.setMatchers(contentMatcher, new Status(statusCode));
 
         final Template template = new Template("template-id", info, requests);
         final String yamlTemplate = Utils.dumpYaml(template);

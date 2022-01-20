@@ -25,31 +25,27 @@
 
 package io.projectdiscovery.nuclei.model;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-@SuppressWarnings("unused")
-public class Word implements Matcher {
+public class Binary implements Matcher {
 
-    public Word() {
+    public String type = Binary.class.getSimpleName().toLowerCase();
+
+    public List<String> binary;
+    private Part part = Part.body;
+
+    public Binary() {
     }
 
-    public Word(String... words) {
-        this.words = Arrays.asList(words);
+    public Binary(byte[]... binary) {
+        this.binary = Stream.of(binary).map(Binary::toHex).collect(Collectors.toList());
     }
 
-    public String type = Word.class.getSimpleName().toLowerCase();
-
-    public List<String> words;
-
-    private Part part = Part.all;
-
-    public List<String> getWords() {
-        return words;
-    }
-
-    public void setWords(List<String> words) {
-        this.words = words;
+    public List<String> getBinary() {
+        return binary;
     }
 
     @Override
@@ -64,11 +60,15 @@ public class Word implements Matcher {
 
     @Override
     public Part getPart() {
-        return part;
+        return this.part;
     }
 
     @Override
     public void setPart(Part part) {
         this.part = part;
+    }
+
+    public static String toHex(byte[] input) {
+        return IntStream.range(0, input.length).mapToObj(i -> String.format("%02x", input[i])).collect(Collectors.joining());
     }
 }

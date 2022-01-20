@@ -59,4 +59,14 @@ public class Status implements Matcher {
     public void setType(String type) {
         this.type = type;
     }
+
+    @Override
+    public Part getPart() {
+        return null; // the part is ignored by the status matcher
+    }
+
+    @Override
+    public void setPart(Part part) {
+        // do nothing
+    }
 }

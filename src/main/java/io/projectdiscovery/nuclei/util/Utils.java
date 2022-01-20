@@ -15,13 +15,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 public class Utils {
+
+    public static final char CR = '\r';
+    public static final char LF = '\n';
+    public static final String CRLF = "" + CR + LF;
 
     public static String dumpYaml(Template template) {
         final Representer representer = new Representer() {
@@ -56,23 +63,6 @@ public class Utils {
 
         final Yaml yaml = new Yaml(representer, options);
         return yaml.dumpAsMap(template);
-    }
-
-    public static Matcher createWordMatcher(byte[] responseBytes, int[] selectionBounds) {
-        final String CRLF = "\r\n";
-        final String messageBodySeparator = CRLF + CRLF;
-
-        final String response = new String(responseBytes);
-        final int messageBodyIndex = response.indexOf(messageBodySeparator);
-
-        String selectedString = Utils.byteToSubString(responseBytes, selectionBounds[0], selectionBounds[1]);
-        final Word word = new Word(selectedString.split(CRLF));
-
-        if ((messageBodyIndex != -1) && (selectionBounds[0] < messageBodyIndex)) {
-            word.setPart(Word.Part.header);
-        }
-
-        return word;
     }
 
     public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
@@ -114,7 +104,6 @@ public class Utils {
         });
     }
 
-
     public static void writeToFile(String content, Path filePath, Consumer<String> logger) {
         try (final FileWriter fileWriter = new FileWriter(filePath.toFile())) {
             fileWriter.write(content);
@@ -129,5 +118,51 @@ public class Utils {
         byte[] destination = new byte[messageLength];
         System.arraycopy(input, fromPosition, destination, 0, messageLength);
         return new String(destination);
+    }
+
+    public static boolean isAsciiPrintableNewLine(byte[] input) {
+        return IntStream.range(0, input.length).map(i -> input[i]).allMatch(b -> b == CR || b == LF || (b >= 20 && b < 0x7F));
+    }
+
+    public static Matcher.Part getSelectionPart(byte[] responseBytes, int fromIndex) {
+        final String messageBodySeparator = CRLF + CRLF;
+
+        final String response = new String(responseBytes);
+        final int messageBodyIndex = response.indexOf(messageBodySeparator);
+        return (messageBodyIndex != -1) && (fromIndex < messageBodyIndex) ? Matcher.Part.header : Matcher.Part.body;
+    }
+
+    public static Matcher createContentMatcher(byte[] responseBytes, int[] selectionBounds) {
+        final int fromIndex = selectionBounds[0];
+        final int toIndex = selectionBounds[1];
+
+        final Matcher.Part selectionPart = getSelectionPart(responseBytes, fromIndex);
+        final byte[] selectedBytes = Arrays.copyOfRange(responseBytes, fromIndex, toIndex);
+
+        final Matcher contentMatcher;
+        if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
+            contentMatcher = createWordMatcher(responseBytes, fromIndex, toIndex, selectionPart);
+        } else {
+            final Binary binaryMatcher = new Binary(selectedBytes);
+            binaryMatcher.setPart(selectionPart);
+            contentMatcher = binaryMatcher;
+        }
+
+        return contentMatcher;
+    }
+
+    private static Matcher createWordMatcher(byte[] responseBytes, int fromIndex, int toIndex, Matcher.Part selectionPart) {
+        final String selectedString = byteToSubString(responseBytes, fromIndex, toIndex);
+
+        final Word wordMatcher;
+        if (selectionPart == Matcher.Part.header) {
+            wordMatcher = new Word(selectedString.split(CRLF));
+        } else {
+            // TODO could make a config to enable the user to decide on the normalization
+            final String selectedStringWithNormalizedNewLines = selectedString.replaceAll(CRLF, String.valueOf(LF)).replace(CR, LF);
+            wordMatcher = new Word(selectedStringWithNormalizedNewLines.split(String.valueOf(LF)));
+        }
+        wordMatcher.setPart(selectionPart);
+        return wordMatcher;
     }
 }
