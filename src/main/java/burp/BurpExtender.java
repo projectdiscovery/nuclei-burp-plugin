@@ -27,12 +27,14 @@ package burp;
 
 import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
 import io.projectdiscovery.nuclei.model.*;
+import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class BurpExtender implements burp.IBurpExtender {
 
@@ -48,21 +50,32 @@ public class BurpExtender implements burp.IBurpExtender {
             List<JMenuItem> menuItems = null;
 
             final byte invocationContext = invocation.getInvocationContext();
-            if (invocationContext == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE || invocationContext == IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE) {
-                menuItems = List.of(messageEditorContextMenu(callbacks, invocation));
+            switch (invocationContext) {
+                case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE | IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
+                    final Consumer<IHttpRequestResponse[]> requestResponseConsumer = (requestResponses) -> generateTemplate(callbacks, requestResponses[0], invocation.getSelectionBounds());
+
+                    menuItems = List.of(messageEditorContextMenu(requestResponseConsumer, invocation));
+                    break;
+                }
+                case IContextMenuInvocation.CONTEXT_INTRUDER_PAYLOAD_POSITIONS: {
+                    final Consumer<IHttpRequestResponse[]> requestResponseConsumer = (requestResponses) -> generateIntruderTemplate(callbacks, requestResponses[0]);
+
+                    menuItems = List.of(messageEditorContextMenu(requestResponseConsumer, invocation));
+                    break;
+                }
             }
 
             return menuItems;
         };
     }
 
-    private JMenuItem messageEditorContextMenu(IBurpExtenderCallbacks burpCallbacks, IContextMenuInvocation invocation) {
-        final JMenuItem menuItem = new JMenuItem("Generate template");
+    private JMenuItem messageEditorContextMenu(Consumer<IHttpRequestResponse[]> requestResponseConsumer, IContextMenuInvocation invocation) {
+        final JMenuItem menuItem = new JMenuItem("Generate nuclei template");
 
         menuItem.addActionListener((ActionEvent e) -> {
             final IHttpRequestResponse[] selectedMessages = invocation.getSelectedMessages();
             if (selectedMessages.length != 0) {
-                generateTemplate(burpCallbacks, selectedMessages[0], invocation.getSelectionBounds());
+                requestResponseConsumer.accept(selectedMessages);
             }
         });
 
@@ -76,14 +89,33 @@ public class BurpExtender implements burp.IBurpExtender {
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
-        final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
 
-        final Matcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds);
+        final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
+        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds);
         final int statusCode = responseInfo.getStatusCode();
 
         final Requests requests = new Requests();
         requests.setRaw(requestBytes);
         requests.setMatchers(contentMatcher, new Status(statusCode));
+
+        final Template template = new Template("template-id", info, requests);
+        final String yamlTemplate = Utils.dumpYaml(template);
+
+        final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(targetUrl, yamlTemplate, callbacks));
+    }
+
+    // TODO remove duplicated block
+    private void generateIntruderTemplate(IBurpExtenderCallbacks callbacks, IHttpRequestResponse requestResponse) {
+        final byte[] requestBytes = requestResponse.getRequest();
+
+        final IExtensionHelpers helpers = callbacks.getHelpers();
+
+        final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
+
+        final Requests requests = new Requests();
+        final TransformedRequest intruderRequest = Utils.transformRequestWithPayloads(Requests.AttackType.batteringram, helpers.bytesToString(requestBytes));
+        requests.setTransformedRequest(intruderRequest);
 
         final Template template = new Template("template-id", info, requests);
         final String yamlTemplate = Utils.dumpYaml(template);

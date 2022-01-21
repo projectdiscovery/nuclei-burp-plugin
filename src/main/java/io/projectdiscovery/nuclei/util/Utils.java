@@ -2,6 +2,7 @@ package io.projectdiscovery.nuclei.util;
 
 import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.model.*;
+import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
@@ -16,22 +17,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 public class Utils {
 
-    public static final char CR = '\r';
-    public static final char LF = '\n';
-    public static final String CRLF = "" + CR + LF;
+    private static final char CR = '\r';
+    private static final char LF = '\n';
+    private static final String CRLF = "" + CR + LF;
 
-    public static String dumpYaml(Template template) {
+    private static final char INTRUDER_PAYLOAD_MARKER = '§';
+    private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern.compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
+
+    private static final String BASE_PAYLOAD_PARAMETER_NAME = "param";
+    private static final String PAYLOAD_START_MARKER = "{{";
+    private static final String PAYLOAD_END_MARKER = "}}";
+
+    public static String dumpYaml(Object data) {
         final Representer representer = new Representer() {
             @Override
             protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
@@ -63,7 +72,7 @@ public class Utils {
         options.setPrettyFlow(true);
 
         final Yaml yaml = new Yaml(representer, options);
-        return yaml.dumpAsMap(template);
+        return yaml.dumpAsMap(data);
     }
 
     public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
@@ -118,19 +127,19 @@ public class Utils {
         return IntStream.range(0, input.length).map(i -> input[i]).allMatch(b -> b == CR || b == LF || (b >= 20 && b < 0x7F));
     }
 
-    public static Matcher.Part getSelectionPart(IResponseInfo responseInfo, int fromIndex) {
+    public static TemplateMatcher.Part getSelectionPart(IResponseInfo responseInfo, int fromIndex) {
         final int bodyOffset = responseInfo.getBodyOffset();
-        return (bodyOffset != -1) && (fromIndex < bodyOffset) ? Matcher.Part.header : Matcher.Part.body;
+        return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
     }
 
-    public static Matcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds) {
+    public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
 
         final byte[] selectedBytes = Arrays.copyOfRange(responseBytes, fromIndex, toIndex);
-        final Matcher.Part selectionPart = Utils.getSelectionPart(responseInfo, fromIndex);
+        final TemplateMatcher.Part selectionPart = Utils.getSelectionPart(responseInfo, fromIndex);
 
-        final Matcher contentMatcher;
+        final TemplateMatcher contentMatcher;
         if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
             contentMatcher = createWordMatcher(responseBytes, fromIndex, toIndex, selectionPart);
         } else {
@@ -142,11 +151,51 @@ public class Utils {
         return contentMatcher;
     }
 
-    private static Matcher createWordMatcher(byte[] responseBytes, int fromIndex, int toIndex, Matcher.Part selectionPart) {
+    public static TransformedRequest transformRequestWithPayloads(Requests.AttackType attackType, String request) {
+        final Matcher matcher = INTRUDER_PAYLOAD_PATTERN.matcher(request);
+
+        if (attackType == Requests.AttackType.batteringram) {
+            final List<String> payloadParameters = new ArrayList<>();
+            final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
+                payloadParameters.add(payloadParameter);
+                return BASE_PAYLOAD_PARAMETER_NAME;
+            };
+
+            String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
+            return new TransformedRequest(attackType, transformedRequest, Map.of(BASE_PAYLOAD_PARAMETER_NAME, payloadParameters));
+        } else {
+            final Map<String, List<String>> payloadParameters = new LinkedHashMap<>();
+
+            final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
+                final String indexedParameterName = BASE_PAYLOAD_PARAMETER_NAME + index;
+                payloadParameters.put(indexedParameterName, new ArrayList<>(List.of(payloadParameter)));
+                return indexedParameterName;
+            };
+
+            final String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
+            return new TransformedRequest(attackType, transformedRequest, payloadParameters);
+        }
+    }
+
+    private static String transformRawRequest(String request, Matcher matcher, BiFunction<Integer, String, String> payloadFunction) {
+        String transformedRequest = request;
+        int index = 1;
+        while (matcher.find()) {
+            final String group = matcher.group();
+            final String payloadParameter = group.substring(1, group.length() - 1);
+
+            final String newParamName = payloadFunction.apply(index++, payloadParameter);
+
+            transformedRequest = transformedRequest.replace(group, PAYLOAD_START_MARKER + newParamName + PAYLOAD_END_MARKER);
+        }
+        return transformedRequest;
+    }
+
+    private static TemplateMatcher createWordMatcher(byte[] responseBytes, int fromIndex, int toIndex, TemplateMatcher.Part selectionPart) {
         final String selectedString = new String(Arrays.copyOfRange(responseBytes, fromIndex, toIndex)); // TODO charset Charset.defaultCharset() vs UTF-8
 
         final Word wordMatcher;
-        if (selectionPart == Matcher.Part.header) {
+        if (selectionPart == TemplateMatcher.Part.header) {
             wordMatcher = new Word(selectedString.split(CRLF));
         } else {
             // TODO could make a config to enable the user to decide on the normalization

@@ -23,22 +23,35 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.nuclei.model.util;
 
-@SuppressWarnings("unused")
-public interface Matcher {
+import io.projectdiscovery.nuclei.model.Requests;
 
-    enum Part {
-        header, body, all
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public class TransformedRequest {
+
+    private final Requests.AttackType attackType;
+    private final String request;
+    private final Map<String, List<String>> parameters;
+
+    public TransformedRequest(Requests.AttackType attackType, String request, Map<String, List<String>> parameters) {
+        this.attackType = attackType;
+        this.request = request;
+        this.parameters = new LinkedHashMap<>(parameters);
     }
 
-    String getType();
+    public Requests.AttackType getAttackType() {
+        return attackType;
+    }
 
-    void setType(String type);
+    public String getRequest() {
+        return request;
+    }
 
-    Part getPart();
-
-    void setPart(Part part);
-
-    // TODO add matcher condition
+    public Map<String, List<String>> getParameters() {
+        return parameters;
+    }
 }

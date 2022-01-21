@@ -25,6 +25,8 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,15 +38,15 @@ public class Requests {
         and, or
     }
 
-    public enum AttackTypes {
+    public enum AttackType {
         batteringram, pitchfork, clusterbomb
     }
 
-    private MatchersCondition matchersCondition = MatchersCondition.and;
+    private MatchersCondition matchersCondition;
     private List<String> raw;
-    private AttackTypes attack;
+    private AttackType attack;
     private Map<String, List<String>> payloads;
-    private List<Matcher> matchers;
+    private List<TemplateMatcher> matchers;
 
     public List<String> getRaw() {
         return raw;
@@ -63,16 +65,26 @@ public class Requests {
         this.raw = normalizeRawRequest(Arrays.stream(raw).map(String::new));
     }
 
-    public List<Matcher> getMatchers() {
+    public List<TemplateMatcher> getMatchers() {
         return matchers;
     }
 
-    public void setMatchers(List<Matcher> matchers) {
+    /**
+     * Must be public for the serialization to work, but it should not be used directly.
+     * Use {@link #setTransformedRequest} instead
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
+    public void setMatchers(List<TemplateMatcher> matchers) {
         this.matchers = matchers;
+
+        if (Objects.isNull(matchersCondition) && matchers.size() > 1) {
+            this.matchersCondition = MatchersCondition.and;
+        }
     }
 
-    public void setMatchers(Matcher... matchers) {
-        this.matchers = List.of(matchers);
+    public void setMatchers(TemplateMatcher... matchers) {
+        setMatchers(List.of(matchers));
     }
 
     public void setMatchersCondition(MatchersCondition matchersCondition) {
@@ -83,15 +95,17 @@ public class Requests {
         return matchersCondition;
     }
 
-    private List<String> normalizeRawRequest(Stream<String> content) {
-        return content.map(s -> s.replaceAll("\r", "")).collect(Collectors.toList());
-    }
-
-    public void setAttack(AttackTypes attack) {
+    /**
+     * Must be public for the serialization to work, but it should not be used directly.
+     * Use {@link #setTransformedRequest} instead
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
+    public void setAttack(AttackType attack) {
         this.attack = attack;
     }
 
-    public AttackTypes getAttack() {
+    public AttackType getAttack() {
         return attack;
     }
 
@@ -99,23 +113,50 @@ public class Requests {
         return payloads;
     }
 
+    public void setTransformedRequest(TransformedRequest transformedRequest) {
+        setAttack(transformedRequest.getAttackType());
+        setRaw(transformedRequest.getRequest());
+        setPayloads(transformedRequest.getParameters());
+    }
+
+    /**
+     * Must be public for the serialization to work, but it should not be used directly.
+     * Use {@link #setTransformedRequest} instead
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
     public void setPayloads(Map<String, List<String>> payloads) {
-        if (Objects.isNull(attack)) {
-            attack = AttackTypes.batteringram;
-        }
         this.payloads = payloads;
     }
 
-    public void addPayloads(String key, String... payloads) {
-        if (Objects.nonNull(payloads)) {
-            if (Objects.isNull(this.payloads)) {
-                setPayloads(new LinkedHashMap<>(Map.of(key, List.of(payloads))));
+    public void addPayloads(AttackType attackType, String key, String... payloads) {
+        if (this.attack == null) {
+            setAttack(attackType);
+        } else if (this.attack != attackType) {
+            throw new IllegalArgumentException("An attack type with an associated raw request was already set.");
+        }
+
+        if (payloads != null) {
+            if (attackType == AttackType.batteringram) {
+                this.payloads.values().stream().findFirst().ifPresentOrElse(v -> v.addAll(Arrays.asList(payloads)), () -> addPayloads(key, payloads));
             } else {
-                this.payloads.merge(key, List.of(payloads), (v1, v2) -> {
-                    v1.addAll(v2);
-                    return v1;
-                });
+                addPayloads(key, payloads);
             }
         }
+    }
+
+    private void addPayloads(String key, String... payloads) {
+        if (this.payloads == null) {
+            setPayloads(new LinkedHashMap<>(Map.of(key, new ArrayList<>(List.of(payloads)))));
+        } else {
+            this.payloads.merge(key, List.of(payloads), (v1, v2) -> {
+                v1.addAll(v2);
+                return v1;
+            });
+        }
+    }
+
+    private List<String> normalizeRawRequest(Stream<String> content) {
+        return content.map(s -> s.replaceAll("\r", "")).collect(Collectors.toList());
     }
 }

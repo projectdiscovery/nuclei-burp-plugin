@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class Word implements Matcher {
+public class Word implements TemplateMatcher {
 
     public Word() {
     }

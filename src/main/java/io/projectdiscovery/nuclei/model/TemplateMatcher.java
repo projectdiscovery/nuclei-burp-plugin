@@ -25,50 +25,20 @@
 
 package io.projectdiscovery.nuclei.model;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+@SuppressWarnings("unused")
+public interface TemplateMatcher {
 
-public class Binary implements TemplateMatcher {
-
-    public String type = Binary.class.getSimpleName().toLowerCase();
-
-    public List<String> binary;
-    private Part part = Part.body;
-
-    public Binary() {
+    enum Part {
+        header, body, all
     }
 
-    public Binary(byte[]... binary) {
-        this.binary = Stream.of(binary).map(Binary::toHex).collect(Collectors.toList());
-    }
+    String getType();
 
-    public List<String> getBinary() {
-        return binary;
-    }
+    void setType(String type);
 
-    @Override
-    public String getType() {
-        return type;
-    }
+    Part getPart();
 
-    @Override
-    public void setType(String type) {
-        this.type = type;
-    }
+    void setPart(Part part);
 
-    @Override
-    public Part getPart() {
-        return this.part;
-    }
-
-    @Override
-    public void setPart(Part part) {
-        this.part = part;
-    }
-
-    public static String toHex(byte[] input) {
-        return IntStream.range(0, input.length).mapToObj(i -> String.format("%02x", input[i])).collect(Collectors.joining());
-    }
+    // TODO add matcher condition
 }

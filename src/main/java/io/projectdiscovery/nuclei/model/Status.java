@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
-public class Status implements Matcher {
+public class Status implements TemplateMatcher {
 
     public Status() {
     }
