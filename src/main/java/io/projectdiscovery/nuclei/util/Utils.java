@@ -1,6 +1,8 @@
 package io.projectdiscovery.nuclei.util;
 
+import burp.IBurpExtenderCallbacks;
 import burp.IResponseInfo;
+import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.yaml.snakeyaml.DumperOptions;
@@ -17,6 +19,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -130,6 +133,23 @@ public class Utils {
     public static TemplateMatcher.Part getSelectionPart(IResponseInfo responseInfo, int fromIndex) {
         final int bodyOffset = responseInfo.getBodyOffset();
         return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
+    }
+
+    public static Path getNucleiPath(IBurpExtenderCallbacks callbacks) {
+        // TODO the OS detection would be enough to happen once at startup
+        final String osName = System.getProperty("os.name");
+        final String baseBinaryName = "nuclei";
+        final String nucleiBinaryName = osName.toLowerCase().startsWith("windows") ? baseBinaryName + ".exe" : baseBinaryName;
+
+        final Path nucleiBinaryPath;
+        final String nucleiBinaryPathSetting = callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_VARIABLE);
+        if (nucleiBinaryPathSetting == null || nucleiBinaryPathSetting.trim().equals("")) {
+            nucleiBinaryPath = Paths.get(nucleiBinaryName);
+        } else {
+            nucleiBinaryPath = nucleiBinaryPathSetting.endsWith(nucleiBinaryName) ? Paths.get(nucleiBinaryPathSetting)
+                                                                                  : Paths.get(nucleiBinaryPathSetting).resolve(nucleiBinaryName);
+        }
+        return nucleiBinaryPath;
     }
 
     public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds) {

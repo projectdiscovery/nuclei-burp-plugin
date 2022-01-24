@@ -25,12 +25,14 @@
 
 package burp;
 
+import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
 import java.util.List;
@@ -43,6 +45,25 @@ public class BurpExtender implements burp.IBurpExtender {
         callbacks.setExtensionName("Nuclei");
 
         callbacks.registerContextMenuFactory(createContextMenuFactory(callbacks));
+
+        callbacks.addSuiteTab(createConfigurationTab(callbacks));
+    }
+
+    private ITab createConfigurationTab(IBurpExtenderCallbacks callbacks) {
+        return new ITab() {
+            @Override
+            public String getTabCaption() {
+                return "Nuclei";
+            }
+
+            @Override
+            public Component getUiComponent() {
+                final JTabbedPane jTabbedPane = new JTabbedPane();
+                jTabbedPane.addTab("Configuration", new SettingsPanel(callbacks));
+                jTabbedPane.setVisible(true);
+                return jTabbedPane;
+            }
+        };
     }
 
     private IContextMenuFactory createContextMenuFactory(IBurpExtenderCallbacks callbacks) {
@@ -88,7 +109,8 @@ public class BurpExtender implements burp.IBurpExtender {
 
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
-        final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
+        final String author = callbacks.loadExtensionSetting(SettingsPanel.AUTHOR_VARIABLE);
+        final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
         final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds);
@@ -111,7 +133,8 @@ public class BurpExtender implements burp.IBurpExtender {
 
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
-        final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
+        final String author = callbacks.loadExtensionSetting(SettingsPanel.AUTHOR_VARIABLE);
+        final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Requests requests = new Requests();
         final TransformedRequest intruderRequest = Utils.transformRequestWithPayloads(Requests.AttackType.batteringram, helpers.bytesToString(requestBytes));

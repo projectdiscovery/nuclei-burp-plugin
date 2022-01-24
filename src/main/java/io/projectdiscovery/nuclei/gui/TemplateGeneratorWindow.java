@@ -36,7 +36,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         setCloseWithKeyboardShortcut();
 
-        String command = createCommand(targetUrl);
+        String command = createCommand(callbacks, targetUrl);
         cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
@@ -47,7 +47,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         this.setLocationRelativeTo(null); // center of the screen
         this.setPreferredSize(new Dimension(800, 600));
-        this.setMinimumSize(this.getSize());
+        this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
         this.setVisible(true);
         this.pack();
     }
@@ -59,7 +59,7 @@ public class TemplateGeneratorWindow extends JFrame {
                 try {
                     Files.deleteIfExists(temporaryTemplatePath);
                 } catch (IOException ex) {
-                    logError(String.format("Could not delete temporary file:  %s", temporaryTemplatePath));
+                    logError(String.format("Could not delete temporary file: %s", temporaryTemplatePath));
                     logError(ex.getMessage());
                 }
 
@@ -68,7 +68,7 @@ public class TemplateGeneratorWindow extends JFrame {
         });
     }
 
-    private String createCommand(URL targetUrl) {
+    private String createCommand(IBurpExtenderCallbacks callbacks, URL targetUrl) {
         try {
             temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
@@ -76,7 +76,7 @@ public class TemplateGeneratorWindow extends JFrame {
         }
 
         // TODO quoting in case of Windows?
-        return String.format("nuclei -nc -v -t %s -u %s", temporaryTemplatePath, targetUrl);
+        return String.format("%s -nc -v -t %s -u %s", Utils.getNucleiPath(callbacks), temporaryTemplatePath, targetUrl);
     }
 
     private void setCloseWithKeyboardShortcut() {
@@ -157,9 +157,9 @@ public class TemplateGeneratorWindow extends JFrame {
         contentPane.add(editorScrollPane, panelConstraints);
     }
 
-    private JScrollPane createScrollPane(JTextArea templateEditor, String template) {
+    private JScrollPane createScrollPane(JTextArea templateEditor, String paneTitle) {
         final JScrollPane editorScrollPane = new JScrollPane(templateEditor, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        editorScrollPane.setBorder(BorderFactory.createTitledBorder(template));
+        editorScrollPane.setBorder(BorderFactory.createTitledBorder(paneTitle));
         return editorScrollPane;
     }
 
@@ -250,7 +250,7 @@ public class TemplateGeneratorWindow extends JFrame {
                              this::logError);
     }
 
-    public void logError(String message) {
+    private void logError(String message) {
         System.err.println(message);
 
         if (Objects.nonNull(callbacks)) {
