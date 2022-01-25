@@ -25,7 +25,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private JTextArea templateEditor;
     private JTextField commandLineField;
-    private JTextArea outputPanel;
+    private AnsiColorTextPane outputPane;
 
     private final IBurpExtenderCallbacks callbacks;
     private Path temporaryTemplatePath;
@@ -57,7 +57,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void createSplitPane(Container contentPane, String templateYaml) {
-        final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createTextEditor(templateYaml), createOutputPanel());
+        final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createTextEditor(templateYaml), createOutputPane());
         splitPane.setOneTouchExpandable(true);
         splitPane.setResizeWeight(0.5);
 
@@ -88,20 +88,20 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private String createCommand(URL targetUrl, Path nucleiPath) {
         try {
-            temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
+            this.temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
             logError("Could not create temporary file: " + e.getMessage());
         }
 
         // TODO quoting in case of Windows?
-        return String.format("%s -nc -v -t %s -u %s", nucleiPath, temporaryTemplatePath, targetUrl);
+        return String.format("%s -v -t %s -u %s", nucleiPath, this.temporaryTemplatePath, targetUrl);
     }
 
     private void setKeyboardShortcuts() {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> commandLineField.requestFocus());
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> templateEditor.requestFocus());
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
     }
 
     private void setKeyboardShortcut(KeyStroke keyStroke, Action action) {
@@ -132,23 +132,23 @@ public class TemplateGeneratorWindow extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+            this.frame.dispatchEvent(new WindowEvent(this.frame, WindowEvent.WINDOW_CLOSING));
         }
     }
 
-    private Component createOutputPanel() {
-        outputPanel = new JTextArea();
-        outputPanel.setEditable(false);
-        outputPanel.setVisible(true);
-        outputPanel.setAutoscrolls(true);
+    private Component createOutputPane() {
+        this.outputPane = new AnsiColorTextPane(this::logError);
+        this.outputPane.setEditable(false);
+        this.outputPane.setVisible(true);
+        this.outputPane.setAutoscrolls(true);
 
-        final JScrollPane scrollPane = createScrollPane(outputPanel, "Output");
+        final JScrollPane scrollPane = createScrollPane(this.outputPane, "Output");
         scrollPane.setVisible(true);
 
         return scrollPane;
     }
 
-    private JScrollPane createScrollPane(JTextArea templateEditor, String paneTitle) {
+    private JScrollPane createScrollPane(Component templateEditor, String paneTitle) {
         final JScrollPane editorScrollPane = new JScrollPane(templateEditor, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         editorScrollPane.setBorder(BorderFactory.createTitledBorder(paneTitle));
         return editorScrollPane;
@@ -156,8 +156,6 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private Component createTextEditor(String templateYaml) {
         final RSyntaxTextArea textEditor = createTextEditorWithSyntaxHighlighting(templateYaml);
-
-        templateEditor = textEditor;
 
         if (UIManager.getLookAndFeel().getID().toLowerCase().contains("dark")) {
             final InputStream resourceAsStream = this.getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml");
@@ -169,6 +167,8 @@ public class TemplateGeneratorWindow extends JFrame {
                 logError(e.getMessage());
             }
         }
+
+        this.templateEditor = textEditor;
 
         final RTextScrollPane scrollPane = new RTextScrollPane(textEditor, true);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Template"));
@@ -203,9 +203,9 @@ public class TemplateGeneratorWindow extends JFrame {
         topPanel.setPreferredSize(new Dimension(200, 50));
         topPanel.setLayout(new GridBagLayout());
 
-        commandLineField = new JTextField(command);
-        commandLineField.setPreferredSize(new Dimension(200, 25));
-        commandLineField.addActionListener(e -> executeButtonClick());
+        this.commandLineField = new JTextField(command);
+        this.commandLineField.setPreferredSize(new Dimension(200, 25));
+        this.commandLineField.addActionListener(e -> executeButtonClick());
 
         final GridBagConstraints textFieldConstraints = new GridBagConstraints();
         textFieldConstraints.gridx = 0;
@@ -215,7 +215,7 @@ public class TemplateGeneratorWindow extends JFrame {
         textFieldConstraints.insets = new Insets(0, 5, 0, 5);
         textFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
 
-        topPanel.add(commandLineField, textFieldConstraints);
+        topPanel.add(this.commandLineField, textFieldConstraints);
 
         final JButton executeBtn = new JButton("Execute");
         executeBtn.setMnemonic(KeyEvent.VK_E);
@@ -231,7 +231,7 @@ public class TemplateGeneratorWindow extends JFrame {
         final JButton clipboardBtn = new JButton("Copy Template to Clipboard");
         clipboardBtn.setMnemonic(KeyEvent.VK_C);
         clipboardBtn.addActionListener(e -> {
-            final String templateYaml = templateEditor.getText();
+            final String templateYaml = this.templateEditor.getText();
             final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(new StringSelection(templateYaml), null);
         });
@@ -254,26 +254,29 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void executeButtonClick() {
-        Utils.writeToFile(this.templateEditor.getText(), temporaryTemplatePath, this::logError);
+        Utils.writeToFile(this.templateEditor.getText(), this.temporaryTemplatePath, this::logError);
 
-        this.outputPanel.setText(null);
+        this.outputPane.setText(null);
 
-        Utils.executeCommand(this.commandLineField.getText(),
+        final String command = this.commandLineField.getText();
+        boolean noColor = command.contains(" -nc ") || command.contains(" -no-color ");
+
+        Utils.executeCommand(command,
                              bufferedReader -> bufferedReader.lines()
                                                              .map(line -> line + "\n")
                                                              .forEach(line -> SwingUtilities.invokeLater(() -> {
-                                                                 this.outputPanel.append(line);
-                                                                 this.outputPanel.repaint();
+                                                                 this.outputPane.appendText(line, noColor);
+                                                                 this.outputPane.repaint();
                                                              })),
-                             exitCode -> SwingUtilities.invokeLater(() -> this.outputPanel.append("\nThe process exited with code " + exitCode)),
+                             exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
                              this::logError);
     }
 
     private void logError(String message) {
         System.err.println(message);
 
-        if (Objects.nonNull(callbacks)) {
-            callbacks.printError(message);
+        if (Objects.nonNull(this.callbacks)) {
+            this.callbacks.printError(message);
         }
     }
 
@@ -295,7 +298,6 @@ public class TemplateGeneratorWindow extends JFrame {
                                 "    - type: status\n" +
                                 "      status:\n" +
                                 "      - 200\n";
-
 
         final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(url, template);
         templateGeneratorWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
