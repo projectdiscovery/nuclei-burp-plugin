@@ -2,13 +2,18 @@ package io.projectdiscovery.nuclei.gui;
 
 import burp.IBurpExtenderCallbacks;
 import io.projectdiscovery.nuclei.util.Utils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.Theme;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -35,7 +40,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         this.callbacks = callbacks;
 
-        setCloseWithKeyboardShortcut();
+        setKeyboardShortcuts();
 
         String command = createCommand(targetUrl, nucleiPath);
         cleanupOnClose();
@@ -92,13 +97,33 @@ public class TemplateGeneratorWindow extends JFrame {
         return String.format("%s -nc -v -t %s -u %s", nucleiPath, temporaryTemplatePath, targetUrl);
     }
 
-    private void setCloseWithKeyboardShortcut() {
+    private void setKeyboardShortcuts() {
+        final InputMap frameInputMap = this.rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final ActionMap frameActionMap = this.rootPane.getActionMap();
+
+        setCloseWithKeyboardShortcut(frameInputMap, frameActionMap);
+        setSubmitTemplateKeyboardShortcut(frameInputMap, frameActionMap);
+    }
+
+    private void setSubmitTemplateKeyboardShortcut(InputMap frameInputMap, ActionMap frameActionMap) {
+        final String submit = "text-submit";
+        final KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK);
+        frameInputMap.put(ctrlEnter, submit);
+
+        frameActionMap.put(submit, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                executeButtonClick();
+            }
+        });
+    }
+
+    private void setCloseWithKeyboardShortcut(InputMap frameInputMap, ActionMap frameActionMap) {
         final KeyStroke ctrlQ = KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK);
 
-        final JRootPane rootPane = this.getRootPane();
         final String closeActionKey = "CLOSE";
-        rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ctrlQ, closeActionKey);
-        rootPane.getActionMap().put(closeActionKey, new CloseAction(this));
+        frameInputMap.put(ctrlQ, closeActionKey);
+        frameActionMap.put(closeActionKey, new CloseAction(this));
     }
 
     private static class CloseAction extends AbstractAction {
@@ -126,34 +151,54 @@ public class TemplateGeneratorWindow extends JFrame {
         return scrollPane;
     }
 
-    private Component createTextEditor(String templateYaml) {
-        templateEditor = new JTextArea();
-        templateEditor.setText(templateYaml);
-        templateEditor.setEditable(true);
-
-        addKeyboardShortcutsToEditor(templateEditor);
-
-        return createScrollPane(templateEditor, "Template");
-    }
-
     private JScrollPane createScrollPane(JTextArea templateEditor, String paneTitle) {
         final JScrollPane editorScrollPane = new JScrollPane(templateEditor, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         editorScrollPane.setBorder(BorderFactory.createTitledBorder(paneTitle));
         return editorScrollPane;
     }
 
-    private void addKeyboardShortcutsToEditor(JTextArea templateEditor) {
-        final String submit = "text-submit";
-        final KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK);
-        templateEditor.getInputMap().put(ctrlEnter, submit);
+    private Component createTextEditor(String templateYaml) {
+        final RSyntaxTextArea textEditor = createTextEditorWithSyntaxHighlighting(templateYaml);
 
-        final ActionMap editorActionMap = templateEditor.getActionMap();
-        editorActionMap.put(submit, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                executeButtonClick();
+        templateEditor = textEditor;
+
+        if (UIManager.getLookAndFeel().getID().toLowerCase().contains("dark")) {
+            final InputStream resourceAsStream = this.getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml");
+            final Theme theme;
+            try {
+                theme = Theme.load(resourceAsStream);
+                theme.apply(textEditor);
+            } catch (IOException e) {
+                logError(e.getMessage());
             }
-        });
+        }
+
+        final RTextScrollPane scrollPane = new RTextScrollPane(textEditor, true);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Template"));
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        return scrollPane;
+    }
+
+    private RSyntaxTextArea createTextEditorWithSyntaxHighlighting(String templateYaml) {
+        // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
+        JTextComponent.removeKeymap("RTextAreaKeymap");
+        UIManager.put("RSyntaxTextAreaUI.actionMap", null);
+        UIManager.put("RSyntaxTextAreaUI.inputMap", null);
+        UIManager.put("RTextAreaUI.actionMap", null);
+        UIManager.put("RTextAreaUI.inputMap", null);
+
+        final RSyntaxTextArea textEditor = new RSyntaxTextArea();
+        textEditor.setSyntaxEditingStyle(RSyntaxTextArea.SYNTAX_STYLE_YAML);
+        textEditor.setEditable(true);
+        textEditor.setAntiAliasingEnabled(true);
+        textEditor.setTabsEmulated(true);
+        textEditor.setAutoIndentEnabled(true);
+        textEditor.setTabSize(2);
+        textEditor.setText(templateYaml);
+
+        return textEditor;
     }
 
     private void createControlPanel(Container contentPane, String command) {
