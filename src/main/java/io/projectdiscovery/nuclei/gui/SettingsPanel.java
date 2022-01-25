@@ -29,6 +29,7 @@ import burp.IBurpExtenderCallbacks;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.Map;
 
 public class SettingsPanel extends JPanel {
@@ -92,6 +93,7 @@ public class SettingsPanel extends JPanel {
         final JPanel buttonPanel = new JPanel(new GridBagLayout());
 
         final JButton saveButton = new JButton("Save");
+        saveButton.setMnemonic(KeyEvent.VK_S);
         final GridBagConstraints saveConstraints = createButtonConstraints(1);
         saveButton.addActionListener(e -> {
             if (callbacks != null) {
@@ -101,6 +103,7 @@ public class SettingsPanel extends JPanel {
         buttonPanel.add(saveButton, saveConstraints);
 
         final JButton cancelButton = new JButton("Cancel");
+        cancelButton.setMnemonic(KeyEvent.VK_C);
         cancelButton.addActionListener(e -> {
             if (callbacks != null) {
                 valueTextFieldMap.forEach((k, v) -> v.setText(callbacks.loadExtensionSetting(k)));

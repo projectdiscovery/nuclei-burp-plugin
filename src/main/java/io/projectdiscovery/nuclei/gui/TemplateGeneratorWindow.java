@@ -98,32 +98,29 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void setKeyboardShortcuts() {
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> commandLineField.requestFocus());
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> templateEditor.requestFocus());
+    }
+
+    private void setKeyboardShortcut(KeyStroke keyStroke, Action action) {
         final InputMap frameInputMap = this.rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap frameActionMap = this.rootPane.getActionMap();
 
-        setCloseWithKeyboardShortcut(frameInputMap, frameActionMap);
-        setSubmitTemplateKeyboardShortcut(frameInputMap, frameActionMap);
+        final String shortcutKey = keyStroke.toString();
+        frameInputMap.put(keyStroke, shortcutKey);
+
+        frameActionMap.put(shortcutKey, action);
     }
 
-    private void setSubmitTemplateKeyboardShortcut(InputMap frameInputMap, ActionMap frameActionMap) {
-        final String submit = "text-submit";
-        final KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK);
-        frameInputMap.put(ctrlEnter, submit);
-
-        frameActionMap.put(submit, new AbstractAction() {
+    private void setKeyboardShortcut(KeyStroke keyStroke, Runnable actionPerformed) {
+        setKeyboardShortcut(keyStroke, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                executeButtonClick();
+                actionPerformed.run();
             }
         });
-    }
-
-    private void setCloseWithKeyboardShortcut(InputMap frameInputMap, ActionMap frameActionMap) {
-        final KeyStroke ctrlQ = KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK);
-
-        final String closeActionKey = "CLOSE";
-        frameInputMap.put(ctrlQ, closeActionKey);
-        frameActionMap.put(closeActionKey, new CloseAction(this));
     }
 
     private static class CloseAction extends AbstractAction {
@@ -209,7 +206,6 @@ public class TemplateGeneratorWindow extends JFrame {
         commandLineField = new JTextField(command);
         commandLineField.setPreferredSize(new Dimension(200, 25));
         commandLineField.addActionListener(e -> executeButtonClick());
-        // TODO add CTRL+L to jump to the field
 
         final GridBagConstraints textFieldConstraints = new GridBagConstraints();
         textFieldConstraints.gridx = 0;
