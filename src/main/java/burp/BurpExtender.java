@@ -124,7 +124,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final String yamlTemplate = Utils.dumpYaml(template);
 
         final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(targetUrl, yamlTemplate, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, callbacks));
     }
 
     // TODO remove duplicated block
@@ -144,6 +144,6 @@ public class BurpExtender implements burp.IBurpExtender {
         final String yamlTemplate = Utils.dumpYaml(template);
 
         final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(targetUrl, yamlTemplate, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, callbacks));
     }
 }

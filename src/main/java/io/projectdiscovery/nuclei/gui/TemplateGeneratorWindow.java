@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public class TemplateGeneratorWindow extends JFrame {
@@ -25,10 +26,10 @@ public class TemplateGeneratorWindow extends JFrame {
     private Path temporaryTemplatePath;
 
     public TemplateGeneratorWindow(URL targetUrl, String templateYaml) {
-        this(targetUrl, templateYaml, null);
+        this(Paths.get("nuclei"), targetUrl, templateYaml, null);
     }
 
-    public TemplateGeneratorWindow(URL targetUrl, String templateYaml, IBurpExtenderCallbacks callbacks) {
+    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, IBurpExtenderCallbacks callbacks) {
         super("Nuclei Template Generator"); // TODO setIconImage
         this.setLayout(new GridBagLayout());
 
@@ -36,20 +37,32 @@ public class TemplateGeneratorWindow extends JFrame {
 
         setCloseWithKeyboardShortcut();
 
-        String command = createCommand(callbacks, targetUrl);
+        String command = createCommand(targetUrl, nucleiPath);
         cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
-        createControlPanel(command, contentPane);
-        // TODO use split pane instead?
-        createTextEditor(contentPane, templateYaml);
-        createOutputPanel(contentPane);
+        createControlPanel(contentPane, command);
+        createSplitPane(contentPane, templateYaml);
 
         this.setLocationRelativeTo(null); // center of the screen
         this.setPreferredSize(new Dimension(800, 600));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
         this.setVisible(true);
         this.pack();
+    }
+
+    private void createSplitPane(Container contentPane, String templateYaml) {
+        final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createTextEditor(templateYaml), createOutputPanel());
+        splitPane.setOneTouchExpandable(true);
+        splitPane.setResizeWeight(0.5);
+
+        final GridBagConstraints outputConstraints = new GridBagConstraints();
+        outputConstraints.gridx = 0;
+        outputConstraints.gridy = 1;
+        outputConstraints.weightx = 1;
+        outputConstraints.weighty = 0.9;
+        outputConstraints.fill = GridBagConstraints.BOTH;
+        contentPane.add(splitPane, outputConstraints);
     }
 
     private void cleanupOnClose() {
@@ -68,7 +81,7 @@ public class TemplateGeneratorWindow extends JFrame {
         });
     }
 
-    private String createCommand(IBurpExtenderCallbacks callbacks, URL targetUrl) {
+    private String createCommand(URL targetUrl, Path nucleiPath) {
         try {
             temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
@@ -76,7 +89,7 @@ public class TemplateGeneratorWindow extends JFrame {
         }
 
         // TODO quoting in case of Windows?
-        return String.format("%s -nc -v -t %s -u %s", Utils.getNucleiPath(callbacks), temporaryTemplatePath, targetUrl);
+        return String.format("%s -nc -v -t %s -u %s", nucleiPath, temporaryTemplatePath, targetUrl);
     }
 
     private void setCloseWithKeyboardShortcut() {
@@ -101,60 +114,26 @@ public class TemplateGeneratorWindow extends JFrame {
         }
     }
 
-    private void createOutputPanel(Container contentPane) {
+    private Component createOutputPanel() {
         outputPanel = new JTextArea();
         outputPanel.setEditable(false);
-        outputPanel.setVisible(false);
+        outputPanel.setVisible(true);
         outputPanel.setAutoscrolls(true);
 
         final JScrollPane scrollPane = createScrollPane(outputPanel, "Output");
-        scrollPane.setVisible(false);
+        scrollPane.setVisible(true);
 
-        outputPanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent e) {
-                // propagate setVisible from the outputPanel to its parent scroll pane
-                scrollPane.setVisible(true);
-                scrollPane.getParent().revalidate();
-
-                super.componentShown(e);
-            }
-        });
-
-        final GridBagConstraints outputConstraints = new GridBagConstraints();
-        outputConstraints.gridx = 1;
-        outputConstraints.gridy = 1;
-        outputConstraints.weightx = 0.5;
-        outputConstraints.weighty = 0.9;
-        outputConstraints.gridwidth = 1;
-        outputConstraints.fill = GridBagConstraints.BOTH;
-
-        contentPane.add(scrollPane, outputConstraints);
+        return scrollPane;
     }
 
-    private void createTextEditor(Container contentPane, String templateYaml) {
+    private Component createTextEditor(String templateYaml) {
         templateEditor = new JTextArea();
         templateEditor.setText(templateYaml);
         templateEditor.setEditable(true);
 
         addKeyboardShortcutsToEditor(templateEditor);
 
-        final JScrollPane editorScrollPane = createScrollPane(templateEditor, "Template");
-
-        final GridBagConstraints textAreaConstraints = new GridBagConstraints();
-        textAreaConstraints.fill = GridBagConstraints.BOTH;
-        textAreaConstraints.gridwidth = 1;
-        textAreaConstraints.gridheight = 1;
-
-        final GridBagConstraints panelConstraints = new GridBagConstraints();
-        panelConstraints.gridx = 0;
-        panelConstraints.gridy = 1;
-        panelConstraints.weightx = 0.5;
-        panelConstraints.weighty = 0.9;
-        panelConstraints.gridwidth = 1;
-        panelConstraints.fill = GridBagConstraints.BOTH;
-
-        contentPane.add(editorScrollPane, panelConstraints);
+        return createScrollPane(templateEditor, "Template");
     }
 
     private JScrollPane createScrollPane(JTextArea templateEditor, String paneTitle) {
@@ -177,7 +156,7 @@ public class TemplateGeneratorWindow extends JFrame {
         });
     }
 
-    private void createControlPanel(String command, Container contentPane) {
+    private void createControlPanel(Container contentPane, String command) {
         final JPanel topPanel = new JPanel();
         topPanel.setPreferredSize(new Dimension(200, 50));
         topPanel.setLayout(new GridBagLayout());
@@ -236,7 +215,6 @@ public class TemplateGeneratorWindow extends JFrame {
     private void executeButtonClick() {
         Utils.writeToFile(this.templateEditor.getText(), temporaryTemplatePath, this::logError);
 
-        this.outputPanel.setVisible(true);
         this.outputPanel.setText(null);
 
         Utils.executeCommand(this.commandLineField.getText(),
