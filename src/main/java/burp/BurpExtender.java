@@ -163,7 +163,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
-        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds);
+        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds, helpers);
         final int statusCode = responseInfo.getStatusCode();
 
         final Requests requests = new Requests();

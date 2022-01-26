@@ -1,6 +1,7 @@
 package io.projectdiscovery.nuclei.util;
 
 import burp.IBurpExtenderCallbacks;
+import burp.IExtensionHelpers;
 import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.model.Binary;
@@ -17,13 +18,18 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -132,6 +138,21 @@ public final class Utils {
         }
     }
 
+    public static void openWebPage(String url) throws IOException, URISyntaxException {
+        openWebPage(new URL(url).toURI());
+    }
+
+    public static void openWebPage(URL url) throws IOException, URISyntaxException {
+        openWebPage(url.toURI());
+    }
+
+    public static void openWebPage(URI uri) throws IOException {
+        final Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+            desktop.browse(uri);
+        }
+    }
+
     public static boolean isAsciiPrintableNewLine(byte[] input) {
         return IntStream.range(0, input.length).map(i -> input[i]).allMatch(b -> b == CR || b == LF || (b >= 20 && b < 0x7F));
     }
@@ -158,7 +179,7 @@ public final class Utils {
         return nucleiBinaryPath;
     }
 
-    public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds) {
+    public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds, IExtensionHelpers helpers) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
 
@@ -167,7 +188,7 @@ public final class Utils {
 
         final TemplateMatcher contentMatcher;
         if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
-            contentMatcher = createWordMatcher(responseBytes, fromIndex, toIndex, selectionPart);
+            contentMatcher = createWordMatcher(selectionPart, helpers.bytesToString(selectedBytes));
         } else {
             final Binary binaryMatcher = new Binary(selectedBytes);
             binaryMatcher.setPart(selectionPart);
@@ -222,9 +243,7 @@ public final class Utils {
         return transformedRequest;
     }
 
-    private static TemplateMatcher createWordMatcher(byte[] responseBytes, int fromIndex, int toIndex, TemplateMatcher.Part selectionPart) {
-        final String selectedString = new String(Arrays.copyOfRange(responseBytes, fromIndex, toIndex)); // TODO charset Charset.defaultCharset() vs UTF-8
-
+    private static TemplateMatcher createWordMatcher(TemplateMatcher.Part selectionPart, String selectedString) {
         final Word wordMatcher;
         if (selectionPart == TemplateMatcher.Part.header) {
             wordMatcher = new Word(selectedString.split(CRLF));

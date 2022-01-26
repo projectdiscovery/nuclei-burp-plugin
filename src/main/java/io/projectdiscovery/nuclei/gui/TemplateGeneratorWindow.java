@@ -27,20 +27,21 @@ import java.util.Objects;
 
 public class TemplateGeneratorWindow extends JFrame {
 
+
     private JTextArea templateEditor;
     private JTextField commandLineField;
     private AnsiColorTextPane outputPane;
 
     private final IBurpExtenderCallbacks callbacks;
     private Path temporaryTemplatePath;
-    private Map<String, String> yamlFieldDescriptionMap;
+    private final Map<String, String> yamlFieldDescriptionMap;
 
     public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap) {
         this(nucleiPath, targetUrl, templateYaml, yamlFieldDescriptionMap, null);
     }
 
     public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap, IBurpExtenderCallbacks callbacks) {
-        super("Nuclei Template Generator"); // TODO setIconImage
+        super("Nuclei Template Generator");
         this.setLayout(new GridBagLayout());
 
         this.callbacks = callbacks;
@@ -55,6 +56,7 @@ public class TemplateGeneratorWindow extends JFrame {
         createControlPanel(contentPane, command);
         createSplitPane(contentPane, templateYaml);
 
+        this.setJMenuBar(new MenuHelper(this::logError).createMenuBar());
         this.setLocationRelativeTo(null); // center of the screen
         this.setPreferredSize(new Dimension(800, 600));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
