@@ -3,7 +3,10 @@ package io.projectdiscovery.nuclei.util;
 import burp.IBurpExtenderCallbacks;
 import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
-import io.projectdiscovery.nuclei.model.*;
+import io.projectdiscovery.nuclei.model.Binary;
+import io.projectdiscovery.nuclei.model.Requests;
+import io.projectdiscovery.nuclei.model.TemplateMatcher;
+import io.projectdiscovery.nuclei.model.Word;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
@@ -36,7 +39,7 @@ public final class Utils {
     private static final char LF = '\n';
     private static final String CRLF = "" + CR + LF;
 
-    private static final char INTRUDER_PAYLOAD_MARKER = '§';
+    public static final char INTRUDER_PAYLOAD_MARKER = '§';
     private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern.compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
 
     private static final String BASE_PAYLOAD_PARAMETER_NAME = "param";
@@ -177,27 +180,32 @@ public final class Utils {
     public static TransformedRequest transformRequestWithPayloads(Requests.AttackType attackType, String request) {
         final Matcher matcher = INTRUDER_PAYLOAD_PATTERN.matcher(request);
 
-        if (attackType == Requests.AttackType.batteringram) {
-            final List<String> payloadParameters = new ArrayList<>();
-            final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
-                payloadParameters.add(payloadParameter);
-                return BASE_PAYLOAD_PARAMETER_NAME;
-            };
+        return attackType == Requests.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
+                                                              : handleMultiPayloadAttackTypes(attackType, request, matcher);
+    }
 
-            String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
-            return new TransformedRequest(attackType, transformedRequest, Map.of(BASE_PAYLOAD_PARAMETER_NAME, payloadParameters));
-        } else {
-            final Map<String, List<String>> payloadParameters = new LinkedHashMap<>();
+    private static TransformedRequest handleMultiPayloadAttackTypes(Requests.AttackType attackType, String request, Matcher matcher) {
+        final Map<String, List<String>> payloadParameters = new LinkedHashMap<>();
 
-            final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
-                final String indexedParameterName = BASE_PAYLOAD_PARAMETER_NAME + index;
-                payloadParameters.put(indexedParameterName, new ArrayList<>(List.of(payloadParameter)));
-                return indexedParameterName;
-            };
+        final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
+            final String indexedParameterName = BASE_PAYLOAD_PARAMETER_NAME + index;
+            payloadParameters.put(indexedParameterName, new ArrayList<>(List.of(payloadParameter)));
+            return indexedParameterName;
+        };
 
-            final String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
-            return new TransformedRequest(attackType, transformedRequest, payloadParameters);
-        }
+        final String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
+        return new TransformedRequest(attackType, transformedRequest, payloadParameters);
+    }
+
+    private static TransformedRequest handleBatteringRam(Requests.AttackType attackType, String request, Matcher matcher) {
+        final List<String> payloadParameters = new ArrayList<>();
+        final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
+            payloadParameters.add(payloadParameter);
+            return BASE_PAYLOAD_PARAMETER_NAME;
+        };
+
+        final String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
+        return new TransformedRequest(attackType, transformedRequest, Map.of(BASE_PAYLOAD_PARAMETER_NAME, payloadParameters));
     }
 
     private static String transformRawRequest(String request, Matcher matcher, BiFunction<Integer, String, String> payloadFunction) {
