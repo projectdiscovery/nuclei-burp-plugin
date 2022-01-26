@@ -30,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-public class Utils {
+public final class Utils {
 
     private static final char CR = '\r';
     private static final char LF = '\n';
@@ -42,6 +42,9 @@ public class Utils {
     private static final String BASE_PAYLOAD_PARAMETER_NAME = "param";
     private static final String PAYLOAD_START_MARKER = "{{";
     private static final String PAYLOAD_END_MARKER = "}}";
+
+    private Utils() {
+    }
 
     public static String dumpYaml(Object data) {
         final Representer representer = new Representer() {

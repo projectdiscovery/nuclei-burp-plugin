@@ -1,7 +1,11 @@
 package io.projectdiscovery.nuclei.gui;
 
 import burp.IBurpExtenderCallbacks;
+import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.BasicCompletion;
+import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -14,11 +18,11 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Objects;
 
 public class TemplateGeneratorWindow extends JFrame {
@@ -29,16 +33,18 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private final IBurpExtenderCallbacks callbacks;
     private Path temporaryTemplatePath;
+    private Map<String, String> yamlFieldDescriptionMap;
 
-    public TemplateGeneratorWindow(URL targetUrl, String templateYaml) {
-        this(Paths.get("nuclei"), targetUrl, templateYaml, null);
+    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap) {
+        this(nucleiPath, targetUrl, templateYaml, yamlFieldDescriptionMap, null);
     }
 
-    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, IBurpExtenderCallbacks callbacks) {
+    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap, IBurpExtenderCallbacks callbacks) {
         super("Nuclei Template Generator"); // TODO setIconImage
         this.setLayout(new GridBagLayout());
 
         this.callbacks = callbacks;
+        this.yamlFieldDescriptionMap = yamlFieldDescriptionMap;
 
         setKeyboardShortcuts();
 
@@ -155,7 +161,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private Component createTextEditor(String templateYaml) {
-        final RSyntaxTextArea textEditor = createTextEditorWithSyntaxHighlighting(templateYaml);
+        final RSyntaxTextArea textEditor = createSmartTextEditor(templateYaml);
 
         if (UIManager.getLookAndFeel().getID().toLowerCase().contains("dark")) {
             final InputStream resourceAsStream = this.getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml");
@@ -178,7 +184,25 @@ public class TemplateGeneratorWindow extends JFrame {
         return scrollPane;
     }
 
-    private RSyntaxTextArea createTextEditorWithSyntaxHighlighting(String templateYaml) {
+    private void setupAutoCompletion(RSyntaxTextArea textEditor) {
+        if (this.yamlFieldDescriptionMap != null) {
+            final DefaultCompletionProvider defaultCompletionProvider = new DefaultCompletionProvider();
+            defaultCompletionProvider.setAutoActivationRules(true, null);
+
+            this.yamlFieldDescriptionMap.forEach((key, value) -> defaultCompletionProvider.addCompletion(new BasicCompletion(defaultCompletionProvider, key, value)));
+
+            final AutoCompletion autoCompletion = new AutoCompletion(defaultCompletionProvider);
+//            autoCompletion.setShowDescWindow(true); TODO point to or open remote documentation
+            autoCompletion.setAutoCompleteEnabled(true);
+            autoCompletion.setAutoActivationEnabled(true);
+            autoCompletion.setAutoCompleteSingleChoices(false);
+            autoCompletion.setAutoActivationDelay(500);
+
+            autoCompletion.install(textEditor);
+        }
+    }
+
+    private RSyntaxTextArea createSmartTextEditor(String templateYaml) {
         // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
         JTextComponent.removeKeymap("RTextAreaKeymap");
         UIManager.put("RSyntaxTextAreaUI.actionMap", null);
@@ -194,6 +218,8 @@ public class TemplateGeneratorWindow extends JFrame {
         textEditor.setAutoIndentEnabled(true);
         textEditor.setTabSize(2);
         textEditor.setText(templateYaml);
+
+        setupAutoCompletion(textEditor);
 
         return textEditor;
     }
@@ -280,7 +306,7 @@ public class TemplateGeneratorWindow extends JFrame {
         }
     }
 
-    public static void main(String[] args) throws MalformedURLException {
+    public static void main(String[] args) throws Exception {
         final URL url = new URL("http://localhost:8081");
 
         final String template = "id: template-id\n" +
@@ -299,7 +325,7 @@ public class TemplateGeneratorWindow extends JFrame {
                                 "      status:\n" +
                                 "      - 200\n";
 
-        final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(url, template);
+        final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(Paths.get("nuclei"), url, template, SchemaUtils.retrieveYamlFieldWithDescriptions());
         templateGeneratorWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 }

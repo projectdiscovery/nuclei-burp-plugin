@@ -29,6 +29,7 @@ import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
@@ -36,17 +37,39 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class BurpExtender implements burp.IBurpExtender {
+
+    private Map<String, String> yamlFieldDescriptionMap;
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         callbacks.setExtensionName("Nuclei");
 
+        // TODO apply callbacks.customizeUiComponent to created UI components
+
+        initializeNucleiYamlSchema(callbacks);
+
         callbacks.registerContextMenuFactory(createContextMenuFactory(callbacks));
 
         callbacks.addSuiteTab(createConfigurationTab(callbacks));
+    }
+
+    private void initializeNucleiYamlSchema(IBurpExtenderCallbacks callbacks) {
+        final String errorMessage = "AutoCompletion will be disabled, because there was an error while downloading and parsing the nuclei JSON schema.";
+
+        try {
+            this.yamlFieldDescriptionMap = SchemaUtils.retrieveYamlFieldWithDescriptions();
+            if (!this.yamlFieldDescriptionMap.isEmpty()) {
+                callbacks.printOutput("JSON schema loaded and parsed!");
+            } else {
+                callbacks.printError(errorMessage);
+            }
+        } catch (Exception e) {
+            callbacks.printError(errorMessage + '\n' + e.getMessage());
+        }
     }
 
     private ITab createConfigurationTab(IBurpExtenderCallbacks callbacks) {
@@ -124,7 +147,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final String yamlTemplate = Utils.dumpYaml(template);
 
         final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
     }
 
     // TODO remove duplicated block
@@ -144,6 +167,6 @@ public class BurpExtender implements burp.IBurpExtender {
         final String yamlTemplate = Utils.dumpYaml(template);
 
         final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
     }
 }
