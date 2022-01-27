@@ -51,8 +51,16 @@ class UtilsTest {
         final String expected = "id: template-id\n" +
                                 "info:\n" +
                                 "  author: forgedhallpass\n" +
+                                "  classification:\n" +
+                                "    cvss-metrics: CVSS:3.0/\n" +
+                                "    cvss-score: 1.0\n" +
+                                "    cve-id: CVE-\n" +
+                                "    cwe-id: CWE-\n" +
+                                "  description: description\n" +
                                 "  name: Template Name\n" +
+                                "  reference: https://\n" +
                                 "  severity: info\n" +
+                                "  tags: tags\n" +
                                 "requests:\n" +
                                 "- matchers-condition: or\n" +
                                 "  matchers:\n" +
@@ -75,14 +83,27 @@ class UtilsTest {
     }
 
     @Test
+    void deleteME() {
+        System.out.println("matcherConditionValues".replaceAll("([a-z]+)([A-Z]+)", "$1-$2"));
+    }
+
+    @Test
     void testExtensiveYamlGeneration() {
         final Template template = createExtensiveTemplate();
 
         final String expected = "id: template-id\n" +
                                 "info:\n" +
                                 "  author: forgedhallpass\n" +
+                                "  classification:\n" +
+                                "    cvss-metrics: CVSS:3.0/\n" +
+                                "    cvss-score: 1.0\n" +
+                                "    cve-id: CVE-\n" +
+                                "    cwe-id: CWE-\n" +
+                                "  description: description\n" +
                                 "  name: Template Name\n" +
+                                "  reference: https://\n" +
                                 "  severity: info\n" +
+                                "  tags: tags\n" +
                                 "requests:\n" +
                                 "- matchers-condition: or\n" +
                                 "  attack: clusterbomb\n" +

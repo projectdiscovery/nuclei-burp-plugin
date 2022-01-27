@@ -32,11 +32,56 @@ public class Info {
         info, low, medium, high, critical
     }
 
+    public static class Classification {
+        private String cvssMetrics = "CVSS:3.0/";
+        private double cvssScore = 1.0;
+        private String cveId = "CVE-";
+        private String cweId = "CWE-";
+
+        public Classification() {
+        }
+
+        public String getCvssMetrics() {
+            return this.cvssMetrics;
+        }
+
+        public void setCvssMetrics(String cvssMetrics) {
+            this.cvssMetrics = cvssMetrics;
+        }
+
+        public double getCvssScore() {
+            return this.cvssScore;
+        }
+
+        public void setCvssScore(double cvssScore) {
+            this.cvssScore = cvssScore;
+        }
+
+        public String getCveId() {
+            return this.cveId;
+        }
+
+        public void setCveId(String cveId) {
+            this.cveId = cveId;
+        }
+
+        public String getCweId() {
+            return this.cweId;
+        }
+
+        public void setCweId(String cweId) {
+            this.cweId = cweId;
+        }
+    }
+
     private String name;
     private String author;
     private Severity severity = Severity.info;
 
-    // TODO add CVSS fields
+    private String reference = "https://";
+    private String tags = "tags";
+    private Classification classification = new Classification();
+    private String description = "description";
 
     public Info() {
     }
@@ -69,5 +114,37 @@ public class Info {
 
     public void setSeverity(Severity severity) {
         this.severity = severity;
+    }
+
+    public String getReference() {
+        return this.reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
+    }
+
+    public String getTags() {
+        return this.tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public Classification getClassification() {
+        return this.classification;
+    }
+
+    public void setClassification(Classification classification) {
+        this.classification = classification;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

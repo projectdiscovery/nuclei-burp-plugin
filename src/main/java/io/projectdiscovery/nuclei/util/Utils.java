@@ -4,10 +4,7 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
-import io.projectdiscovery.nuclei.model.Binary;
-import io.projectdiscovery.nuclei.model.Requests;
-import io.projectdiscovery.nuclei.model.TemplateMatcher;
-import io.projectdiscovery.nuclei.model.Word;
+import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
@@ -75,11 +72,16 @@ public final class Utils {
             }
         };
 
-        final TypeDescription typeDescription = new TypeDescription(Requests.class, Tag.MAP);
         // TODO isn't there a more elegant way to remap field names?
-        typeDescription.substituteProperty("matchers-condition", Requests.class, "getMatchersCondition", "setMatchersCondition");
-        typeDescription.setExcludes("matchersCondition");
-        representer.addTypeDescription(typeDescription);
+        Map.of(
+                Requests.class, List.of("matchersCondition"),
+                Info.Classification.class, List.of("cvssMetrics", "cvssScore", "cveId", "cweId")
+        ).forEach((clazz, fields) -> {
+            final TypeDescription requestsTypeDescription = new TypeDescription(clazz, Tag.MAP);
+            fields.forEach(field -> requestsTypeDescription.substituteProperty(toSnakeCase(field), Info.Classification.class, createGetterMethodName(field), createSetterMethodName(field)));
+            requestsTypeDescription.setExcludes(fields.toArray(String[]::new));
+            representer.addTypeDescription(requestsTypeDescription);
+        });
 
         final DumperOptions options = new DumperOptions();
         options.setIndent(2);
@@ -88,6 +90,10 @@ public final class Utils {
 
         final Yaml yaml = new Yaml(representer, options);
         return yaml.dumpAsMap(data);
+    }
+
+    private static String createGetterOrSetterMethodName(String prefix, String fieldName) {
+        return prefix + String.valueOf(fieldName.charAt(0)).toUpperCase() + fieldName.substring(1);
     }
 
     public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
@@ -261,5 +267,17 @@ public final class Utils {
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;
+    }
+
+    private static String toSnakeCase(String input) {
+        return input.replaceAll("([a-z]+)([A-Z]+)", "$1-$2").toLowerCase();
+    }
+
+    private static String createGetterMethodName(String fieldName) {
+        return createGetterOrSetterMethodName("get", fieldName);
+    }
+
+    private static String createSetterMethodName(String fieldName) {
+        return createGetterOrSetterMethodName("set", fieldName);
     }
 }
