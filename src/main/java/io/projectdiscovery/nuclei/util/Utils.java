@@ -129,12 +129,14 @@ public final class Utils {
         });
     }
 
-    public static void writeToFile(String content, Path filePath, Consumer<String> logger) {
+    public static boolean writeToFile(String content, Path filePath, Consumer<String> logger) {
         try (final FileWriter fileWriter = new FileWriter(filePath.toFile())) {
             fileWriter.write(content);
             fileWriter.flush();
+            return true;
         } catch (Exception e) {
             logger.accept(String.format("Error while writing to file '%s': %s ", filePath, e.getMessage()));
+            return false;
         }
     }
 

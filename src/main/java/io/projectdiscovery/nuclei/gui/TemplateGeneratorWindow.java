@@ -9,6 +9,7 @@ import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -16,6 +17,7 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -109,6 +111,7 @@ public class TemplateGeneratorWindow extends JFrame {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> commandLineField.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this::logError));
     }
 
@@ -264,12 +267,23 @@ public class TemplateGeneratorWindow extends JFrame {
             clipboard.setContents(new StringSelection(templateYaml), null);
         });
 
-        final GridBagConstraints btn2Constraints = new GridBagConstraints();
-        btn2Constraints.gridx = 2;
-        btn2Constraints.gridy = 0;
-        btn2Constraints.gridheight = 1;
-        btn2Constraints.insets = new Insets(0, 5, 0, 5);
-        topPanel.add(clipboardBtn, btn2Constraints);
+        final GridBagConstraints clipBoardButtonConstraints = new GridBagConstraints();
+        clipBoardButtonConstraints.gridx = 2;
+        clipBoardButtonConstraints.gridy = 0;
+        clipBoardButtonConstraints.gridheight = 1;
+        clipBoardButtonConstraints.insets = new Insets(0, 5, 0, 5);
+        topPanel.add(clipboardBtn, clipBoardButtonConstraints);
+
+        final JButton saveButton = new JButton("Save");
+        saveButton.setMnemonic(KeyEvent.VK_S);
+        saveButton.addActionListener(e -> saveTemplateToFile());
+
+        final GridBagConstraints saveButtonConstraints = new GridBagConstraints();
+        saveButtonConstraints.gridx = 3;
+        saveButtonConstraints.gridy = 0;
+        saveButtonConstraints.gridheight = 1;
+        saveButtonConstraints.insets = new Insets(0, 5, 0, 5);
+        topPanel.add(saveButton, saveButtonConstraints);
 
         final GridBagConstraints panelConstraints = new GridBagConstraints();
         panelConstraints.gridx = 0;
@@ -279,6 +293,36 @@ public class TemplateGeneratorWindow extends JFrame {
         panelConstraints.fill = GridBagConstraints.BOTH;
 
         contentPane.add(topPanel, panelConstraints);
+    }
+
+    private void saveTemplateToFile() {
+        final String targetTemplatePath = callbacks == null ? System.getProperty("java.io.tmpdir") : callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_VARIABLE);
+
+        final String yamlTemplate = this.templateEditor.getText();
+        final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
+        if (parsedYaml == null) {
+            JOptionPane.showMessageDialog(this, "Invalid template", "Template error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            final String templateId = (String) parsedYaml.get("id"); // TODO it would be nicer to deserialize to Template.class and use the getter for the id
+            if (templateId == null || templateId.trim().equals("")) {
+                JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                final Path generatedFilePath = Paths.get(targetTemplatePath).resolve(templateId + ".yaml");
+
+                final JFileChooser fileChooser = new JFileChooser(generatedFilePath.toFile());
+                fileChooser.setSelectedFile(generatedFilePath.toFile());
+                final int option = fileChooser.showSaveDialog(this);
+
+                if (option == JFileChooser.APPROVE_OPTION) {
+                    final File userSelectedFile = fileChooser.getSelectedFile();
+                    final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this::logError);
+                    if (!ok) {
+                        JOptionPane.showMessageDialog(this, "Error while writing file to: " + userSelectedFile, "File write error", JOptionPane.ERROR_MESSAGE);
+                    }
+                    log("Generated nuclei template saved to: " + userSelectedFile);
+                }
+            }
+        }
     }
 
     private void executeButtonClick() {
@@ -298,6 +342,14 @@ public class TemplateGeneratorWindow extends JFrame {
                                                              })),
                              exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
                              this::logError);
+    }
+
+    private void log(String message) {
+        System.out.println(message);
+
+        if (Objects.nonNull(this.callbacks)) {
+            this.callbacks.printOutput(message);
+        }
     }
 
     private void logError(String message) {
