@@ -28,6 +28,8 @@ package io.projectdiscovery.nuclei.gui;
 import burp.IBurpExtenderCallbacks;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Map;
@@ -38,11 +40,10 @@ public class SettingsPanel extends JPanel {
     public static final String TEMPLATE_PATH_VARIABLE = "templatePath";
     public static final String AUTHOR_VARIABLE = "author";
 
-    private JTextField nucleiPathTextField;
-    private JTextField templatePathTextField;
-    private JTextField authorTextField;
-
     private final IBurpExtenderCallbacks callbacks;
+    private JButton cancelButton;
+    private JButton saveButton;
+    private Map<String, JTextField> valueTextFieldMap;
 
     public SettingsPanel() {
         this(null);
@@ -83,30 +84,32 @@ public class SettingsPanel extends JPanel {
         buttonPanelConstraints.fill = GridBagConstraints.BOTH;
 
         this.add(buttonPanel, buttonPanelConstraints);
+
+        loadSavedFieldValues();
     }
 
     private JPanel createButtonPanel() {
-        final Map<String, JTextField> valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_VARIABLE, nucleiPathTextField),
-                                                                        Map.entry(TEMPLATE_PATH_VARIABLE, templatePathTextField),
-                                                                        Map.entry(AUTHOR_VARIABLE, authorTextField));
-
         final JPanel buttonPanel = new JPanel(new GridBagLayout());
 
-        final JButton saveButton = new JButton("Save");
+        saveButton = new JButton("Save");
         saveButton.setMnemonic(KeyEvent.VK_S);
+        saveButton.setVisible(false);
         final GridBagConstraints saveConstraints = createButtonConstraints(1);
         saveButton.addActionListener(e -> {
             if (callbacks != null) {
-                valueTextFieldMap.forEach((k,v) -> callbacks.saveExtensionSetting(k, v.getText()));
+                valueTextFieldMap.forEach((k, v) -> callbacks.saveExtensionSetting(k, v.getText()));
+                setButtonsVisible(false);
             }
         });
         buttonPanel.add(saveButton, saveConstraints);
 
-        final JButton cancelButton = new JButton("Cancel");
+        cancelButton = new JButton("Cancel");
         cancelButton.setMnemonic(KeyEvent.VK_C);
+        cancelButton.setVisible(false);
         cancelButton.addActionListener(e -> {
             if (callbacks != null) {
-                valueTextFieldMap.forEach((k, v) -> v.setText(callbacks.loadExtensionSetting(k)));
+                loadSavedFieldValues();
+                setButtonsVisible(false);
             }
         });
         final GridBagConstraints cancelConstraints = createButtonConstraints(2);
@@ -136,7 +139,7 @@ public class SettingsPanel extends JPanel {
 
         formPanel.add(topPanel, topPanelConstraints);
 
-        final JPanel bottom = new JPanel(new GridBagLayout());
+        final JPanel bottomPanel = new JPanel(new GridBagLayout());
         final GridBagConstraints bottomConstraints = new GridBagConstraints();
         bottomConstraints.weightx = 1;
         bottomConstraints.weighty = 0.95;
@@ -144,7 +147,7 @@ public class SettingsPanel extends JPanel {
         bottomConstraints.gridy = 1;
         bottomConstraints.fill = GridBagConstraints.BOTH;
 
-        formPanel.add(bottom, bottomConstraints);
+        formPanel.add(bottomPanel, bottomConstraints);
 
         return formPanel;
     }
@@ -163,25 +166,41 @@ public class SettingsPanel extends JPanel {
 
         final String[] labels = {"Path to nuclei", "Template default save path", "Template author"};
         for (int index = 1; index <= labels.length; index++) {
-            final JLabel jLabel = new JLabel(labels[index-1]);
+            final JLabel jLabel = new JLabel(labels[index - 1]);
             final GridBagConstraints nucleiLabelConstraints = createLabelConstraints(index);
             topPanel.add(jLabel, nucleiLabelConstraints);
         }
 
         int gridY = 0;
-        nucleiPathTextField = new JTextField();
+        final JTextField nucleiPathTextField = new JTextField();
         final GridBagConstraints nucleiPathConstraints = createTextFieldConstraints(nucleiPathTextField, ++gridY);
         topPanel.add(nucleiPathTextField, nucleiPathConstraints);
 
-        templatePathTextField = new JTextField();
+        final JTextField templatePathTextField = new JTextField();
         final GridBagConstraints templatePathConstraints = createTextFieldConstraints(templatePathTextField, ++gridY);
         topPanel.add(templatePathTextField, templatePathConstraints);
 
-        authorTextField = new JTextField();
+        final JTextField authorTextField = new JTextField();
         final GridBagConstraints authorFieldConstraints = createTextFieldConstraints(authorTextField, ++gridY);
         topPanel.add(authorTextField, authorFieldConstraints);
 
+        this.valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_VARIABLE, nucleiPathTextField),
+                                               Map.entry(TEMPLATE_PATH_VARIABLE, templatePathTextField),
+                                               Map.entry(AUTHOR_VARIABLE, authorTextField));
+
         return topPanel;
+    }
+
+    private void loadSavedFieldValues() {
+        this.valueTextFieldMap.forEach((k, v) -> {
+            if (this.callbacks != null) {
+                final String savedValue = this.callbacks.loadExtensionSetting(k);
+                if (savedValue != null) {
+                    v.setText(savedValue);
+                }
+            }
+        });
+        setButtonsVisible(false);
     }
 
     private GridBagConstraints createLabelConstraints(int gridY) {
@@ -195,8 +214,26 @@ public class SettingsPanel extends JPanel {
         return nucleiLabelConstraints;
     }
 
-    private GridBagConstraints createTextFieldConstraints(JTextField authorTextField, int gridY) {
-        authorTextField.setPreferredSize(new Dimension(600, 30));
+    private GridBagConstraints createTextFieldConstraints(JTextField textField, int gridY) {
+        textField.setPreferredSize(new Dimension(600, 30));
+
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                setButtonsVisible(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                setButtonsVisible(true);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                setButtonsVisible(true);
+            }
+        });
+
         final GridBagConstraints authorFieldConstraints = new GridBagConstraints();
         authorFieldConstraints.gridx = 1;
         authorFieldConstraints.gridy = gridY;
@@ -205,6 +242,13 @@ public class SettingsPanel extends JPanel {
         authorFieldConstraints.insets = new Insets(10, 0, 10, 10);
         authorFieldConstraints.anchor = GridBagConstraints.LINE_START;
         return authorFieldConstraints;
+    }
+
+    private void setButtonsVisible(boolean visibility) {
+        if (saveButton.isVisible() != visibility) {
+            this.saveButton.setVisible(visibility);
+            this.cancelButton.setVisible(visibility);
+        }
     }
 
     public static void main(String[] args) {
