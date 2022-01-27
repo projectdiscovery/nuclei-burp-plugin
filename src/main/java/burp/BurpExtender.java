@@ -128,7 +128,7 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private List<JMenuItem> generateIntruderTemplate(URL targetUrl, String request, IBurpExtenderCallbacks callbacks) {
-        List<JMenuItem> menuItems;
+        final List<JMenuItem> menuItems;
         if (request.chars().filter(c -> c == Utils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
             menuItems = List.of(messageEditorContextMenu(() -> generateIntruderTemplate(targetUrl, request, Requests.AttackType.batteringram, callbacks), DEFAULT_CONTEXT_MENU_TEXT));
         } else {
@@ -147,7 +147,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private List<JMenuItem> generateRequestTemplate(IBurpExtenderCallbacks callbacks, IContextMenuInvocation invocation, IExtensionHelpers helpers, byte[] requestBytes, URL targetUrl) {
         return List.of(messageEditorContextMenu(() -> {
-            int[] selectionBounds = invocation.getSelectionBounds();
+            final int[] selectionBounds = invocation.getSelectionBounds();
             final StringBuilder stringBuilder = new StringBuilder(helpers.bytesToString(requestBytes));
             stringBuilder.insert(selectionBounds[0], Utils.INTRUDER_PAYLOAD_MARKER);
             stringBuilder.insert(selectionBounds[1] + 1, Utils.INTRUDER_PAYLOAD_MARKER);

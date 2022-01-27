@@ -79,7 +79,7 @@ public class AnsiColorTextPane extends JTextPane {
         try {
             document.insertString(document.getLength(), content, attributeSet);
         } catch (BadLocationException e) {
-            errorLogger.accept(e.getMessage());
+            this.errorLogger.accept(e.getMessage());
         }
     }
 
@@ -96,7 +96,7 @@ public class AnsiColorTextPane extends JTextPane {
         }
 
         if (simpleAttributeSet.isEmpty()) {
-            errorLogger.accept(String.format("ANSI escape '%s' not recognized!", content.replace('\u001B', Character.MIN_VALUE)));
+            this.errorLogger.accept(String.format("ANSI escape '%s' not recognized!", content.replace('\u001B', Character.MIN_VALUE)));
         }
 
         return simpleAttributeSet;

@@ -73,7 +73,7 @@ public final class MenuHelper {
 
     private JMenuItem createHelpMenuItem() {
         final JMenuItem documentationMenuItem = new JMenuItem("Documentation");
-        documentationMenuItem.addActionListener(event -> openDocumentationLink(errorMessageConsumer));
+        documentationMenuItem.addActionListener(event -> openDocumentationLink(this.errorMessageConsumer));
         return documentationMenuItem;
     }
 
@@ -103,7 +103,7 @@ public final class MenuHelper {
                     try {
                         Utils.openWebPage(e.getURL());
                     } catch (IOException | URISyntaxException ex) {
-                        errorMessageConsumer.accept("Launching the default browser is not allowed: " + ex.getMessage());
+                        MenuHelper.this.errorMessageConsumer.accept("Launching the default browser is not allowed: " + ex.getMessage());
                     }
                 }
             });

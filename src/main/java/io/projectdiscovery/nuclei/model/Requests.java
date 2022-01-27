@@ -49,7 +49,7 @@ public class Requests {
     private List<TemplateMatcher> matchers;
 
     public List<String> getRaw() {
-        return raw;
+        return this.raw;
     }
 
     public void setRaw(List<String> raw) {
@@ -66,7 +66,7 @@ public class Requests {
     }
 
     public List<TemplateMatcher> getMatchers() {
-        return matchers;
+        return this.matchers;
     }
 
     /**
@@ -78,7 +78,7 @@ public class Requests {
     public void setMatchers(List<TemplateMatcher> matchers) {
         this.matchers = matchers;
 
-        if (Objects.isNull(matchersCondition) && matchers.size() > 1) {
+        if (Objects.isNull(this.matchersCondition) && matchers.size() > 1) {
             this.matchersCondition = MatchersCondition.and;
         }
     }
@@ -92,7 +92,7 @@ public class Requests {
     }
 
     public MatchersCondition getMatchersCondition() {
-        return matchersCondition;
+        return this.matchersCondition;
     }
 
     /**
@@ -106,11 +106,11 @@ public class Requests {
     }
 
     public AttackType getAttack() {
-        return attack;
+        return this.attack;
     }
 
     public Map<String, List<String>> getPayloads() {
-        return payloads;
+        return this.payloads;
     }
 
     public void setTransformedRequest(TransformedRequest transformedRequest) {

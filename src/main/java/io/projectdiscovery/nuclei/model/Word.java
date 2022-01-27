@@ -45,7 +45,7 @@ public class Word implements TemplateMatcher {
     private Part part = Part.all;
 
     public List<String> getWords() {
-        return words;
+        return this.words;
     }
 
     public void setWords(List<String> words) {
@@ -54,7 +54,7 @@ public class Word implements TemplateMatcher {
 
     @Override
     public String getType() {
-        return type;
+        return this.type;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Word implements TemplateMatcher {
 
     @Override
     public Part getPart() {
-        return part;
+        return this.part;
     }
 
     @Override

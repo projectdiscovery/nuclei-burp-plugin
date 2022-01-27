@@ -50,7 +50,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         setKeyboardShortcuts();
 
-        String command = createCommand(targetUrl, nucleiPath);
+        final String command = createCommand(targetUrl, nucleiPath);
         cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
@@ -84,9 +84,9 @@ public class TemplateGeneratorWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
-                    Files.deleteIfExists(temporaryTemplatePath);
+                    Files.deleteIfExists(TemplateGeneratorWindow.this.temporaryTemplatePath);
                 } catch (IOException ex) {
-                    logError(String.format("Could not delete temporary file: %s", temporaryTemplatePath));
+                    logError(String.format("Could not delete temporary file: %s", TemplateGeneratorWindow.this.temporaryTemplatePath));
                     logError(ex.getMessage());
                 }
 
@@ -116,7 +116,7 @@ public class TemplateGeneratorWindow extends JFrame {
     private void setKeyboardShortcuts() {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> commandLineField.requestFocus());
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> this.commandLineField.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this::logError));
@@ -303,7 +303,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void saveTemplateToFile() {
-        final String targetTemplatePath = callbacks == null ? System.getProperty("java.io.tmpdir") : callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_VARIABLE);
+        final String targetTemplatePath = this.callbacks == null ? System.getProperty("java.io.tmpdir") : this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_VARIABLE);
 
         final String yamlTemplate = this.templateEditor.getText();
         final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
@@ -338,7 +338,7 @@ public class TemplateGeneratorWindow extends JFrame {
         this.outputPane.setText(null);
 
         final String command = this.commandLineField.getText();
-        boolean noColor = command.contains(" -nc ") || command.contains(" -no-color ");
+        final boolean noColor = command.contains(" -nc") || command.contains(" -no-color");
 
         Utils.executeCommand(command,
                              bufferedReader -> bufferedReader.lines()

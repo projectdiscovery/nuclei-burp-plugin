@@ -43,7 +43,7 @@ public class Status implements TemplateMatcher {
     public List<Integer> status;
 
     public List<Integer> getStatus() {
-        return status;
+        return this.status;
     }
 
     public void setStatus(List<Integer> status) {
@@ -52,7 +52,7 @@ public class Status implements TemplateMatcher {
 
     @Override
     public String getType() {
-        return type;
+        return this.type;
     }
 
     @Override

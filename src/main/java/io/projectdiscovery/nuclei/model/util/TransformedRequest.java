@@ -44,14 +44,14 @@ public class TransformedRequest {
     }
 
     public Requests.AttackType getAttackType() {
-        return attackType;
+        return this.attackType;
     }
 
     public String getRequest() {
-        return request;
+        return this.request;
     }
 
     public Map<String, List<String>> getParameters() {
-        return parameters;
+        return this.parameters;
     }
 }

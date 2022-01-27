@@ -36,6 +36,8 @@ public class Info {
     private String author;
     private Severity severity = Severity.info;
 
+    // TODO add CVSS fields
+
     public Info() {
     }
 
@@ -46,7 +48,7 @@ public class Info {
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public void setName(String name) {
@@ -54,7 +56,7 @@ public class Info {
     }
 
     public String getAuthor() {
-        return author;
+        return this.author;
     }
 
     public void setAuthor(String author) {
@@ -62,7 +64,7 @@ public class Info {
     }
 
     public Severity getSeverity() {
-        return severity;
+        return this.severity;
     }
 
     public void setSeverity(Severity severity) {

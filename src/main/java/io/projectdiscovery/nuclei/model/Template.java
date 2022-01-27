@@ -45,7 +45,7 @@ public class Template {
     }
 
     public String getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(String id) {
@@ -53,7 +53,7 @@ public class Template {
     }
 
     public Info getInfo() {
-        return info;
+        return this.info;
     }
 
     public void setInfo(Info info) {
@@ -61,7 +61,7 @@ public class Template {
     }
 
     public List<Requests> getRequests() {
-        return requests;
+        return this.requests;
     }
 
     public void setRequests(List<Requests> requests) {

@@ -67,7 +67,7 @@ public final class Utils {
 
             @Override
             protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
-                if (!classTags.containsKey(javaBean.getClass())) {
+                if (!this.classTags.containsKey(javaBean.getClass())) {
                     addClassTag(javaBean.getClass(), Tag.MAP);
                 }
 

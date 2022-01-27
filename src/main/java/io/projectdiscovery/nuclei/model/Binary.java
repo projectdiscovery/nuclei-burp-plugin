@@ -45,12 +45,12 @@ public class Binary implements TemplateMatcher {
     }
 
     public List<String> getBinary() {
-        return binary;
+        return this.binary;
     }
 
     @Override
     public String getType() {
-        return type;
+        return this.type;
     }
 
     @Override

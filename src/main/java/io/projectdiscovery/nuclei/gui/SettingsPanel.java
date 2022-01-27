@@ -91,29 +91,29 @@ public class SettingsPanel extends JPanel {
     private JPanel createButtonPanel() {
         final JPanel buttonPanel = new JPanel(new GridBagLayout());
 
-        saveButton = new JButton("Save");
-        saveButton.setMnemonic(KeyEvent.VK_S);
-        saveButton.setVisible(false);
+        this.saveButton = new JButton("Save");
+        this.saveButton.setMnemonic(KeyEvent.VK_S);
+        this.saveButton.setVisible(false);
         final GridBagConstraints saveConstraints = createButtonConstraints(1);
-        saveButton.addActionListener(e -> {
-            if (callbacks != null) {
-                valueTextFieldMap.forEach((k, v) -> callbacks.saveExtensionSetting(k, v.getText()));
+        this.saveButton.addActionListener(e -> {
+            if (this.callbacks != null) {
+                this.valueTextFieldMap.forEach((k, v) -> this.callbacks.saveExtensionSetting(k, v.getText()));
                 setButtonsVisible(false);
             }
         });
-        buttonPanel.add(saveButton, saveConstraints);
+        buttonPanel.add(this.saveButton, saveConstraints);
 
-        cancelButton = new JButton("Cancel");
-        cancelButton.setMnemonic(KeyEvent.VK_C);
-        cancelButton.setVisible(false);
-        cancelButton.addActionListener(e -> {
-            if (callbacks != null) {
+        this.cancelButton = new JButton("Cancel");
+        this.cancelButton.setMnemonic(KeyEvent.VK_C);
+        this.cancelButton.setVisible(false);
+        this.cancelButton.addActionListener(e -> {
+            if (this.callbacks != null) {
                 loadSavedFieldValues();
                 setButtonsVisible(false);
             }
         });
         final GridBagConstraints cancelConstraints = createButtonConstraints(2);
-        buttonPanel.add(cancelButton, cancelConstraints);
+        buttonPanel.add(this.cancelButton, cancelConstraints);
 
         return buttonPanel;
     }
@@ -123,6 +123,7 @@ public class SettingsPanel extends JPanel {
         cancelConstraints.gridx = gridx;
         cancelConstraints.gridy = 2;
         cancelConstraints.fill = GridBagConstraints.CENTER;
+        cancelConstraints.insets = new Insets(10, 5, 10, 5);
         return cancelConstraints;
     }
 
@@ -245,7 +246,7 @@ public class SettingsPanel extends JPanel {
     }
 
     private void setButtonsVisible(boolean visibility) {
-        if (saveButton.isVisible() != visibility) {
+        if (this.saveButton.isVisible() != visibility) {
             this.saveButton.setVisible(visibility);
             this.cancelButton.setVisible(visibility);
         }
