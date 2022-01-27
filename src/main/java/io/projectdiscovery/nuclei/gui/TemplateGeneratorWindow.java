@@ -27,7 +27,6 @@ import java.util.Objects;
 
 public class TemplateGeneratorWindow extends JFrame {
 
-
     private JTextArea templateEditor;
     private JTextField commandLineField;
     private AnsiColorTextPane outputPane;
@@ -110,6 +109,7 @@ public class TemplateGeneratorWindow extends JFrame {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> commandLineField.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this::logError));
     }
 
     private void setKeyboardShortcut(KeyStroke keyStroke, Action action) {

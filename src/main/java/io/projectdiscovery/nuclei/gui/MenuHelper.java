@@ -29,6 +29,7 @@ import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -51,24 +52,28 @@ public final class MenuHelper {
 
     public JMenuBar createMenuBar() {
         final JMenu menu = new JMenu("Help");
+        menu.setMnemonic(KeyEvent.VK_H);
 
         menu.add(createAboutMenuItem());
         menu.add(createHelpMenuItem());
+        // TODO add shortcuts description
 
         final JMenuBar menuBar = new JMenuBar();
         menuBar.add(menu);
         return menuBar;
     }
 
+    public static void openDocumentationLink(Consumer<String> errorMessageConsumer) {
+        try {
+            Utils.openWebPage(TEMPLATE_DOCUMENTATION_URL);
+        } catch (IOException | URISyntaxException e) {
+            errorMessageConsumer.accept("Launching the default browser is not allowed: " + e.getMessage());
+        }
+    }
+
     private JMenuItem createHelpMenuItem() {
         final JMenuItem documentationMenuItem = new JMenuItem("Documentation");
-        documentationMenuItem.addActionListener(event -> {
-            try {
-                Utils.openWebPage(TEMPLATE_DOCUMENTATION_URL);
-            } catch (IOException | URISyntaxException e) {
-                errorMessageConsumer.accept("Launching the default browser is not allowed: " + e.getMessage());
-            }
-        });
+        documentationMenuItem.addActionListener(event -> openDocumentationLink(errorMessageConsumer));
         return documentationMenuItem;
     }
 
