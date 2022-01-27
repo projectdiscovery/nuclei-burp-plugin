@@ -102,8 +102,15 @@ public class TemplateGeneratorWindow extends JFrame {
             logError("Could not create temporary file: " + e.getMessage());
         }
 
-        // TODO quoting in case of Windows?
-        return String.format("%s -v -t %s -u %s", nucleiPath, this.temporaryTemplatePath, targetUrl);
+        return String.format("%s -v -t %s -u %s",
+                             wrapWithQuotesIfNecessary(nucleiPath.toString()),
+                             wrapWithQuotesIfNecessary(this.temporaryTemplatePath.toString()),
+                             wrapWithQuotesIfNecessary(targetUrl.toString()));
+    }
+
+    private String wrapWithQuotesIfNecessary(String input) {
+        return input.contains(" ") ? String.format("\"%s\"", input)
+                                   : input;
     }
 
     private void setKeyboardShortcuts() {

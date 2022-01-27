@@ -28,8 +28,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -91,8 +91,13 @@ public final class Utils {
     }
 
     public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
-        final String[] commandParts = command.split(" "); // TODO handle space between quotes
+        final String[] commandParts = stringCommandToChunks(command);
         executeCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
+    }
+
+    static String[] stringCommandToChunks(String command) {
+        return command.replaceAll("^\"", "")
+                      .split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
     }
 
     public static void executeCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {

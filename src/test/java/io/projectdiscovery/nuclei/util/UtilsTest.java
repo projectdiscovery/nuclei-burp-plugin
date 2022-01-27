@@ -30,7 +30,20 @@ import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 class UtilsTest {
+
+    @Test
+    void testCommandSplitToChunks() {
+        final Map<String, String[]> testCases = Map.of(
+                "nuclei -t ~/nuclei-templates/my-template.yaml -u http://localhost:8080", new String[]{"nuclei", "-t", "~/nuclei-templates/my-template.yaml", "-u", "http://localhost:8080"},
+                "nuclei -t \"/tmp/dir space/template.yaml\" -u \"/users/directory with space/\"", new String[]{"nuclei", "-t", "/tmp/dir space/template.yaml", "-u", "/users/directory with space/"},
+                "\"c:/program files/nuclei.exe\" -t \"template.yaml\" -u \"c:/users/directory with space/\" -nc", new String[]{"c:/program files/nuclei.exe", "-t", "template.yaml", "-u", "c:/users/directory with space/", "-nc"}
+        );
+
+        testCases.forEach((key, value) -> Assertions.assertArrayEquals(value, Utils.stringCommandToChunks(key)));
+    }
 
     @Test
     void testSimpleYaml() {
