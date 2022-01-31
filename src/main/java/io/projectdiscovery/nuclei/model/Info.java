@@ -25,13 +25,17 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+
 @SuppressWarnings("unused")
+@YamlPropertyOrder({"name", "author", "severity", "description", "reference", "classification", "tags"})
 public class Info {
 
     public enum Severity {
         info, low, medium, high, critical
     }
 
+    @YamlPropertyOrder({"cvss-metrics", "cvss-score", "cve-id", "cwe-id"})
     public static class Classification {
         private String cvssMetrics = "CVSS:3.0/";
         private double cvssScore = 1.0;

@@ -25,10 +25,13 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+
 import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
+@YamlPropertyOrder({"type", "part", "status"})
 public class Status implements TemplateMatcher {
 
     public Status() {

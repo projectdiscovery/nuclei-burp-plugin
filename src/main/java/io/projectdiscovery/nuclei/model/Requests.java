@@ -26,12 +26,14 @@
 package io.projectdiscovery.nuclei.model;
 
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unused")
+@YamlPropertyOrder({"raw", "attack", "payloads", "matchers-condition", "matchers"})
 public class Requests {
 
     public enum MatchersCondition {

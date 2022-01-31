@@ -29,6 +29,7 @@ import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 import java.util.Map;
 
@@ -50,47 +51,88 @@ class UtilsTest {
         final Template template = createTemplate();
         final String expected = "id: template-id\n" +
                                 "info:\n" +
+                                "  name: Template Name\n" +
                                 "  author: forgedhallpass\n" +
+                                "  severity: info\n" +
+                                "  description: description\n" +
+                                "  reference: https://\n" +
                                 "  classification:\n" +
                                 "    cvss-metrics: CVSS:3.0/\n" +
                                 "    cvss-score: 1.0\n" +
                                 "    cve-id: CVE-\n" +
                                 "    cwe-id: CWE-\n" +
-                                "  description: description\n" +
-                                "  name: Template Name\n" +
-                                "  reference: https://\n" +
-                                "  severity: info\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
-                                "- matchers-condition: or\n" +
-                                "  matchers:\n" +
-                                "  - part: all\n" +
-                                "    type: word\n" +
-                                "    words:\n" +
-                                "    - word1\n" +
-                                "    - word2\n" +
-                                "  - status:\n" +
-                                "    - 200\n" +
-                                "    - 500\n" +
-                                "    type: status\n" +
-                                "  raw:\n" +
+                                "- raw:\n" +
                                 "  - |-\n" +
                                 "    GET / HTTP/1.1\n" +
                                 "    Host: {{Hostname}}\n" +
-                                "    Accept: */*\n";
+                                "    Accept: */*\n" +
+                                "  matchers-condition: or\n" +
+                                "  matchers:\n" +
+                                "  - type: word\n" +
+                                "    part: all\n" +
+                                "    words:\n" +
+                                "    - word1\n" +
+                                "    - word2\n" +
+                                "  - type: status\n" +
+                                "    status:\n" +
+                                "    - 200\n" +
+                                "    - 500\n";
 
         Assertions.assertEquals(expected, Utils.dumpYaml(template));
-    }
-
-    @Test
-    void deleteME() {
-        System.out.println("matcherConditionValues".replaceAll("([a-z]+)([A-Z]+)", "$1-$2"));
     }
 
     @Test
     void testExtensiveYamlGeneration() {
         final Template template = createExtensiveTemplate();
 
+        final String expected = "id: template-id\n" +
+                                "info:\n" +
+                                "  name: Template Name\n" +
+                                "  author: forgedhallpass\n" +
+                                "  severity: info\n" +
+                                "  description: description\n" +
+                                "  reference: https://\n" +
+                                "  classification:\n" +
+                                "    cvss-metrics: CVSS:3.0/\n" +
+                                "    cvss-score: 1.0\n" +
+                                "    cve-id: CVE-\n" +
+                                "    cwe-id: CWE-\n" +
+                                "  tags: tags\n" +
+                                "requests:\n" +
+                                "- raw:\n" +
+                                "  - |-\n" +
+                                "    GET / HTTP/1.1\n" +
+                                "    Host: {{Hostname}}\n" +
+                                "    Accept: */*\n" +
+                                "    HeaderOne: {{param1}}\n" +
+                                "    HeaderTwo: {{param2}}\n" +
+                                "  attack: clusterbomb\n" +
+                                "  payloads:\n" +
+                                "    param1:\n" +
+                                "    - headerOne\n" +
+                                "    - one\n" +
+                                "    param2:\n" +
+                                "    - headerTwo\n" +
+                                "    - two\n" +
+                                "  matchers-condition: or\n" +
+                                "  matchers:\n" +
+                                "  - type: word\n" +
+                                "    part: all\n" +
+                                "    words:\n" +
+                                "    - word1\n" +
+                                "    - word2\n" +
+                                "  - type: status\n" +
+                                "    status:\n" +
+                                "    - 200\n" +
+                                "    - 500\n";
+
+        Assertions.assertEquals(expected, Utils.dumpYaml(template));
+    }
+
+    @Test
+    void testDeserializeYaml() {
         final String expected = "id: template-id\n" +
                                 "info:\n" +
                                 "  author: forgedhallpass\n" +
@@ -132,7 +174,9 @@ class UtilsTest {
                                 "    HeaderOne: {{param1}}\n" +
                                 "    HeaderTwo: {{param2}}\n";
 
-        Assertions.assertEquals(expected, Utils.dumpYaml(template));
+
+        final Yaml yaml = new Yaml();
+        final Map map = yaml.loadAs(expected, Map.class);
     }
 
     @Test
@@ -151,7 +195,15 @@ class UtilsTest {
         requests.addPayloads(Requests.AttackType.batteringram, "param1", "Chrome");
         requests.addPayloads(Requests.AttackType.batteringram, "param3", "compress");
 
-        final String expected = "attack: batteringram\n" +
+        final String expected = "raw:\n" +
+                                "- |\n" +
+                                "  GET / HTTP/1.1\n" +
+                                "  Host: localhost\n" +
+                                "  User-Agent: {{param}} (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0\n" +
+                                "  Accept-Language: en-US,en;{{param}}-Encoding: {{param}}\n" +
+                                "  Pragma: no-cache\n" +
+                                "  Cache-Control: no-cache\n" +
+                                "attack: batteringram\n" +
                                 "payloads:\n" +
                                 "  param:\n" +
                                 "  - Mozilla/5.0\n" +
@@ -160,15 +212,7 @@ class UtilsTest {
                                 "    Accept\n" +
                                 "  - gzip, deflate\n" +
                                 "  - Chrome\n" +
-                                "  - compress\n" +
-                                "raw:\n" +
-                                "- |\n" +
-                                "  GET / HTTP/1.1\n" +
-                                "  Host: localhost\n" +
-                                "  User-Agent: {{param}} (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0\n" +
-                                "  Accept-Language: en-US,en;{{param}}-Encoding: {{param}}\n" +
-                                "  Pragma: no-cache\n" +
-                                "  Cache-Control: no-cache\n";
+                                "  - compress\n";
 
         Assertions.assertEquals(expected, Utils.dumpYaml(requests));
     }

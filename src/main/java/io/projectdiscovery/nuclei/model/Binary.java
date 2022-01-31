@@ -25,11 +25,14 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@YamlPropertyOrder({"type", "part", "binary"})
 public class Binary implements TemplateMatcher {
 
     public String type = Binary.class.getSimpleName().toLowerCase();

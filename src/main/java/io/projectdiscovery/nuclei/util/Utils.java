@@ -6,6 +6,7 @@ import burp.IResponseInfo;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
@@ -34,6 +35,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public final class Utils {
@@ -69,6 +71,22 @@ public final class Utils {
                 }
 
                 return super.representJavaBean(properties, javaBean);
+            }
+
+            @Override
+            protected Set<Property> getProperties(Class<?> type) {
+                Set<Property> propertySet = this.typeDefinitions.containsKey(type) ? this.typeDefinitions.get(type).getProperties()
+                                                                                   : super.getPropertyUtils().getProperties(type);
+
+                final YamlPropertyOrder annotation = type.getAnnotation(YamlPropertyOrder.class);
+                if (annotation != null) {
+                    final List<String> order = Arrays.asList(annotation.value());
+                    propertySet = propertySet.stream()
+                                             .sorted(Comparator.comparingInt(o -> order.indexOf(o.getName())))
+                                             .collect(Collectors.toCollection(LinkedHashSet::new));
+                }
+
+                return propertySet;
             }
         };
 
