@@ -32,11 +32,17 @@ public interface TemplateMatcher {
         header, body, all
     }
 
+    enum Condition {
+        and, or
+    }
+
     String getType();
 
     Part getPart();
 
     void setPart(Part part);
 
-    // TODO add matcher condition
+    Condition getCondition();
+
+    void setCondition(Condition condition);
 }

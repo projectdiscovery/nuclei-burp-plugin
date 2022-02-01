@@ -30,19 +30,23 @@ import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
-@YamlPropertyOrder({"type", "part", "words"})
+@YamlPropertyOrder({"type", "part", "condition", "words"})
 public class Word implements TemplateMatcher {
 
     @YamlProperty
-    public String type = Word.class.getSimpleName().toLowerCase();
+    private final String type = Word.class.getSimpleName().toLowerCase();
 
     @YamlProperty
     private Part part = Part.all;
 
     @YamlProperty
-    public List<String> words;
+    private List<String> words;
+
+    @YamlProperty
+    private Condition condition;
 
     public Word() {
     }
@@ -68,5 +72,15 @@ public class Word implements TemplateMatcher {
     @Override
     public void setPart(Part part) {
         this.part = part;
+    }
+
+    @Override
+    public Condition getCondition() {
+        return Optional.ofNullable(this.condition).orElse(Condition.or);
+    }
+
+    @Override
+    public void setCondition(Condition condition) {
+        this.condition = condition;
     }
 }

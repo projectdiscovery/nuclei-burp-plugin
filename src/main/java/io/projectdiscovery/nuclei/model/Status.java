@@ -30,16 +30,20 @@ import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
-@YamlPropertyOrder({"type", "part", "status"})
+@YamlPropertyOrder({"type", "part", "condition", "status"})
 public class Status implements TemplateMatcher {
 
     @YamlProperty
-    public String type = Status.class.getSimpleName().toLowerCase();
+    private final String type = Status.class.getSimpleName().toLowerCase();
 
     @YamlProperty
-    public List<Integer> status;
+    private List<Integer> status;
+
+    @YamlProperty
+    private Condition condition;
 
     public Status() {
     }
@@ -65,5 +69,15 @@ public class Status implements TemplateMatcher {
     @Override
     public void setPart(Part part) {
         // do nothing
+    }
+
+    @Override
+    public Condition getCondition() {
+        return Optional.ofNullable(this.condition).orElse(Condition.or);
+    }
+
+    @Override
+    public void setCondition(Condition condition) {
+        this.condition = condition;
     }
 }

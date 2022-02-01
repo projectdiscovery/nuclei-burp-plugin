@@ -221,7 +221,12 @@ public final class Utils {
         } else {
             // TODO could make a config to enable the user to decide on the normalization
             final String selectedStringWithNormalizedNewLines = selectedString.replaceAll(CRLF, String.valueOf(LF)).replace(CR, LF);
-            wordMatcher = new Word(selectedStringWithNormalizedNewLines.split(String.valueOf(LF)));
+            final String[] words = selectedStringWithNormalizedNewLines.split(String.valueOf(LF));
+            wordMatcher = new Word(words);
+
+            if (words.length > 1) {
+                wordMatcher.setCondition(TemplateMatcher.Condition.or);
+            }
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;

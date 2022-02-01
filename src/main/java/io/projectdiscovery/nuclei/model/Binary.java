@@ -29,21 +29,25 @@ import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@YamlPropertyOrder({"type", "part", "binary"})
+@YamlPropertyOrder({"type", "part", "condition", "binary"})
 public class Binary implements TemplateMatcher {
 
     @YamlProperty
-    public String type = Binary.class.getSimpleName().toLowerCase();
+    private final String type = Binary.class.getSimpleName().toLowerCase();
 
     @YamlProperty
-    public List<String> binary;
+    private List<String> binary;
 
     @YamlProperty
     private Part part = Part.body;
+
+    @YamlProperty
+    private Condition condition;
 
     public Binary() {
     }
@@ -69,6 +73,16 @@ public class Binary implements TemplateMatcher {
     @Override
     public void setPart(Part part) {
         this.part = part;
+    }
+
+    @Override
+    public Condition getCondition() {
+        return Optional.ofNullable(this.condition).orElse(Condition.or);
+    }
+
+    @Override
+    public void setCondition(Condition condition) {
+        this.condition = condition;
     }
 
     public static String toHex(byte[] input) {
