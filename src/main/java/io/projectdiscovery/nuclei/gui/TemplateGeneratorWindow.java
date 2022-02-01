@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class TemplateGeneratorWindow extends JFrame {
 
@@ -120,6 +121,20 @@ public class TemplateGeneratorWindow extends JFrame {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this::logError));
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> {
+            deriveFont(this.outputPane, size -> ++size);
+            deriveFont(this.templateEditor, size -> ++size);
+        });
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> {
+            deriveFont(this.outputPane, size -> --size);
+            deriveFont(this.templateEditor, size -> --size);
+        });
+    }
+
+    private void deriveFont(Component component, Function<Integer, Integer> fontSizeModifier) {
+        final Font font = component.getFont();
+        final int fontSize = font.getSize();
+        component.setFont(font.deriveFont((float) fontSizeModifier.apply(fontSize)));
     }
 
     private void setKeyboardShortcut(KeyStroke keyStroke, Action action) {
@@ -230,6 +245,7 @@ public class TemplateGeneratorWindow extends JFrame {
         textEditor.setAutoIndentEnabled(true);
         textEditor.setTabSize(2);
         textEditor.setText(templateYaml);
+        textEditor.setFont(textEditor.getFont().deriveFont(SettingsPanel.FONT_SIZE));
 
         setupAutoCompletion(textEditor);
 

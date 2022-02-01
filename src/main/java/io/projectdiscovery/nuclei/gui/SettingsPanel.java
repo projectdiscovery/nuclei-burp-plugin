@@ -40,6 +40,8 @@ public class SettingsPanel extends JPanel {
     public static final String TEMPLATE_PATH_VARIABLE = "templatePath";
     public static final String AUTHOR_VARIABLE = "author";
 
+    public static final float FONT_SIZE = 14f; // TODO make configurable or try to retrieve burp user config
+
     private final IBurpExtenderCallbacks callbacks;
     private JButton cancelButton;
     private JButton saveButton;

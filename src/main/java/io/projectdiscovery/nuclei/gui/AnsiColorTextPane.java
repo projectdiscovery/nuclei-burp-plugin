@@ -41,7 +41,8 @@ public class AnsiColorTextPane extends JTextPane {
 
     public AnsiColorTextPane(Consumer<String> errorLogger) {
         super();
-        putClientProperty(RenderingHints.KEY_ANTIALIASING, Boolean.TRUE);
+        super.putClientProperty(RenderingHints.KEY_ANTIALIASING, Boolean.TRUE);
+        super.setFont(new Font(Font.MONOSPACED, Font.PLAIN, (int) SettingsPanel.FONT_SIZE));
         this.errorLogger = errorLogger;
     }
 
