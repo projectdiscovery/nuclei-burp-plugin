@@ -3,27 +3,22 @@ package io.projectdiscovery.nuclei.util;
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IResponseInfo;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
-import io.projectdiscovery.nuclei.model.*;
+import io.projectdiscovery.nuclei.model.Binary;
+import io.projectdiscovery.nuclei.model.Requests;
+import io.projectdiscovery.nuclei.model.TemplateMatcher;
+import io.projectdiscovery.nuclei.model.Word;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.introspector.Property;
-import org.yaml.snakeyaml.nodes.MappingNode;
-import org.yaml.snakeyaml.nodes.NodeTuple;
-import org.yaml.snakeyaml.nodes.Tag;
-import org.yaml.snakeyaml.representer.Representer;
 
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -35,8 +30,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public final class Utils {
 
@@ -109,6 +104,10 @@ public final class Utils {
         }
     }
 
+    public static boolean isBlank(String input) {
+        return input == null || input.trim().equals("");
+    }
+
     public static void openWebPage(String url) throws IOException, URISyntaxException {
         openWebPage(new URL(url).toURI());
     }
@@ -133,21 +132,43 @@ public final class Utils {
         return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
     }
 
-    public static Path getNucleiPath(IBurpExtenderCallbacks callbacks) {
+    public static Optional<Path> getNucleiPath() {
+        return Stream.of(System.getenv("PATH").split(Pattern.quote(File.pathSeparator)))
+                     .map(Paths::get)
+                     .map(path -> path.resolve(getNucleiBinaryName()))
+                     .filter(Files::exists)
+                     .findFirst();
+    }
+
+    public static Path getConfiguredNucleiPath(IBurpExtenderCallbacks callbacks) {
         // TODO the OS detection would be enough to happen once at startup
-        final String osName = System.getProperty("os.name");
-        final String baseBinaryName = "nuclei";
-        final String nucleiBinaryName = osName.toLowerCase().startsWith("windows") ? baseBinaryName + ".exe" : baseBinaryName;
+        final String nucleiBinaryName = getNucleiBinaryName();
 
         final Path nucleiBinaryPath;
         final String nucleiBinaryPathSetting = callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_VARIABLE);
-        if (nucleiBinaryPathSetting == null || nucleiBinaryPathSetting.trim().equals("")) {
+        if (isBlank(nucleiBinaryPathSetting)) {
             nucleiBinaryPath = Paths.get(nucleiBinaryName);
         } else {
             nucleiBinaryPath = nucleiBinaryPathSetting.endsWith(nucleiBinaryName) ? Paths.get(nucleiBinaryPathSetting)
                                                                                   : Paths.get(nucleiBinaryPathSetting).resolve(nucleiBinaryName);
         }
         return nucleiBinaryPath;
+    }
+
+    public static Optional<String> detectDefaultTemplatePath() throws IOException {
+        final String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            final Path templatesConfigJsonPath = Paths.get(userHome).resolve(".config").resolve("nuclei").resolve(".templates-config.json");
+            if (Files.exists(templatesConfigJsonPath)) {
+                final Gson gson = new Gson();
+                final Type mapType = new TypeToken<Map<String, String>>() {
+                }.getType();
+                final Map<String, String> parsedTemplateConfig = gson.fromJson(Files.readString(templatesConfigJsonPath), mapType);
+                final String nucleiTemplatesDirectory = parsedTemplateConfig.get("nuclei-templates-directory");
+                return Optional.of(nucleiTemplatesDirectory);
+            }
+        }
+        return Optional.empty();
     }
 
     public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds, IExtensionHelpers helpers) {
@@ -230,5 +251,11 @@ public final class Utils {
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;
+    }
+
+    private static String getNucleiBinaryName() {
+        final String osName = System.getProperty("os.name");
+        final String baseBinaryName = "nuclei";
+        return osName.toLowerCase().startsWith("windows") ? baseBinaryName + ".exe" : baseBinaryName;
     }
 }

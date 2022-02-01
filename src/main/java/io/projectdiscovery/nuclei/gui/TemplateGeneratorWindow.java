@@ -327,7 +327,7 @@ public class TemplateGeneratorWindow extends JFrame {
             JOptionPane.showMessageDialog(this, "Invalid template", "Template error", JOptionPane.ERROR_MESSAGE);
         } else {
             final String templateId = (String) parsedYaml.get("id"); // TODO it would be nicer to deserialize to Template.class and use the getter for the id
-            if (templateId == null || templateId.trim().equals("")) {
+            if (Utils.isBlank(templateId)) {
                 JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
             } else {
                 final Path generatedFilePath = Paths.get(targetTemplatePath).resolve(templateId + ".yaml");

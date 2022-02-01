@@ -26,6 +26,7 @@
 package io.projectdiscovery.nuclei.gui;
 
 import burp.IBurpExtenderCallbacks;
+import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -33,6 +34,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Map;
+import java.util.Optional;
 
 public class SettingsPanel extends JPanel {
 
@@ -97,12 +99,7 @@ public class SettingsPanel extends JPanel {
         this.saveButton.setMnemonic(KeyEvent.VK_S);
         this.saveButton.setVisible(false);
         final GridBagConstraints saveConstraints = createButtonConstraints(1);
-        this.saveButton.addActionListener(e -> {
-            if (this.callbacks != null) {
-                this.valueTextFieldMap.forEach((k, v) -> this.callbacks.saveExtensionSetting(k, v.getText()));
-                setButtonsVisible(false);
-            }
-        });
+        this.saveButton.addActionListener(e -> saveConfigValues());
         buttonPanel.add(this.saveButton, saveConstraints);
 
         this.cancelButton = new JButton("Cancel");
@@ -118,6 +115,13 @@ public class SettingsPanel extends JPanel {
         buttonPanel.add(this.cancelButton, cancelConstraints);
 
         return buttonPanel;
+    }
+
+    private void saveConfigValues() {
+        if (this.callbacks != null) {
+            this.valueTextFieldMap.forEach((k, v) -> this.callbacks.saveExtensionSetting(k, v.getText()));
+            setButtonsVisible(false);
+        }
     }
 
     private GridBagConstraints createButtonConstraints(int gridx) {
@@ -195,15 +199,41 @@ public class SettingsPanel extends JPanel {
     }
 
     private void loadSavedFieldValues() {
-        this.valueTextFieldMap.forEach((k, v) -> {
+        this.valueTextFieldMap.forEach((configurationName, configurationField) -> {
             if (this.callbacks != null) {
-                final String savedValue = this.callbacks.loadExtensionSetting(k);
-                if (savedValue != null) {
-                    v.setText(savedValue);
+                final String savedValue = this.callbacks.loadExtensionSetting(configurationName);
+                if (Utils.isBlank(savedValue)) {
+                    calculateDefaultConfigurationValue(configurationName, configurationField);
+                } else {
+                    configurationField.setText(savedValue);
                 }
             }
         });
+
         setButtonsVisible(false);
+    }
+
+    private void calculateDefaultConfigurationValue(String configurationName, JTextField configurationField) {
+        try {
+            switch (configurationName) {
+                case NUCLEI_PATH_VARIABLE: {
+                    Utils.getNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
+                    break;
+                }
+                case TEMPLATE_PATH_VARIABLE: {
+                    Utils.detectDefaultTemplatePath().ifPresent(configurationField::setText);
+                    break;
+                }
+                case AUTHOR_VARIABLE: {
+                    Optional.ofNullable(System.getProperty("user.name")).ifPresent(configurationField::setText);
+                    break;
+                }
+            }
+
+            saveConfigValues();
+        } catch (Exception e) {
+            this.callbacks.printError("Could not load default value(s): " + e.getMessage());
+        }
     }
 
     private GridBagConstraints createLabelConstraints(int gridY) {

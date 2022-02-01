@@ -189,6 +189,6 @@ public class BurpExtender implements burp.IBurpExtender {
         final Template template = new Template("template-id", info, requests);
         final String yamlTemplate = YamlUtil.dump(template);
 
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getConfiguredNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
     }
 }
