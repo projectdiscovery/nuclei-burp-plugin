@@ -56,7 +56,7 @@ public final class MenuHelper {
 
         menu.add(createAboutMenuItem());
         menu.add(createHelpMenuItem());
-        // TODO add shortcuts description
+        menu.add(createShortcutsMenuItem());
 
         final JMenuBar menuBar = new JMenuBar();
         menuBar.add(menu);
@@ -89,6 +89,23 @@ public final class MenuHelper {
             }
         });
         return aboutMenuItem;
+    }
+
+    private JMenuItem createShortcutsMenuItem() {
+        final JMenuItem documentationMenuItem = new JMenuItem("Shortcuts");
+        documentationMenuItem.addActionListener(event -> {
+            final String[] messages = {
+                    "F1: Open nuclei template documentation",
+                    "Ctrl + Enter: Execute",
+                    "Ctrl + Shift + E: Jump to template editor",
+                    "Ctrl + L: Jump to CLI input field",
+                    "Ctrl + S: Save the current template",
+                    "Ctrl + Plus/Minus: Increase/decrease font size",
+                    "Ctrl + Q: Quit",
+                    };
+            JOptionPane.showMessageDialog(null, String.join("\n", messages), "Keyboard shortcuts", JOptionPane.INFORMATION_MESSAGE);
+        });
+        return documentationMenuItem;
     }
 
     private class HyperlinkPane extends JEditorPane {

@@ -181,8 +181,8 @@ public class TemplateGeneratorWindow extends JFrame {
         return scrollPane;
     }
 
-    private JScrollPane createScrollPane(Component templateEditor, String paneTitle) {
-        final JScrollPane editorScrollPane = new JScrollPane(templateEditor, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    private JScrollPane createScrollPane(Component component, String paneTitle) {
+        final JScrollPane editorScrollPane = new JScrollPane(component, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         editorScrollPane.setBorder(BorderFactory.createTitledBorder(paneTitle));
         return editorScrollPane;
     }
