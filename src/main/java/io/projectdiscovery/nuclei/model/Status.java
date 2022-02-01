@@ -25,6 +25,7 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.Arrays;
@@ -34,6 +35,12 @@ import java.util.List;
 @YamlPropertyOrder({"type", "part", "status"})
 public class Status implements TemplateMatcher {
 
+    @YamlProperty
+    public String type = Status.class.getSimpleName().toLowerCase();
+
+    @YamlProperty
+    public List<Integer> status;
+
     public Status() {
     }
 
@@ -41,26 +48,13 @@ public class Status implements TemplateMatcher {
         this.status = Arrays.asList(status);
     }
 
-    public String type = Status.class.getSimpleName().toLowerCase();
-
-    public List<Integer> status;
-
     public List<Integer> getStatus() {
         return this.status;
-    }
-
-    public void setStatus(List<Integer> status) {
-        this.status = status;
     }
 
     @Override
     public String getType() {
         return this.type;
-    }
-
-    @Override
-    public void setType(String type) {
-        this.type = type;
     }
 
     @Override

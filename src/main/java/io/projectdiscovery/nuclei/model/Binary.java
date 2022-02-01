@@ -25,6 +25,7 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.List;
@@ -35,9 +36,13 @@ import java.util.stream.Stream;
 @YamlPropertyOrder({"type", "part", "binary"})
 public class Binary implements TemplateMatcher {
 
+    @YamlProperty
     public String type = Binary.class.getSimpleName().toLowerCase();
 
+    @YamlProperty
     public List<String> binary;
+
+    @YamlProperty
     private Part part = Part.body;
 
     public Binary() {
@@ -54,11 +59,6 @@ public class Binary implements TemplateMatcher {
     @Override
     public String getType() {
         return this.type;
-    }
-
-    @Override
-    public void setType(String type) {
-        this.type = type;
     }
 
     @Override

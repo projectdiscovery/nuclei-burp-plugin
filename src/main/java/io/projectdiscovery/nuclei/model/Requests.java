@@ -26,36 +26,39 @@
 package io.projectdiscovery.nuclei.model;
 
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("unused")
 @YamlPropertyOrder({"raw", "attack", "payloads", "matchers-condition", "matchers"})
 public class Requests {
 
+    @YamlProperty("matchers-condition")
     public enum MatchersCondition {
         and, or
     }
 
+    @YamlProperty
     public enum AttackType {
         batteringram, pitchfork, clusterbomb
     }
 
+    @YamlProperty
     private MatchersCondition matchersCondition;
+    @YamlProperty
     private List<String> raw;
+    @YamlProperty
     private AttackType attack;
+    @YamlProperty
     private Map<String, List<String>> payloads;
+    @YamlProperty
     private List<TemplateMatcher> matchers;
 
     public List<String> getRaw() {
         return this.raw;
-    }
-
-    public void setRaw(List<String> raw) {
-        this.raw = normalizeRawRequest(raw.stream());
     }
 
     public void setRaw(String... raw) {
@@ -72,21 +75,14 @@ public class Requests {
     }
 
     /**
-     * Must be public for the serialization to work, but it should not be used directly.
-     * Use {@link #setTransformedRequest} instead
+     * For requests with payloads, use {@link #setTransformedRequest} instead
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    public void setMatchers(List<TemplateMatcher> matchers) {
-        this.matchers = matchers;
+    public void setMatchers(TemplateMatcher... matchers) {
+        this.matchers = List.of(matchers);
 
-        if (Objects.isNull(this.matchersCondition) && matchers.size() > 1) {
+        if (Objects.isNull(this.matchersCondition) && this.matchers.size() > 1) {
             this.matchersCondition = MatchersCondition.and;
         }
-    }
-
-    public void setMatchers(TemplateMatcher... matchers) {
-        setMatchers(List.of(matchers));
     }
 
     public void setMatchersCondition(MatchersCondition matchersCondition) {
@@ -95,16 +91,6 @@ public class Requests {
 
     public MatchersCondition getMatchersCondition() {
         return this.matchersCondition;
-    }
-
-    /**
-     * Must be public for the serialization to work, but it should not be used directly.
-     * Use {@link #setTransformedRequest} instead
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    public void setAttack(AttackType attack) {
-        this.attack = attack;
     }
 
     public AttackType getAttack() {
@@ -116,24 +102,14 @@ public class Requests {
     }
 
     public void setTransformedRequest(TransformedRequest transformedRequest) {
-        setAttack(transformedRequest.getAttackType());
+        this.attack = transformedRequest.getAttackType();
         setRaw(transformedRequest.getRequest());
-        setPayloads(transformedRequest.getParameters());
-    }
-
-    /**
-     * Must be public for the serialization to work, but it should not be used directly.
-     * Use {@link #setTransformedRequest} instead
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    public void setPayloads(Map<String, List<String>> payloads) {
-        this.payloads = payloads;
+        this.payloads = transformedRequest.getParameters();
     }
 
     public void addPayloads(AttackType attackType, String key, String... payloads) {
         if (this.attack == null) {
-            setAttack(attackType);
+            this.attack = attackType;
         } else if (this.attack != attackType) {
             throw new IllegalArgumentException("An attack type with an associated raw request was already set.");
         }
@@ -149,7 +125,7 @@ public class Requests {
 
     private void addPayloads(String key, String... payloads) {
         if (this.payloads == null) {
-            setPayloads(new LinkedHashMap<>(Map.of(key, new ArrayList<>(List.of(payloads)))));
+            this.payloads = new LinkedHashMap<>(Map.of(key, new ArrayList<>(List.of(payloads))));
         } else {
             this.payloads.merge(key, List.of(payloads), (v1, v2) -> {
                 v1.addAll(v2);

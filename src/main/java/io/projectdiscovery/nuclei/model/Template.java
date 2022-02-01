@@ -25,17 +25,21 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 import java.util.Arrays;
 import java.util.List;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 @YamlPropertyOrder({"id", "info", "requests"})
 public class Template {
 
+    @YamlProperty
     private String id;
+    @YamlProperty
     private Info info;
+    @YamlProperty
     private List<Requests> requests;
 
     public Template() {
@@ -45,29 +49,5 @@ public class Template {
         this.id = id;
         this.info = info;
         this.requests = Arrays.asList(requests);
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public void setInfo(Info info) {
-        this.info = info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
-    }
-
-    public void setRequests(List<Requests> requests) {
-        this.requests = requests;
     }
 }

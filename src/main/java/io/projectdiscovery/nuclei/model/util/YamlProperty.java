@@ -23,50 +23,15 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.nuclei.model.util;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.util.Arrays;
-import java.util.List;
-
-@SuppressWarnings("unused")
-@YamlPropertyOrder({"type", "part", "words"})
-public class Word implements TemplateMatcher {
-
-    @YamlProperty
-    public String type = Word.class.getSimpleName().toLowerCase();
-
-    @YamlProperty
-    private Part part = Part.all;
-
-    @YamlProperty
-    public List<String> words;
-
-    public Word() {
-    }
-
-    public Word(String... words) {
-        this.words = Arrays.asList(words);
-    }
-
-    public List<String> getWords() {
-        return this.words;
-    }
-
-    @Override
-    public String getType() {
-        return this.type;
-    }
-
-    @Override
-    public Part getPart() {
-        return this.part;
-    }
-
-    @Override
-    public void setPart(Part part) {
-        this.part = part;
-    }
+@Target({ElementType.FIELD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface YamlProperty {
+    String value() default "";
 }

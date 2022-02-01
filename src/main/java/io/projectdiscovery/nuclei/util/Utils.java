@@ -54,66 +54,6 @@ public final class Utils {
     private Utils() {
     }
 
-    public static String dumpYaml(Object data) {
-        final Representer representer = new Representer() {
-            @Override
-            protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
-                if (Objects.isNull(propertyValue)) {
-                    return null; // skip fields with null value
-                }
-                return super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
-            }
-
-            @Override
-            protected MappingNode representJavaBean(Set<Property> properties, Object javaBean) {
-                if (!this.classTags.containsKey(javaBean.getClass())) {
-                    addClassTag(javaBean.getClass(), Tag.MAP);
-                }
-
-                return super.representJavaBean(properties, javaBean);
-            }
-
-            @Override
-            protected Set<Property> getProperties(Class<?> type) {
-                Set<Property> propertySet = this.typeDefinitions.containsKey(type) ? this.typeDefinitions.get(type).getProperties()
-                                                                                   : super.getPropertyUtils().getProperties(type);
-
-                final YamlPropertyOrder annotation = type.getAnnotation(YamlPropertyOrder.class);
-                if (annotation != null) {
-                    final List<String> order = Arrays.asList(annotation.value());
-                    propertySet = propertySet.stream()
-                                             .sorted(Comparator.comparingInt(o -> order.indexOf(o.getName())))
-                                             .collect(Collectors.toCollection(LinkedHashSet::new));
-                }
-
-                return propertySet;
-            }
-        };
-
-        // TODO isn't there a more elegant way to remap field names?
-        Map.of(
-                Requests.class, List.of("matchersCondition"),
-                Info.Classification.class, List.of("cvssMetrics", "cvssScore", "cveId", "cweId")
-        ).forEach((clazz, fields) -> {
-            final TypeDescription requestsTypeDescription = new TypeDescription(clazz, Tag.MAP);
-            fields.forEach(field -> requestsTypeDescription.substituteProperty(toSnakeCase(field), Info.Classification.class, createGetterMethodName(field), createSetterMethodName(field)));
-            requestsTypeDescription.setExcludes(fields.toArray(String[]::new));
-            representer.addTypeDescription(requestsTypeDescription);
-        });
-
-        final DumperOptions options = new DumperOptions();
-        options.setIndent(2);
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        options.setPrettyFlow(true);
-
-        final Yaml yaml = new Yaml(representer, options);
-        return yaml.dumpAsMap(data);
-    }
-
-    private static String createGetterOrSetterMethodName(String prefix, String fieldName) {
-        return prefix + String.valueOf(fieldName.charAt(0)).toUpperCase() + fieldName.substring(1);
-    }
-
     public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
         final String[] commandParts = stringCommandToChunks(command);
         executeCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
@@ -285,17 +225,5 @@ public final class Utils {
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;
-    }
-
-    private static String toSnakeCase(String input) {
-        return input.replaceAll("([a-z]+)([A-Z]+)", "$1-$2").toLowerCase();
-    }
-
-    private static String createGetterMethodName(String fieldName) {
-        return createGetterOrSetterMethodName("get", fieldName);
-    }
-
-    private static String createSetterMethodName(String fieldName) {
-        return createGetterOrSetterMethodName("set", fieldName);
     }
 }

@@ -25,67 +25,45 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
 @SuppressWarnings("unused")
 @YamlPropertyOrder({"name", "author", "severity", "description", "reference", "classification", "tags"})
 public class Info {
 
+    @YamlProperty
     public enum Severity {
         info, low, medium, high, critical
     }
 
     @YamlPropertyOrder({"cvss-metrics", "cvss-score", "cve-id", "cwe-id"})
     public static class Classification {
-        private String cvssMetrics = "CVSS:3.0/";
-        private double cvssScore = 1.0;
-        private String cveId = "CVE-";
-        private String cweId = "CWE-";
-
-        public Classification() {
-        }
-
-        public String getCvssMetrics() {
-            return this.cvssMetrics;
-        }
-
-        public void setCvssMetrics(String cvssMetrics) {
-            this.cvssMetrics = cvssMetrics;
-        }
-
-        public double getCvssScore() {
-            return this.cvssScore;
-        }
-
-        public void setCvssScore(double cvssScore) {
-            this.cvssScore = cvssScore;
-        }
-
-        public String getCveId() {
-            return this.cveId;
-        }
-
-        public void setCveId(String cveId) {
-            this.cveId = cveId;
-        }
-
-        public String getCweId() {
-            return this.cweId;
-        }
-
-        public void setCweId(String cweId) {
-            this.cweId = cweId;
-        }
+        @YamlProperty("cvss-metrics")
+        private final String cvssMetrics = "CVSS:3.0/";
+        @YamlProperty("cvss-score")
+        private final double cvssScore = 1.0;
+        @YamlProperty("cve-id")
+        private final String cveId = "CVE-";
+        @YamlProperty("cwe-id")
+        private final String cweId = "CWE-";
     }
 
+    @YamlProperty
     private String name;
+    @YamlProperty
     private String author;
+    @YamlProperty
     private Severity severity = Severity.info;
 
-    private String reference = "https://";
-    private String tags = "tags";
-    private Classification classification = new Classification();
-    private String description = "description";
+    @YamlProperty
+    private final String reference = "https://";
+    @YamlProperty
+    private final String tags = "tags";
+    @YamlProperty
+    private final Classification classification = new Classification();
+    @YamlProperty
+    private final String description = "description";
 
     public Info() {
     }
@@ -94,61 +72,5 @@ public class Info {
         this.name = name;
         this.author = author;
         this.severity = severity;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAuthor() {
-        return this.author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public Severity getSeverity() {
-        return this.severity;
-    }
-
-    public void setSeverity(Severity severity) {
-        this.severity = severity;
-    }
-
-    public String getReference() {
-        return this.reference;
-    }
-
-    public void setReference(String reference) {
-        this.reference = reference;
-    }
-
-    public String getTags() {
-        return this.tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
-    }
-
-    public Classification getClassification() {
-        return this.classification;
-    }
-
-    public void setClassification(Classification classification) {
-        this.classification = classification;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }

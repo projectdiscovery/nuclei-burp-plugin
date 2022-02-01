@@ -31,6 +31,7 @@ import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.nuclei.util.YamlUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -186,7 +187,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Template template = new Template("template-id", info, requests);
-        final String yamlTemplate = Utils.dumpYaml(template);
+        final String yamlTemplate = YamlUtil.dump(template);
 
         SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
     }

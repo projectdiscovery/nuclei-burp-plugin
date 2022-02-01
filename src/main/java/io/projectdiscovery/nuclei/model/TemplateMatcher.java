@@ -34,8 +34,6 @@ public interface TemplateMatcher {
 
     String getType();
 
-    void setType(String type);
-
     Part getPart();
 
     void setPart(Part part);
