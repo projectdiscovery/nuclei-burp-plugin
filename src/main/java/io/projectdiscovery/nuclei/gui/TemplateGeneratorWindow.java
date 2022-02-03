@@ -367,7 +367,12 @@ public class TemplateGeneratorWindow extends JFrame {
                 if (option == JFileChooser.APPROVE_OPTION) {
                     final File userSelectedFile = fileChooser.getSelectedFile();
                     final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this::logError);
-                    if (!ok) {
+                    if (ok) {
+                        final String command = this.commandLineField.getText();
+                        if (!Utils.isBlank(command) && command.contains(Utils.NUCLEI_BASE_BINARY_NAME)) {
+                            this.commandLineField.setText(Utils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
+                        }
+                    } else {
                         JOptionPane.showMessageDialog(this, "Error while writing file to: " + userSelectedFile, "File write error", JOptionPane.ERROR_MESSAGE);
                     }
                     log("Generated nuclei template saved to: " + userSelectedFile);

@@ -27,6 +27,8 @@ package io.projectdiscovery.nuclei.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 
@@ -41,5 +43,13 @@ class UtilsTest {
         );
 
         testCases.forEach((key, value) -> Assertions.assertArrayEquals(value, Utils.stringCommandToChunks(key)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"nuclei -t \"c:/directory name with space/another one/something.yaml\" -u http://localhost",
+                            "nuclei -t 'c:/directory name with space/another one/something.yaml' -u http://localhost",
+                            "nuclei -t 'c:/temp/something.yaml' -u http://localhost"})
+    void testNucleiTemplateParameterPattern(String testCase) {
+        Assertions.assertEquals("nuclei -t test.yaml -u http://localhost", Utils.replaceTemplatePathInCommand(testCase, "test.yaml"));
     }
 }

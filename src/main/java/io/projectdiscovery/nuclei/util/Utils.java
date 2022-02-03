@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 public final class Utils {
 
     public static final String NUCLEI_BASE_BINARY_NAME = "nuclei";
+    public static final Pattern NUCLEI_TEMPLATE_PARAMETER_PATTERN = Pattern.compile("(-t)\\s+(\"[^\"]+\"|'[^']+'|[^ ]+)");
 
     private static final char CR = '\r';
     private static final char LF = '\n';
@@ -168,6 +169,10 @@ public final class Utils {
             }
         }
         return Optional.empty();
+    }
+
+    public static String replaceTemplatePathInCommand(String nucleiCommand, String newTemplatePath) {
+        return NUCLEI_TEMPLATE_PARAMETER_PATTERN.matcher(nucleiCommand).replaceFirst("$1 " + newTemplatePath);
     }
 
     public static TemplateMatcher createContentMatcher(byte[] responseBytes, int bodyOffset, int[] selectionBounds, Function<byte[], String> byteToStringFunction) {
