@@ -60,7 +60,7 @@ public class Info {
     private final String reference = "https://";
     @YamlProperty
     private final String tags = "tags";
-    @YamlProperty
+    // @YamlProperty
     private final Classification classification = new Classification();
     @YamlProperty
     private final String description = "description";

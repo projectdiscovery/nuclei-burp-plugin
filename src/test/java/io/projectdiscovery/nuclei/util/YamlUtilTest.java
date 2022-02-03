@@ -45,11 +45,6 @@ class YamlUtilTest {
                                 "  severity: info\n" +
                                 "  description: description\n" +
                                 "  reference: https://\n" +
-                                "  classification:\n" +
-                                "    cvss-metrics: CVSS:3.0/\n" +
-                                "    cvss-score: 1.0\n" +
-                                "    cve-id: CVE-\n" +
-                                "    cwe-id: CWE-\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
                                 "- raw:\n" +
@@ -83,11 +78,6 @@ class YamlUtilTest {
                                 "  severity: info\n" +
                                 "  description: description\n" +
                                 "  reference: https://\n" +
-                                "  classification:\n" +
-                                "    cvss-metrics: CVSS:3.0/\n" +
-                                "    cvss-score: 1.0\n" +
-                                "    cve-id: CVE-\n" +
-                                "    cwe-id: CWE-\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
                                 "- raw:\n" +
@@ -125,11 +115,6 @@ class YamlUtilTest {
         final String expected = "id: template-id\n" +
                                 "info:\n" +
                                 "  author: forgedhallpass\n" +
-                                "  classification:\n" +
-                                "    cvss-metrics: CVSS:3.0/\n" +
-                                "    cvss-score: 1.0\n" +
-                                "    cve-id: CVE-\n" +
-                                "    cwe-id: CWE-\n" +
                                 "  description: description\n" +
                                 "  name: Template Name\n" +
                                 "  reference: https://\n" +
@@ -165,7 +150,7 @@ class YamlUtilTest {
 
 
         final Yaml yaml = new Yaml();
-        final Map map = yaml.loadAs(expected, Map.class);
+        final Map<?, ?> map = yaml.loadAs(expected, Map.class);
     }
 
     @Test
