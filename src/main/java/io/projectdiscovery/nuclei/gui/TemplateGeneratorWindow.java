@@ -337,7 +337,30 @@ public class TemplateGeneratorWindow extends JFrame {
             } else {
                 final Path generatedFilePath = Paths.get(targetTemplatePath).resolve(templateId + ".yaml");
 
-                final JFileChooser fileChooser = new JFileChooser(generatedFilePath.toFile());
+                final JFileChooser fileChooser = new JFileChooser(generatedFilePath.toFile()) {
+                    @Override
+                    public void approveSelection() {
+                        final File selectedFile = getSelectedFile();
+                        if (selectedFile.exists() && getDialogType() == SAVE_DIALOG) {
+                            final int result = JOptionPane.showConfirmDialog(this, "The selected file already exists. Do you want to overwrite it?",
+                                                                             "Overwrite existing file?",
+                                                                             JOptionPane.YES_NO_CANCEL_OPTION);
+                            switch (result) {
+                                case JOptionPane.YES_OPTION:
+                                    super.approveSelection();
+                                    return;
+                                case JOptionPane.CANCEL_OPTION:
+                                    cancelSelection();
+                                    return;
+                                case JOptionPane.CLOSED_OPTION:
+                                case JOptionPane.NO_OPTION:
+                                default:
+                                    return;
+                            }
+                        }
+                        super.approveSelection();
+                    }
+                };
                 fileChooser.setSelectedFile(generatedFilePath.toFile());
                 final int option = fileChooser.showSaveDialog(this);
 
