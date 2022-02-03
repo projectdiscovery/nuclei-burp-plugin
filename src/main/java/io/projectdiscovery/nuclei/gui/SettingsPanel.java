@@ -38,9 +38,9 @@ import java.util.Optional;
 
 public class SettingsPanel extends JPanel {
 
-    public static final String NUCLEI_PATH_VARIABLE = "nucleiPath";
-    public static final String TEMPLATE_PATH_VARIABLE = "templatePath";
-    public static final String AUTHOR_VARIABLE = "author";
+    public static final String NUCLEI_PATH_SETTING_NAME = "nucleiPath";
+    public static final String TEMPLATE_PATH_SETTING_NAME = "templatePath";
+    public static final String AUTHOR_SETTING_NAME = "author";
 
     public static final float FONT_SIZE = 14f; // TODO make configurable or try to retrieve burp user config
 
@@ -191,9 +191,9 @@ public class SettingsPanel extends JPanel {
         final GridBagConstraints authorFieldConstraints = createTextFieldConstraints(authorTextField, ++gridY);
         topPanel.add(authorTextField, authorFieldConstraints);
 
-        this.valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_VARIABLE, nucleiPathTextField),
-                                               Map.entry(TEMPLATE_PATH_VARIABLE, templatePathTextField),
-                                               Map.entry(AUTHOR_VARIABLE, authorTextField));
+        this.valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_SETTING_NAME, nucleiPathTextField),
+                                               Map.entry(TEMPLATE_PATH_SETTING_NAME, templatePathTextField),
+                                               Map.entry(AUTHOR_SETTING_NAME, authorTextField));
 
         return topPanel;
     }
@@ -216,15 +216,15 @@ public class SettingsPanel extends JPanel {
     private void calculateDefaultConfigurationValue(String configurationName, JTextField configurationField) {
         try {
             switch (configurationName) {
-                case NUCLEI_PATH_VARIABLE: {
-                    Utils.getNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
+                case NUCLEI_PATH_SETTING_NAME: {
+                    Utils.calculateNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
                     break;
                 }
-                case TEMPLATE_PATH_VARIABLE: {
+                case TEMPLATE_PATH_SETTING_NAME: {
                     Utils.detectDefaultTemplatePath().ifPresent(configurationField::setText);
                     break;
                 }
-                case AUTHOR_VARIABLE: {
+                case AUTHOR_SETTING_NAME: {
                     Optional.ofNullable(System.getProperty("user.name")).ifPresent(configurationField::setText);
                     break;
                 }

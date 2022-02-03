@@ -53,7 +53,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         setKeyboardShortcuts();
 
-        final String command = createCommand(targetUrl, nucleiPath);
+        final String command = createCommand(nucleiPath, targetUrl);
         cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
@@ -98,7 +98,7 @@ public class TemplateGeneratorWindow extends JFrame {
         });
     }
 
-    private String createCommand(URL targetUrl, Path nucleiPath) {
+    private String createCommand(Path nucleiPath, URL targetUrl) {
         try {
             this.temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
@@ -324,7 +324,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void saveTemplateToFile() {
-        final String targetTemplatePath = this.callbacks == null ? System.getProperty("java.io.tmpdir") : this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_VARIABLE);
+        final String targetTemplatePath = this.callbacks == null ? System.getProperty("java.io.tmpdir") : this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME);
 
         final String yamlTemplate = this.templateEditor.getText();
         final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);

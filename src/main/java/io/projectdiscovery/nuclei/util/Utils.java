@@ -1,11 +1,7 @@
 package io.projectdiscovery.nuclei.util;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IExtensionHelpers;
-import burp.IResponseInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.model.Binary;
 import io.projectdiscovery.nuclei.model.Requests;
 import io.projectdiscovery.nuclei.model.TemplateMatcher;
@@ -28,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -129,12 +126,16 @@ public final class Utils {
         return IntStream.range(0, input.length).map(i -> input[i]).allMatch(b -> b == CR || b == LF || (b >= 20 && b < 0x7F));
     }
 
-    public static TemplateMatcher.Part getSelectionPart(IResponseInfo responseInfo, int fromIndex) {
-        final int bodyOffset = responseInfo.getBodyOffset();
+    public static TemplateMatcher.Part getSelectionPart(int bodyOffset, int fromIndex) {
         return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
     }
 
-    public static Optional<Path> getNucleiPath() {
+    public static String getNucleiBinaryName() {
+        final String osName = System.getProperty("os.name");
+        return osName.toLowerCase().startsWith("windows") ? NUCLEI_BASE_BINARY_NAME + ".exe" : NUCLEI_BASE_BINARY_NAME;
+    }
+
+    public static Optional<Path> calculateNucleiPath() {
         return Stream.of(System.getenv("PATH").split(Pattern.quote(File.pathSeparator)))
                      .map(Paths::get)
                      .map(path -> path.resolve(getNucleiBinaryName()))
@@ -142,12 +143,8 @@ public final class Utils {
                      .findFirst();
     }
 
-    public static Path getConfiguredNucleiPath(IBurpExtenderCallbacks callbacks) {
-        // TODO the OS detection would be enough to happen once at startup
-        final String nucleiBinaryName = getNucleiBinaryName();
-
+    public static Path getConfiguredNucleiPath(String nucleiBinaryPathSetting, String nucleiBinaryName) {
         final Path nucleiBinaryPath;
-        final String nucleiBinaryPathSetting = callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_VARIABLE);
         if (isBlank(nucleiBinaryPathSetting)) {
             nucleiBinaryPath = Paths.get(nucleiBinaryName);
         } else {
@@ -173,16 +170,16 @@ public final class Utils {
         return Optional.empty();
     }
 
-    public static TemplateMatcher createContentMatcher(byte[] responseBytes, IResponseInfo responseInfo, int[] selectionBounds, IExtensionHelpers helpers) {
+    public static TemplateMatcher createContentMatcher(byte[] responseBytes, int bodyOffset, int[] selectionBounds, Function<byte[], String> byteToStringFunction) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
 
         final byte[] selectedBytes = Arrays.copyOfRange(responseBytes, fromIndex, toIndex);
-        final TemplateMatcher.Part selectionPart = Utils.getSelectionPart(responseInfo, fromIndex);
+        final TemplateMatcher.Part selectionPart = getSelectionPart(bodyOffset, fromIndex);
 
         final TemplateMatcher contentMatcher;
         if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
-            contentMatcher = createWordMatcher(selectionPart, helpers.bytesToString(selectedBytes));
+            contentMatcher = createWordMatcher(selectionPart, byteToStringFunction.apply(selectedBytes));
         } else {
             final Binary binaryMatcher = new Binary(selectedBytes);
             binaryMatcher.setPart(selectionPart);
@@ -253,11 +250,5 @@ public final class Utils {
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;
-    }
-
-    private static String getNucleiBinaryName() {
-        final String osName = System.getProperty("os.name");
-        final String baseBinaryName = "nuclei";
-        return osName.toLowerCase().startsWith("windows") ? baseBinaryName + ".exe" : baseBinaryName;
     }
 }

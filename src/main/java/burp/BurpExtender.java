@@ -37,6 +37,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class BurpExtender implements burp.IBurpExtender {
     private static final String DEFAULT_CONTEXT_MENU_TEXT = "Generate nuclei template";
 
     private Map<String, String> yamlFieldDescriptionMap;
+    private String nucleiBinaryName;
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
@@ -60,6 +62,8 @@ public class BurpExtender implements burp.IBurpExtender {
         callbacks.registerContextMenuFactory(createContextMenuFactory(callbacks));
 
         callbacks.addSuiteTab(createConfigurationTab(callbacks));
+
+        this.nucleiBinaryName = Utils.getNucleiBinaryName();
     }
 
     private void initializeNucleiYamlSchema(IBurpExtenderCallbacks callbacks) {
@@ -164,7 +168,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
-        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo, selectionBounds, helpers);
+        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo.getBodyOffset(), selectionBounds, helpers::bytesToString);
         final int statusCode = responseInfo.getStatusCode();
 
         final Requests requests = new Requests();
@@ -183,12 +187,13 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private void generateTemplate(URL targetUrl, Requests requests, IBurpExtenderCallbacks callbacks) {
-        final String author = callbacks.loadExtensionSetting(SettingsPanel.AUTHOR_VARIABLE);
+        final String author = callbacks.loadExtensionSetting(SettingsPanel.AUTHOR_SETTING_NAME);
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Template template = new Template("template-id", info, requests);
         final String yamlTemplate = YamlUtil.dump(template);
 
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(Utils.getConfiguredNucleiPath(callbacks), targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
+        final Path configuredNucleiPath = Utils.getConfiguredNucleiPath(callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME), this.nucleiBinaryName);
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(configuredNucleiPath, targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
     }
 }
