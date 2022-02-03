@@ -36,6 +36,7 @@ import io.projectdiscovery.nuclei.util.YamlUtil;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -108,24 +109,30 @@ public class BurpExtender implements burp.IBurpExtender {
 
                 final IHttpRequestResponse requestResponse = selectedMessages[0];
                 final byte[] requestBytes = requestResponse.getRequest();
-                final URL targetUrl = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
+                final URL targetUrlWithPath = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
+                final URL targetUrl;
+                try {
+                    targetUrl = new URL(targetUrlWithPath.getProtocol(), targetUrlWithPath.getHost(), targetUrlWithPath.getPort(), "/");
 
-                switch (invocation.getInvocationContext()) {
-                    case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
-                    case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
-                        menuItems = generateRequestTemplate(callbacks, invocation, helpers, requestBytes, targetUrl);
-                        break;
+                    switch (invocation.getInvocationContext()) {
+                        case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
+                        case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
+                            menuItems = generateRequestTemplate(callbacks, invocation, helpers, requestBytes, targetUrl);
+                            break;
+                        }
+                        case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
+                        case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
+                            menuItems = List.of(messageEditorContextMenu(() -> generateTemplate(targetUrl, requestResponse, invocation.getSelectionBounds(), callbacks), DEFAULT_CONTEXT_MENU_TEXT));
+                            break;
+                        }
+                        case IContextMenuInvocation.CONTEXT_INTRUDER_PAYLOAD_POSITIONS: {
+                            final String request = helpers.bytesToString(requestBytes);
+                            menuItems = generateIntruderTemplate(targetUrl, request, callbacks);
+                            break;
+                        }
                     }
-                    case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
-                    case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
-                        menuItems = List.of(messageEditorContextMenu(() -> generateTemplate(targetUrl, requestResponse, invocation.getSelectionBounds(), callbacks), DEFAULT_CONTEXT_MENU_TEXT));
-                        break;
-                    }
-                    case IContextMenuInvocation.CONTEXT_INTRUDER_PAYLOAD_POSITIONS: {
-                        final String request = helpers.bytesToString(requestBytes);
-                        menuItems = generateIntruderTemplate(targetUrl, request, callbacks);
-                        break;
-                    }
+                } catch (MalformedURLException e) {
+                    callbacks.printError(e.getMessage());
                 }
             }
             return menuItems;
