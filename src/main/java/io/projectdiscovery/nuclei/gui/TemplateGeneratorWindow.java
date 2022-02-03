@@ -257,19 +257,22 @@ public class TemplateGeneratorWindow extends JFrame {
         topPanel.setPreferredSize(new Dimension(200, 50));
         topPanel.setLayout(new GridBagLayout());
 
-        this.commandLineField = new JTextField(command);
-        this.commandLineField.setPreferredSize(new Dimension(200, 25));
-        this.commandLineField.addActionListener(e -> executeButtonClick());
+        final FilterableJComboBox filterableJComboBox = new FilterableJComboBox(command);
+        filterableJComboBox.setPreferredSize(new Dimension(200, 25));
 
-        final GridBagConstraints textFieldConstraints = new GridBagConstraints();
-        textFieldConstraints.gridx = 0;
-        textFieldConstraints.gridy = 0;
-        textFieldConstraints.weightx = 1.0;
-        textFieldConstraints.gridheight = 1;
-        textFieldConstraints.insets = new Insets(0, 5, 0, 5);
-        textFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
+        final JTextField textField = filterableJComboBox.getTextField();
+        textField.addActionListener(e -> executeButtonClick());
+        this.commandLineField = textField;
 
-        topPanel.add(this.commandLineField, textFieldConstraints);
+        final GridBagConstraints commandsComboBoxConstraints = new GridBagConstraints();
+        commandsComboBoxConstraints.gridx = 0;
+        commandsComboBoxConstraints.gridy = 0;
+        commandsComboBoxConstraints.weightx = 1.0;
+        commandsComboBoxConstraints.gridheight = 1;
+        commandsComboBoxConstraints.insets = new Insets(0, 5, 0, 5);
+        commandsComboBoxConstraints.fill = GridBagConstraints.HORIZONTAL;
+
+        topPanel.add(filterableJComboBox, commandsComboBoxConstraints);
 
         final JButton executeBtn = new JButton("Execute");
         executeBtn.setMnemonic(KeyEvent.VK_E);
@@ -349,22 +352,25 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void executeButtonClick() {
-        Utils.writeToFile(this.templateEditor.getText(), this.temporaryTemplatePath, this::logError);
-
-        this.outputPane.setText(null);
-
         final String command = this.commandLineField.getText();
-        final boolean noColor = command.contains(" -nc") || command.contains(" -no-color");
 
-        Utils.executeCommand(command,
-                             bufferedReader -> bufferedReader.lines()
-                                                             .map(line -> line + "\n")
-                                                             .forEach(line -> SwingUtilities.invokeLater(() -> {
-                                                                 this.outputPane.appendText(line, noColor);
-                                                                 this.outputPane.repaint();
-                                                             })),
-                             exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
-                             this::logError);
+        if (!Utils.isBlank(command)) {
+            Utils.writeToFile(this.templateEditor.getText(), this.temporaryTemplatePath, this::logError);
+
+            this.outputPane.setText(null);
+
+            final boolean noColor = command.contains(" -nc") || command.contains(" -no-color");
+
+            Utils.executeCommand(command,
+                                 bufferedReader -> bufferedReader.lines()
+                                                                 .map(line -> line + "\n")
+                                                                 .forEach(line -> SwingUtilities.invokeLater(() -> {
+                                                                     this.outputPane.appendText(line, noColor);
+                                                                     this.outputPane.repaint();
+                                                                 })),
+                                 exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
+                                 this::logError);
+        }
     }
 
     private void log(String message) {
