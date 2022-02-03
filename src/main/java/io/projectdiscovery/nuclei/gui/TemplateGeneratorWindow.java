@@ -36,6 +36,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private final IBurpExtenderCallbacks callbacks;
     private Path temporaryTemplatePath;
+    private final Path nucleiPath;
     private final Map<String, String> yamlFieldDescriptionMap;
 
     public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap) {
@@ -48,6 +49,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
         this.callbacks = callbacks;
         this.yamlFieldDescriptionMap = yamlFieldDescriptionMap;
+        this.nucleiPath = nucleiPath;
 
         setKeyboardShortcuts();
 
@@ -352,7 +354,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void executeButtonClick() {
-        final String command = this.commandLineField.getText();
+        String command = this.commandLineField.getText();
 
         if (!Utils.isBlank(command)) {
             Utils.writeToFile(this.templateEditor.getText(), this.temporaryTemplatePath, this::logError);
@@ -360,6 +362,10 @@ public class TemplateGeneratorWindow extends JFrame {
             this.outputPane.setText(null);
 
             final boolean noColor = command.contains(" -nc") || command.contains(" -no-color");
+
+            if (command.startsWith(Utils.NUCLEI_BASE_BINARY_NAME)) {
+                command = command.replaceFirst("nuclei(\\.exe)?", this.nucleiPath.toString());
+            }
 
             Utils.executeCommand(command,
                                  bufferedReader -> bufferedReader.lines()

@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 
 public final class Utils {
 
+    public static final String NUCLEI_BASE_BINARY_NAME = "nuclei";
+
     private static final char CR = '\r';
     private static final char LF = '\n';
     private static final String CRLF = "" + CR + LF;
