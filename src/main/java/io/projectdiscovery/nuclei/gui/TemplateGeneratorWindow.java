@@ -6,8 +6,7 @@ import io.projectdiscovery.nuclei.util.Utils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.Theme;
+import org.fife.ui.rsyntaxtextarea.*;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.yaml.snakeyaml.Yaml;
 
@@ -232,15 +231,25 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private RSyntaxTextArea createSmartTextEditor(String templateYaml) {
-        // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
-        JTextComponent.removeKeymap("RTextAreaKeymap");
-        UIManager.put("RSyntaxTextAreaUI.actionMap", null);
-        UIManager.put("RSyntaxTextAreaUI.inputMap", null);
-        UIManager.put("RTextAreaUI.actionMap", null);
-        UIManager.put("RTextAreaUI.inputMap", null);
+        if (this.callbacks != null) {
+            // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
+            JTextComponent.removeKeymap("RTextAreaKeymap");
+            UIManager.put("RSyntaxTextAreaUI.actionMap", null);
+            UIManager.put("RSyntaxTextAreaUI.inputMap", null);
+            UIManager.put("RTextAreaUI.actionMap", null);
+            UIManager.put("RTextAreaUI.inputMap", null);
+        }
 
-        final RSyntaxTextArea textEditor = new RSyntaxTextArea();
-        textEditor.setSyntaxEditingStyle(RSyntaxTextArea.SYNTAX_STYLE_YAML);
+        final boolean experimental = true; // TODO move to settings
+        final RSyntaxTextArea textEditor;
+        if (experimental) {
+            final AbstractTokenMakerFactory nucleiTokenMakerFactory = new NucleiTokenMakerFactory(this.yamlFieldDescriptionMap.keySet());
+            textEditor = new RSyntaxTextArea(new RSyntaxDocument(nucleiTokenMakerFactory, NucleiTokenMaker.NUCLEI_YAML_SYNTAX));
+        } else {
+            textEditor = new RSyntaxTextArea();
+            textEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_YAML);
+        }
+
         textEditor.setEditable(true);
         textEditor.setAntiAliasingEnabled(true);
         textEditor.setTabsEmulated(true);
