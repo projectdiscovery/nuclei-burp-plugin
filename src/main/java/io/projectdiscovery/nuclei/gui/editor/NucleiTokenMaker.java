@@ -23,7 +23,7 @@
  *
  */
 
-package io.projectdiscovery.nuclei.gui;
+package io.projectdiscovery.nuclei.gui.editor;
 
 import org.fife.ui.rsyntaxtextarea.*;
 

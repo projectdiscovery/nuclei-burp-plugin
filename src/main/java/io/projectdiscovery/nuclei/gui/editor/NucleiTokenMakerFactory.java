@@ -23,14 +23,14 @@
  *
  */
 
-package io.projectdiscovery.nuclei.gui;
+package io.projectdiscovery.nuclei.gui.editor;
 
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.TokenMaker;
 
 import java.util.Set;
 
-class NucleiTokenMakerFactory extends AbstractTokenMakerFactory {
+public class NucleiTokenMakerFactory extends AbstractTokenMakerFactory {
     private final Set<String> preservedWords;
 
     public NucleiTokenMakerFactory(Set<String> preservedWords) {

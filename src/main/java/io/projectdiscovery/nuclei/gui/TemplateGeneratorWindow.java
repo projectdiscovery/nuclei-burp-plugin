@@ -1,6 +1,8 @@
 package io.projectdiscovery.nuclei.gui;
 
 import burp.IBurpExtenderCallbacks;
+import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
+import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
 import org.fife.ui.autocomplete.AutoCompletion;
