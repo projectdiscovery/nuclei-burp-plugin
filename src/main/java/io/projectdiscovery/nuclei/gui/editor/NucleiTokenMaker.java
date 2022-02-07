@@ -25,14 +25,19 @@
 
 package io.projectdiscovery.nuclei.gui.editor;
 
+import io.projectdiscovery.nuclei.util.Utils;
 import org.fife.ui.rsyntaxtextarea.*;
 
 import javax.swing.text.Segment;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public class NucleiTokenMaker extends AbstractTokenMaker {
 
     public static final String NUCLEI_YAML_SYNTAX = "text/yaml/nuclei";
+
+    private static final char YAML_MAPPING_INDICATOR = ':';
 
     private int currentTokenStart;
     private int currentTokenType;
@@ -50,9 +55,30 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
     @Override
     public void addToken(Segment segment, int start, int end, int tokenType, int startOffset) {
         if (tokenType == TokenTypes.IDENTIFIER) {
-            final int value = this.wordsToHighlight.get(segment, start, end);
-            if (value != -1) {
-                tokenType = value;
+            final String currentFragment = new String(Arrays.copyOfRange(segment.array, start, end + 1));
+
+            final int calculatedTokenType = this.wordsToHighlight.get(segment, start, end);
+            if (calculatedTokenType != -1) {
+                if (calculatedTokenType == TokenTypes.RESERVED_WORD) {
+                    final String trimmedSegment = segment.toString().trim();
+                    final boolean followedByColon = segment.array[end + 1] == YAML_MAPPING_INDICATOR;
+                    final Supplier<Boolean> isPrefixedWithDash = () -> {
+                        int index = 1;
+                        char c;
+
+                        while ((c = segment.array[start - index]) == ' ') {
+                            index++;
+                        }
+                        return c == '-';
+                    };
+                    if (followedByColon && (trimmedSegment.startsWith(currentFragment.trim()) || isPrefixedWithDash.get())) {
+                        tokenType = TokenTypes.RESERVED_WORD;
+                    }
+                }
+            } else {
+                if (currentFragment.startsWith(Utils.PAYLOAD_START_MARKER) && currentFragment.endsWith(Utils.PAYLOAD_END_MARKER)) {
+                    tokenType = TokenTypes.FUNCTION;
+                }
             }
         }
 
@@ -115,7 +141,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                             this.currentTokenStart = i;
                             this.currentTokenType = Token.WHITESPACE;
                             break;
-                        case ':':
+                        case YAML_MAPPING_INDICATOR:
                             addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
                             this.currentTokenStart = i;
                             this.currentTokenType = Token.SEPARATOR;
@@ -206,7 +232,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 this.currentTokenStart = i;
                 this.currentTokenType = Token.WHITESPACE;
                 break;
-            case ':':
+            case YAML_MAPPING_INDICATOR:
                 addToken(text, this.currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
                 this.currentTokenType = Token.SEPARATOR;

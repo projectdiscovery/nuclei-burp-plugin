@@ -35,16 +35,17 @@ public final class Utils {
     public static final String NUCLEI_BASE_BINARY_NAME = "nuclei";
     public static final Pattern NUCLEI_TEMPLATE_PARAMETER_PATTERN = Pattern.compile("(-t)\\s+(\"[^\"]+\"|'[^']+'|[^ ]+)");
 
-    private static final char CR = '\r';
-    private static final char LF = '\n';
-    private static final String CRLF = "" + CR + LF;
+    public static final String PAYLOAD_START_MARKER = "{{";
+    public static final String PAYLOAD_END_MARKER = "}}";
 
     public static final char INTRUDER_PAYLOAD_MARKER = '§';
     private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern.compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
 
+    private static final char CR = '\r';
+    private static final char LF = '\n';
+    private static final String CRLF = "" + CR + LF;
+
     private static final String BASE_PAYLOAD_PARAMETER_NAME = "param";
-    private static final String PAYLOAD_START_MARKER = "{{";
-    private static final String PAYLOAD_END_MARKER = "}}";
 
     private Utils() {
     }
