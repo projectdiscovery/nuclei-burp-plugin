@@ -36,7 +36,7 @@ public class TemplateGeneratorWindow extends JFrame {
     private AnsiColorTextPane outputPane;
 
     private final IBurpExtenderCallbacks callbacks;
-    private Path temporaryTemplatePath;
+    private Path templatePath;
     private final Path nucleiPath;
     private final Map<String, String> yamlFieldDescriptionMap;
 
@@ -88,9 +88,11 @@ public class TemplateGeneratorWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
-                    Files.deleteIfExists(TemplateGeneratorWindow.this.temporaryTemplatePath);
+                    if (TemplateGeneratorWindow.this.templatePath.startsWith(getTempPath())) {
+                        Files.deleteIfExists(TemplateGeneratorWindow.this.templatePath);
+                    }
                 } catch (IOException ex) {
-                    logError(String.format("Could not delete temporary file: %s", TemplateGeneratorWindow.this.temporaryTemplatePath));
+                    logError(String.format("Could not delete temporary file: %s", TemplateGeneratorWindow.this.templatePath));
                     logError(ex.getMessage());
                 }
 
@@ -101,14 +103,14 @@ public class TemplateGeneratorWindow extends JFrame {
 
     private String createCommand(Path nucleiPath, URL targetUrl) {
         try {
-            this.temporaryTemplatePath = Files.createTempFile("nuclei", ".yaml");
+            this.templatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
             logError("Could not create temporary file: " + e.getMessage());
         }
 
         return String.format("%s -v -t %s -u %s",
                              wrapWithQuotesIfNecessary(nucleiPath.toString()),
-                             wrapWithQuotesIfNecessary(this.temporaryTemplatePath.toString()),
+                             wrapWithQuotesIfNecessary(this.templatePath.toString()),
                              wrapWithQuotesIfNecessary(targetUrl.toString()));
     }
 
@@ -335,7 +337,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void saveTemplateToFile() {
-        final String targetTemplatePath = this.callbacks == null ? System.getProperty("java.io.tmpdir") : this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME);
+        final Path targetTemplatePath = this.callbacks == null ? getTempPath() : Paths.get(this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME));
 
         final String yamlTemplate = this.templateEditor.getText();
         final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
@@ -346,7 +348,7 @@ public class TemplateGeneratorWindow extends JFrame {
             if (Utils.isBlank(templateId)) {
                 JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
             } else {
-                final Path generatedFilePath = Paths.get(targetTemplatePath).resolve(templateId + ".yaml");
+                final Path generatedFilePath = targetTemplatePath.resolve(templateId + ".yaml");
 
                 final JFileChooser fileChooser = new JFileChooser(generatedFilePath.toFile()) {
                     @Override
@@ -381,6 +383,7 @@ public class TemplateGeneratorWindow extends JFrame {
                     if (ok) {
                         final String command = this.commandLineField.getText();
                         if (!Utils.isBlank(command) && command.contains(Utils.NUCLEI_BASE_BINARY_NAME)) {
+                            this.templatePath = userSelectedFile.toPath();
                             this.commandLineField.setText(Utils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
                         }
                     } else {
@@ -392,11 +395,15 @@ public class TemplateGeneratorWindow extends JFrame {
         }
     }
 
+    private Path getTempPath() {
+        return Paths.get(System.getProperty("java.io.tmpdir"));
+    }
+
     private void executeButtonClick() {
         String command = this.commandLineField.getText();
 
         if (!Utils.isBlank(command)) {
-            Utils.writeToFile(this.templateEditor.getText(), this.temporaryTemplatePath, this::logError);
+            Utils.writeToFile(this.templateEditor.getText(), this.templatePath, this::logError);
 
             this.outputPane.setText(null);
 
