@@ -61,7 +61,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             if (calculatedTokenType != -1) {
                 if (calculatedTokenType == TokenTypes.RESERVED_WORD) {
                     final String trimmedSegment = segment.toString().trim();
-                    final boolean followedByColon = segment.array[end + 1] == YAML_MAPPING_INDICATOR;
+                    final boolean followedByColon = segment.array.length > end + 1 && segment.array[end + 1] == YAML_MAPPING_INDICATOR;
                     final Supplier<Boolean> isPrefixedWithDash = () -> {
                         int index = 1;
                         char c;
@@ -71,18 +71,19 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                         }
                         return c == '-';
                     };
+                    // TODO handle repeating reserved words, followed by colons (e.g. id: template id: test)
                     if (followedByColon && (trimmedSegment.startsWith(currentFragment.trim()) || isPrefixedWithDash.get())) {
-                        tokenType = TokenTypes.RESERVED_WORD;
+                        this.currentTokenType = TokenTypes.RESERVED_WORD;
                     }
                 }
             } else {
                 if (currentFragment.startsWith(Utils.PAYLOAD_START_MARKER) && currentFragment.endsWith(Utils.PAYLOAD_END_MARKER)) {
-                    tokenType = TokenTypes.FUNCTION;
+                    this.currentTokenType = TokenTypes.FUNCTION;
                 }
             }
         }
 
-        super.addToken(segment, start, end, tokenType, startOffset);
+        super.addToken(segment, start, end, this.currentTokenType, startOffset);
     }
 
     /**
@@ -130,36 +131,11 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 case Token.COMMENT_EOL:
                     i = commentEol(text, end, newStartOffset);
                     break;
-                case Token.LITERAL_STRING_DOUBLE_QUOTE:
-                    quotes(text, newStartOffset, i, c);
-                    break;
                 case TokenTypes.SEPARATOR:
-                    switch (c) {
-                        case ' ':
-                        case '\t':
-                            addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
-                            this.currentTokenStart = i;
-                            this.currentTokenType = Token.WHITESPACE;
-                            break;
-                        case YAML_MAPPING_INDICATOR:
-                            addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
-                            this.currentTokenStart = i;
-                            this.currentTokenType = Token.SEPARATOR;
-                            break;
-                        case '\'':
-                        case '"':
-                            addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
-                            this.currentTokenStart = i;
-                            this.currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
-                            break;
-                        default:
-                            if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
-                                break;   // Still an identifier of some type.
-                            }
-                    }
+                    handleSeparator(text, newStartOffset, i, c);
                     break;
-                default: // Should never happen
-                    throw new IllegalStateException("this should never happen");
+                default:
+                    throw new IllegalStateException("Unhandled token type: " + this.currentTokenType);
             }
         }
 
@@ -182,10 +158,23 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
         return this.firstToken;
     }
 
-    private void quotes(Segment text, int newStartOffset, int i, char c) {
-        if (c == '"' || c == '\'') {
-            addToken(text, this.currentTokenStart, i, Token.LITERAL_STRING_DOUBLE_QUOTE, newStartOffset + this.currentTokenStart);
-            this.currentTokenType = Token.NULL;
+    private void handleSeparator(Segment text, int newStartOffset, int i, char c) {
+        switch (c) {
+            case ' ':
+            case '\t':
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
+                this.currentTokenStart = i;
+                this.currentTokenType = Token.WHITESPACE;
+                break;
+            case YAML_MAPPING_INDICATOR:
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
+                this.currentTokenStart = i;
+                break;
+            default:
+                if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
+                    this.currentTokenType = Token.IDENTIFIER;
+                    break;
+                }
         }
     }
 
@@ -205,14 +194,8 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 this.currentTokenStart = i;
                 this.currentTokenType = Token.WHITESPACE;
                 break;
-            case '\'':
-            case '"':
-                addToken(text, this.currentTokenStart, i - 1, Token.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + this.currentTokenStart);
-                this.currentTokenStart = i;
-                this.currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
-                break;
             default:
-                if (RSyntaxUtilities.isDigit(c)) {
+                if (RSyntaxUtilities.isDigit(c) || c == '.' || c == ',') {
                     break;   // Still a literal number.
                 }
 
@@ -235,18 +218,12 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             case YAML_MAPPING_INDICATOR:
                 addToken(text, this.currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
-                this.currentTokenType = Token.SEPARATOR;
-                break;
-            case '\'':
-            case '"':
-                addToken(text, this.currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + this.currentTokenStart);
-                this.currentTokenStart = i;
-                this.currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
+                // The ':' is only a separator, if it's preceded by a reserved word
+                this.currentTokenType = this.currentTokenType == TokenTypes.RESERVED_WORD ? Token.SEPARATOR
+                                                                                          : Token.IDENTIFIER;
                 break;
             default:
-                if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
-                    break;   // Still an identifier of some type.
-                }
+                this.currentTokenType = Token.IDENTIFIER;
         }
     }
 
@@ -255,12 +232,6 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             case ' ':
             case '\t':
                 break;   // Still whitespace.
-            case '\'':
-            case '"':
-                addToken(text, this.currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + this.currentTokenStart);
-                this.currentTokenStart = i;
-                this.currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
-                break;
             case '#':
                 addToken(text, this.currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
@@ -270,15 +241,8 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 addToken(text, this.currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
 
-                if (RSyntaxUtilities.isDigit(c)) {
-                    this.currentTokenType = Token.LITERAL_NUMBER_DECIMAL_INT;
-                    break;
-                } else if (RSyntaxUtilities.isLetter(c) || c == '/' || c == '_') {
-                    this.currentTokenType = Token.IDENTIFIER;
-                    break;
-                }
-                // Anything not currently handled - mark as identifier
-                this.currentTokenType = Token.IDENTIFIER;
+                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? Token.LITERAL_NUMBER_DECIMAL_INT
+                                                                    : Token.IDENTIFIER;
         }
     }
 
@@ -289,24 +253,12 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             case '\t':
                 this.currentTokenType = Token.WHITESPACE;
                 break;
-            case '\'':
-            case '"':
-                this.currentTokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
-                break;
             case '#':
                 this.currentTokenType = Token.COMMENT_EOL;
                 break;
             default:
-                if (RSyntaxUtilities.isDigit(c)) {
-                    this.currentTokenType = Token.LITERAL_NUMBER_DECIMAL_INT;
-                    break;
-                } else if (RSyntaxUtilities.isLetter(c) || c == '/' || c == '_') {
-                    this.currentTokenType = Token.IDENTIFIER;
-                    break;
-                }
-                // Anything not currently handled - mark as an identifier
-                this.currentTokenType = Token.IDENTIFIER;
-                break;
+                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? Token.LITERAL_NUMBER_DECIMAL_INT
+                                                                    : Token.IDENTIFIER;
         }
     }
 }
