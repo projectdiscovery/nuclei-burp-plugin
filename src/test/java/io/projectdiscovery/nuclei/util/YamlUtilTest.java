@@ -172,7 +172,7 @@ class YamlUtilTest {
         final String expected = "raw:\n" +
                                 "- |\n" +
                                 "  GET / HTTP/1.1\n" +
-                                "  Host: localhost\n" +
+                                "  Host: {{Hostname}}\n" +
                                 "  User-Agent: {{param}} (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0\n" +
                                 "  Accept-Language: en-US,en;{{param}}-Encoding: {{param}}\n" +
                                 "  Pragma: no-cache\n" +
