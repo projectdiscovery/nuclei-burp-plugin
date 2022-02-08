@@ -135,6 +135,8 @@ public class Requests {
     }
 
     private List<String> normalizeRawRequest(Stream<String> content) {
-        return content.map(s -> s.replaceAll("\r", "")).collect(Collectors.toList());
+        return content.map(s -> s.replaceAll("\r", "")
+                                 .replaceAll("Host: [^\\n]+", "Host: {{Hostname}}"))
+                      .collect(Collectors.toList());
     }
 }

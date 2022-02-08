@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class BurpExtender implements burp.IBurpExtender {
 
-    private static final String DEFAULT_CONTEXT_MENU_TEXT = "Generate nuclei template";
+    private static final String DEFAULT_CONTEXT_MENU_TEXT = "Generate template";
 
     private Map<String, String> yamlFieldDescriptionMap;
     private String nucleiBinaryName;
@@ -160,11 +160,11 @@ public class BurpExtender implements burp.IBurpExtender {
     private List<JMenuItem> generateRequestTemplate(IBurpExtenderCallbacks callbacks, IContextMenuInvocation invocation, IExtensionHelpers helpers, byte[] requestBytes, URL targetUrl) {
         return List.of(messageEditorContextMenu(() -> {
             final int[] selectionBounds = invocation.getSelectionBounds();
-            final StringBuilder stringBuilder = new StringBuilder(helpers.bytesToString(requestBytes));
-            stringBuilder.insert(selectionBounds[0], Utils.INTRUDER_PAYLOAD_MARKER);
-            stringBuilder.insert(selectionBounds[1] + 1, Utils.INTRUDER_PAYLOAD_MARKER);
+            final StringBuilder requestModifier = new StringBuilder(helpers.bytesToString(requestBytes));
+            requestModifier.insert(selectionBounds[0], Utils.INTRUDER_PAYLOAD_MARKER);
+            requestModifier.insert(selectionBounds[1] + 1, Utils.INTRUDER_PAYLOAD_MARKER);
 
-            generateIntruderTemplate(targetUrl, stringBuilder.toString(), Requests.AttackType.batteringram, callbacks);
+            generateIntruderTemplate(targetUrl, requestModifier.toString(), Requests.AttackType.batteringram, callbacks);
         }, DEFAULT_CONTEXT_MENU_TEXT));
     }
 
@@ -198,9 +198,9 @@ public class BurpExtender implements burp.IBurpExtender {
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Template template = new Template("template-id", info, requests);
-        final String yamlTemplate = YamlUtil.dump(template);
+        final String normalizedTemplate = Utils.normalizeTemplate(YamlUtil.dump(template));
 
         final Path configuredNucleiPath = Utils.getConfiguredNucleiPath(callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME), this.nucleiBinaryName);
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(configuredNucleiPath, targetUrl, yamlTemplate, this.yamlFieldDescriptionMap, callbacks));
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(configuredNucleiPath, targetUrl, normalizedTemplate, this.yamlFieldDescriptionMap, callbacks));
     }
 }

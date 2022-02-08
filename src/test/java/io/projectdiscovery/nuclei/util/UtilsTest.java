@@ -52,4 +52,50 @@ class UtilsTest {
     void testNucleiTemplateParameterPattern(String testCase) {
         Assertions.assertEquals("nuclei -t test.yaml -u http://localhost", Utils.replaceTemplatePathInCommand(testCase, "test.yaml"));
     }
+
+    @Test
+    void testTemplateNormalization() {
+        final String yamlTemplate = "id: template-id\n" +
+                                    "info:\n" +
+                                    "  name: Template Name\n" +
+                                    "  author: istvan\n" +
+                                    "  severity: info\n" +
+                                    "requests:\n" +
+                                    "- raw:\n" +
+                                    "  - |+\n" +
+                                    "    GET / HTTP/1.1\n" +
+                                    "    Host: http://localhost:8080\n" +
+                                    "  matchers-condition: and\n" +
+                                    "  matchers:\n" +
+                                    "  - type: word\n" +
+                                    "    part: body\n" +
+                                    "    condition: or\n" +
+                                    "    words:\n" +
+                                    "    - f=\"bin.bin\">bin.bin</a></li>\n" +
+                                    "    - <li><a href=\"dns.yaml\">dns.yaml</a></li>";
+
+        final String expected = "id: template-id\n" +
+                                "\n" +
+                                "info:\n" +
+                                "  name: Template Name\n" +
+                                "  author: istvan\n" +
+                                "  severity: info\n" +
+                                "\n" +
+                                "requests:\n" +
+                                "- raw:\n" +
+                                "  - |+\n" +
+                                "    GET / HTTP/1.1\n" +
+                                "    Host: http://localhost:8080\n" +
+                                "\n" +
+                                "  matchers-condition: and\n" +
+                                "  matchers:\n" +
+                                "  - type: word\n" +
+                                "    part: body\n" +
+                                "    condition: or\n" +
+                                "    words:\n" +
+                                "    - f=\"bin.bin\">bin.bin</a></li>\n" +
+                                "    - <li><a href=\"dns.yaml\">dns.yaml</a></li>";
+
+        Assertions.assertEquals(expected, Utils.normalizeTemplate(yamlTemplate));
+    }
 }

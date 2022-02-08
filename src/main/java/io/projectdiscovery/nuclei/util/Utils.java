@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -176,6 +177,22 @@ public final class Utils {
         return NUCLEI_TEMPLATE_PARAMETER_PATTERN.matcher(nucleiCommand).replaceFirst("$1 " + newTemplatePath);
     }
 
+    public static String normalizeTemplate(String yamlTemplate) {
+        String result = yamlTemplate;
+
+        for (String fieldName : Arrays.asList("info", "requests", "extractors")) {
+            result = addNewLineBeforeProperty(result, fieldName);
+        }
+
+        result = result.contains("matchers-condition: ") ? addNewLineBeforeProperty(result, "matchers-condition", getEnumValues(Requests.MatchersCondition.class))
+                                                         : addNewLineBeforeProperty(result, "matchers");
+
+        result = result.contains("attack: ") ? addNewLineBeforeProperty(result, "attack", getEnumValues(Requests.AttackType.class))
+                                             : addNewLineBeforeProperty(result, "payloads");
+
+        return result;
+    }
+
     public static TemplateMatcher createContentMatcher(byte[] responseBytes, int bodyOffset, int[] selectionBounds, Function<byte[], String> byteToStringFunction) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
@@ -256,5 +273,27 @@ public final class Utils {
         }
         wordMatcher.setPart(selectionPart);
         return wordMatcher;
+    }
+
+    private static String addNewLineBeforeProperty(String input, String propertyName) {
+        return addNewLineBeforeProperty(input, propertyName, Collections.emptyList());
+    }
+
+    private static String addNewLineBeforeProperty(String input, String propertyName, List<String> values) {
+        final String valuesRegexOrExpression = values.isEmpty() ? ""
+                                                                : String.format(" (?:%s)", String.join("|", values));
+
+        final Pattern pattern = Pattern.compile(String.format("(^\\s*%s:%s$)", propertyName, valuesRegexOrExpression), Pattern.MULTILINE);
+        final Matcher matcher = pattern.matcher(input);
+        while (matcher.find()) {
+            final String group = matcher.group(1);
+            input = input.replace(group, "\n" + group);
+        }
+
+        return input;
+    }
+
+    private static <T extends Enum<T>> List<String> getEnumValues(Class<T> enumClass) {
+        return Arrays.stream(enumClass.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
     }
 }
