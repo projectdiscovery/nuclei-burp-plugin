@@ -42,7 +42,7 @@ public class SettingsPanel extends JPanel {
     public static final String TEMPLATE_PATH_SETTING_NAME = "templatePath";
     public static final String AUTHOR_SETTING_NAME = "author";
 
-    public static final float FONT_SIZE = 14f; // TODO make configurable or try to retrieve burp user config
+    public static final float FONT_SIZE = 14f; // TODO make configurable, store the adjusted value, or try to retrieve burp user config
 
     private final IBurpExtenderCallbacks callbacks;
     private JButton cancelButton;
@@ -62,75 +62,30 @@ public class SettingsPanel extends JPanel {
         final GridBagConstraints formPanelConstraints = new GridBagConstraints();
         formPanelConstraints.gridx = 0;
         formPanelConstraints.gridy = 0;
-        formPanelConstraints.weightx = 0.4;
+        formPanelConstraints.weightx = 0.2;
         formPanelConstraints.weighty = 0.95;
         formPanelConstraints.fill = GridBagConstraints.BOTH;
 
         this.add(formPanel, formPanelConstraints);
 
         final JPanel rightPanel = new JPanel();
-
         final GridBagConstraints rightPanelConstraints = new GridBagConstraints();
         rightPanelConstraints.gridx = 1;
         rightPanelConstraints.gridy = 0;
-        rightPanelConstraints.weightx = 0.6;
-        rightPanelConstraints.weighty = 0.95;
+        rightPanelConstraints.weightx = 0.8;
+        rightPanelConstraints.weighty = 1;
         rightPanelConstraints.fill = GridBagConstraints.BOTH;
 
         this.add(rightPanel, rightPanelConstraints);
 
-        final JPanel buttonPanel = createButtonPanel();
-        final GridBagConstraints buttonPanelConstraints = new GridBagConstraints();
-        buttonPanelConstraints.gridx = 0;
-        buttonPanelConstraints.gridy = 1;
-        buttonPanelConstraints.gridwidth = 2;
-        buttonPanelConstraints.weighty = 0.05;
-        buttonPanelConstraints.fill = GridBagConstraints.BOTH;
-
-        this.add(buttonPanel, buttonPanelConstraints);
-
         loadSavedFieldValues();
-    }
-
-    private JPanel createButtonPanel() {
-        final JPanel buttonPanel = new JPanel(new GridBagLayout());
-
-        this.saveButton = new JButton("Save");
-        this.saveButton.setMnemonic(KeyEvent.VK_S);
-        this.saveButton.setVisible(false);
-        final GridBagConstraints saveConstraints = createButtonConstraints(1);
-        this.saveButton.addActionListener(e -> saveConfigValues());
-        buttonPanel.add(this.saveButton, saveConstraints);
-
-        this.cancelButton = new JButton("Cancel");
-        this.cancelButton.setMnemonic(KeyEvent.VK_C);
-        this.cancelButton.setVisible(false);
-        this.cancelButton.addActionListener(e -> {
-            if (this.callbacks != null) {
-                loadSavedFieldValues();
-                setButtonsVisible(false);
-            }
-        });
-        final GridBagConstraints cancelConstraints = createButtonConstraints(2);
-        buttonPanel.add(this.cancelButton, cancelConstraints);
-
-        return buttonPanel;
     }
 
     private void saveConfigValues() {
         if (this.callbacks != null) {
             this.valueTextFieldMap.forEach((k, v) -> this.callbacks.saveExtensionSetting(k, v.getText()));
-            setButtonsVisible(false);
+            enableButtons(false);
         }
-    }
-
-    private GridBagConstraints createButtonConstraints(int gridx) {
-        final GridBagConstraints cancelConstraints = new GridBagConstraints();
-        cancelConstraints.gridx = gridx;
-        cancelConstraints.gridy = 2;
-        cancelConstraints.fill = GridBagConstraints.CENTER;
-        cancelConstraints.insets = new Insets(10, 5, 10, 5);
-        return cancelConstraints;
     }
 
     private JPanel createFormPanel() {
@@ -146,15 +101,15 @@ public class SettingsPanel extends JPanel {
 
         formPanel.add(topPanel, topPanelConstraints);
 
-        final JPanel bottomPanel = new JPanel(new GridBagLayout());
-        final GridBagConstraints bottomConstraints = new GridBagConstraints();
-        bottomConstraints.weightx = 1;
-        bottomConstraints.weighty = 0.95;
-        bottomConstraints.gridx = 0;
-        bottomConstraints.gridy = 1;
-        bottomConstraints.fill = GridBagConstraints.BOTH;
+        final JPanel middlePanel = new JPanel();
+        final GridBagConstraints middlePanelConstraints = new GridBagConstraints();
+        middlePanelConstraints.weightx = 1;
+        middlePanelConstraints.weighty = 0.6;
+        middlePanelConstraints.gridx = 0;
+        middlePanelConstraints.gridy = 1;
+        middlePanelConstraints.fill = GridBagConstraints.BOTH;
 
-        formPanel.add(bottomPanel, bottomConstraints);
+        formPanel.add(middlePanel, middlePanelConstraints);
 
         return formPanel;
     }
@@ -162,28 +117,39 @@ public class SettingsPanel extends JPanel {
     private JPanel createFormTopPanel() {
         final JPanel topPanel = new JPanel(new GridBagLayout());
 
-        final JLabel heading = new JLabel("Template generator constants");
-        heading.setFont(heading.getFont().deriveFont(Font.PLAIN, 18));
-        final GridBagConstraints headerConstraints = new GridBagConstraints();
-        headerConstraints.gridx = 0;
-        headerConstraints.gridy = 0;
-        headerConstraints.anchor = GridBagConstraints.LINE_START;
-        headerConstraints.insets = new Insets(10, 10, 30, 10);
-        topPanel.add(heading, headerConstraints);
+        createSettingsHeader(topPanel);
 
-        final String[] labels = {"Path to nuclei", "Template default save path", "Template author"};
-        for (int index = 1; index <= labels.length; index++) {
-            final JLabel jLabel = new JLabel(labels[index - 1]);
-            final GridBagConstraints nucleiLabelConstraints = createLabelConstraints(index);
-            topPanel.add(jLabel, nucleiLabelConstraints);
+        createLabels(topPanel);
+
+        createTextFields(topPanel);
+
+        createButtons(topPanel);
+
+        addAlignmentBoxes(topPanel);
+
+        return topPanel;
+    }
+
+    private void addAlignmentBoxes(JPanel topPanel) {
+        // create empty cells on the right, so that the previously created buttons can be centered against the text fields
+        for (int i = 0; i <= this.valueTextFieldMap.size() + 1; i++) {
+            final Box horizontalBox = Box.createHorizontalBox();
+            final GridBagConstraints boxConstraints = new GridBagConstraints();
+            boxConstraints.gridx = 3;
+            boxConstraints.gridy = i;
+            boxConstraints.weightx = 1.2;
+            boxConstraints.fill = GridBagConstraints.HORIZONTAL;
+            topPanel.add(horizontalBox, boxConstraints);
         }
+    }
 
+    private void createTextFields(JPanel topPanel) {
         int gridY = 0;
-        final JTextField nucleiPathTextField = new JTextField();
+        final JTextField nucleiPathTextField = new JTextField(); // TODO add dialog window to make the selection more convenient
         final GridBagConstraints nucleiPathConstraints = createTextFieldConstraints(nucleiPathTextField, ++gridY);
         topPanel.add(nucleiPathTextField, nucleiPathConstraints);
 
-        final JTextField templatePathTextField = new JTextField();
+        final JTextField templatePathTextField = new JTextField(); // TODO add dialog window to make the selection more convenient
         final GridBagConstraints templatePathConstraints = createTextFieldConstraints(templatePathTextField, ++gridY);
         topPanel.add(templatePathTextField, templatePathConstraints);
 
@@ -194,8 +160,66 @@ public class SettingsPanel extends JPanel {
         this.valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_SETTING_NAME, nucleiPathTextField),
                                                Map.entry(TEMPLATE_PATH_SETTING_NAME, templatePathTextField),
                                                Map.entry(AUTHOR_SETTING_NAME, authorTextField));
+    }
 
-        return topPanel;
+    private void createButtons(JPanel topPanel) {
+        final JPanel buttonPanel = new JPanel(new GridBagLayout());
+
+        this.saveButton = new JButton("Save");
+        this.saveButton.setMnemonic(KeyEvent.VK_S);
+        final GridBagConstraints saveConstraints = createButtonConstraints(0, 0);
+        this.saveButton.addActionListener(e -> saveConfigValues());
+        buttonPanel.add(this.saveButton, saveConstraints);
+
+        this.cancelButton = new JButton("Cancel");
+        this.cancelButton.setMnemonic(KeyEvent.VK_C);
+        this.cancelButton.addActionListener(e -> {
+            if (this.callbacks != null) {
+                loadSavedFieldValues();
+                enableButtons(false);
+            }
+        });
+        final GridBagConstraints cancelConstraints = createButtonConstraints(1, 5);
+        buttonPanel.add(this.cancelButton, cancelConstraints);
+
+        final GridBagConstraints buttonPanelConstraints = new GridBagConstraints();
+        buttonPanelConstraints.gridx = 1;
+        buttonPanelConstraints.gridwidth = 2;
+        buttonPanelConstraints.gridy = 4;
+        buttonPanelConstraints.weightx = 0.01;
+        buttonPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
+
+        topPanel.add(buttonPanel, buttonPanelConstraints);
+    }
+
+    private void createSettingsHeader(Container container) {
+        final JLabel heading = new JLabel("Template generator constants");
+        heading.setFont(heading.getFont().deriveFont(Font.PLAIN, 18));
+        final GridBagConstraints headerConstraints = new GridBagConstraints();
+        headerConstraints.gridx = 0;
+        headerConstraints.gridwidth = 3;
+        headerConstraints.gridy = 0;
+        headerConstraints.fill = GridBagConstraints.HORIZONTAL;
+        headerConstraints.insets = new Insets(10, 10, 30, 0);
+        container.add(heading, headerConstraints);
+    }
+
+    private void createLabels(Container container) {
+        final String[] labels = {"Path to nuclei", "Template default save path", "Template author"};
+        for (int index = 1; index <= labels.length; index++) {
+            final JLabel jLabel = new JLabel(labels[index - 1]);
+            final GridBagConstraints nucleiLabelConstraints = createLabelConstraints(index);
+            container.add(jLabel, nucleiLabelConstraints);
+        }
+    }
+
+    private GridBagConstraints createButtonConstraints(int gridx, int inset) {
+        final GridBagConstraints buttonConstraint = new GridBagConstraints();
+        buttonConstraint.gridx = gridx;
+        buttonConstraint.gridy = 0;
+        buttonConstraint.fill = GridBagConstraints.CENTER;
+        buttonConstraint.insets = new Insets(10, inset, 10, 5);
+        return buttonConstraint;
     }
 
     private void loadSavedFieldValues() {
@@ -210,7 +234,7 @@ public class SettingsPanel extends JPanel {
             }
         });
 
-        setButtonsVisible(false);
+        enableButtons(false);
     }
 
     private void calculateDefaultConfigurationValue(String configurationName, JTextField configurationField) {
@@ -240,8 +264,7 @@ public class SettingsPanel extends JPanel {
         final GridBagConstraints nucleiLabelConstraints = new GridBagConstraints();
         nucleiLabelConstraints.gridx = 0;
         nucleiLabelConstraints.gridy = gridY;
-        nucleiLabelConstraints.weightx = 0.1;
-        nucleiLabelConstraints.fill = GridBagConstraints.NONE;
+        nucleiLabelConstraints.weightx = 0.05;
         nucleiLabelConstraints.anchor = GridBagConstraints.LINE_START;
         nucleiLabelConstraints.insets = new Insets(10, 10, 10, 0);
         return nucleiLabelConstraints;
@@ -253,35 +276,34 @@ public class SettingsPanel extends JPanel {
         textField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                setButtonsVisible(true);
+                enableButtons(true);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                setButtonsVisible(true);
+                enableButtons(true);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                setButtonsVisible(true);
+                enableButtons(true);
             }
         });
 
-        final GridBagConstraints authorFieldConstraints = new GridBagConstraints();
-        authorFieldConstraints.gridx = 1;
-        authorFieldConstraints.gridy = gridY;
-        authorFieldConstraints.gridwidth = 2;
-        authorFieldConstraints.weightx = 0.9;
-        authorFieldConstraints.insets = new Insets(10, 0, 10, 10);
-        authorFieldConstraints.anchor = GridBagConstraints.LINE_START;
-        return authorFieldConstraints;
+        final GridBagConstraints fieldConstraints = new GridBagConstraints();
+        fieldConstraints.gridx = 1;
+        fieldConstraints.gridy = gridY;
+        fieldConstraints.gridwidth = 2;
+        fieldConstraints.weightx = 0.5;
+        fieldConstraints.fill = GridBagConstraints.HORIZONTAL;
+        fieldConstraints.insets = new Insets(10, 0, 10, 0);
+        fieldConstraints.anchor = GridBagConstraints.LINE_START;
+        return fieldConstraints;
     }
 
-    private void setButtonsVisible(boolean visibility) {
-        if (this.saveButton.isVisible() != visibility) {
-            this.saveButton.setVisible(visibility);
-            this.cancelButton.setVisible(visibility);
-        }
+    private void enableButtons(boolean enabled) {
+        this.saveButton.setEnabled(enabled);
+        this.cancelButton.setEnabled(enabled);
     }
 
     public static void main(String[] args) {
