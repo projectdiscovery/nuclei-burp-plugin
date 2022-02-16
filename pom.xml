@@ -11,13 +11,16 @@
     <description>A BurpSuite plugin created to ease nuclei template development.</description>
     <url>https://github.com/projectdiscovery/nuclei</url>
 
+    <organization>
+        <name>ProjectDiscovery, Inc</name>
+        <url>https://projectdiscovery.io</url>
+    </organization>
     <licenses>
         <license>
             <name>MIT</name>
             <url>https://github.com/projectdiscovery/nuclei/blob/master/LICENSE.md</url>
         </license>
     </licenses>
-
     <developers>
         <developer>
             <id>forgedhallpass</id>
@@ -25,6 +28,18 @@
             <organizationUrl>https://projectdiscovery.io</organizationUrl>
         </developer>
     </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/projectdiscovery/nuclei-burp-plugin</connection>
+        <developerConnection>scm:git:git@github.com:projectdiscovery/nuclei-burp-plugin.git</developerConnection>
+        <url>https://github.com/projectdiscovery/nuclei-burp-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issue Tracking</system>
+        <url>https://github.com/projectdiscovery/nuclei-burp-plugin/issues</url>
+    </issueManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -34,6 +49,7 @@
 
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+        <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
         <snakeyaml.version>1.29</snakeyaml.version>
@@ -135,6 +151,17 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven-release-plugin.version}</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <localCheckout>true</localCheckout>
+                    <pushChanges>false</pushChanges>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
