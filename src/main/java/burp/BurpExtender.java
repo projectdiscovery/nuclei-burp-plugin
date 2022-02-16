@@ -56,8 +56,6 @@ public class BurpExtender implements burp.IBurpExtender {
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         callbacks.setExtensionName("Nuclei");
 
-        // TODO apply callbacks.customizeUiComponent to created UI components
-
         initializeNucleiYamlSchema(callbacks);
 
         callbacks.registerContextMenuFactory(createContextMenuFactory(callbacks));

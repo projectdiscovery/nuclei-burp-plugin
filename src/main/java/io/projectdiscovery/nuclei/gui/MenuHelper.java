@@ -33,15 +33,18 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public final class MenuHelper {
 
     private static final String TEMPLATE_DOCUMENTATION_URL = "https://nuclei.projectdiscovery.io/templating-guide/";
     private static final String ABOUT_MESSAGE = "<html>" +
+                                                "<body%s>" +
                                                 "Created by <a href=\"https://github.com/forgedhallpass\">@forgedhallpass</a>" +
                                                 "<br>" +
                                                 "Powered by <a href=\"https://projectdiscovery.io\">ProjectDiscovery.io</a>" +
+                                                "</body>" +
                                                 "</html>";
 
     private final Consumer<String> errorMessageConsumer;
@@ -81,14 +84,25 @@ public final class MenuHelper {
         final String aboutTitle = "About";
         final JMenuItem aboutMenuItem = new JMenuItem(aboutTitle);
         aboutMenuItem.addActionListener(e -> {
-            final URL pdIconUrl = SettingsPanel.class.getResource("/ProjectDiscovery-Icon.png"); // TODO resize the image
+            final URL pdIconUrl = SettingsPanel.class.getResource("/ProjectDiscovery-Icon.png");
+            final String bodyStyle = getHtmlBodyStyle();
+
             if (pdIconUrl != null) {
-                JOptionPane.showMessageDialog(null, new HyperlinkPane(ABOUT_MESSAGE), aboutTitle, JOptionPane.PLAIN_MESSAGE, new ImageIcon(pdIconUrl));
+                JOptionPane.showMessageDialog(null, new HyperlinkPane(String.format(ABOUT_MESSAGE, bodyStyle)), aboutTitle, JOptionPane.PLAIN_MESSAGE, new ImageIcon(pdIconUrl));
             } else {
-                JOptionPane.showMessageDialog(null, new HyperlinkPane(ABOUT_MESSAGE), aboutTitle, JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, new HyperlinkPane(String.format(ABOUT_MESSAGE, bodyStyle)), aboutTitle, JOptionPane.INFORMATION_MESSAGE);
             }
         });
         return aboutMenuItem;
+    }
+
+    private String getHtmlBodyStyle() {
+        return Optional.ofNullable(UIManager.getColor("Panel.background"))
+                       .map(color -> String.format(" style=\"background-color:rgb(%d, %d, %d);\"",
+                                                   color.getRed(),
+                                                   color.getGreen(),
+                                                   color.getBlue()))
+                       .orElse("");
     }
 
     private JMenuItem createShortcutsMenuItem() {
