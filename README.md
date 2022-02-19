@@ -10,7 +10,11 @@
   <a href="https://twitter.com/pdnuclei"><img src="https://img.shields.io/twitter/follow/pdnuclei.svg?logo=twitter"></a>
 </p>
 
+<p align="center">
+
 A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/projectdiscovery/nuclei) template generation.
+
+</p>
 
 <div align="center">
   <br>
