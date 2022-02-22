@@ -52,7 +52,7 @@
         <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
-        <snakeyaml.version>1.29</snakeyaml.version>
+        <snakeyaml.version>1.30</snakeyaml.version>
         <rsyntaxtextarea.version>3.1.6</rsyntaxtextarea.version>
 
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
