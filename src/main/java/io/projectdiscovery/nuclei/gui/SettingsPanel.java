@@ -25,7 +25,6 @@
 
 package io.projectdiscovery.nuclei.gui;
 
-import burp.IBurpExtenderCallbacks;
 import io.projectdiscovery.nuclei.util.Utils;
 
 import javax.swing.*;
@@ -44,17 +43,13 @@ public class SettingsPanel extends JPanel {
 
     public static final float FONT_SIZE = 14f; // TODO make configurable, store the adjusted value, or try to retrieve burp user config
 
-    private final IBurpExtenderCallbacks callbacks;
+    private final GeneralSettings settings;
     private JButton cancelButton;
     private JButton saveButton;
     private Map<String, JTextField> valueTextFieldMap;
 
-    public SettingsPanel() {
-        this(null);
-    }
-
-    public SettingsPanel(IBurpExtenderCallbacks callbacks) {
-        this.callbacks = callbacks;
+    public SettingsPanel(GeneralSettings generalSettings) {
+        this.settings = generalSettings;
 
         this.setLayout(new GridBagLayout());
 
@@ -82,10 +77,8 @@ public class SettingsPanel extends JPanel {
     }
 
     private void saveConfigValues() {
-        if (this.callbacks != null) {
-            this.valueTextFieldMap.forEach((k, v) -> this.callbacks.saveExtensionSetting(k, v.getText()));
-            enableButtons(false);
-        }
+        this.valueTextFieldMap.forEach((k, v) -> this.settings.saveExtensionSetting(k, v.getText()));
+        enableButtons(false);
     }
 
     private JPanel createFormPanel() {
@@ -174,10 +167,8 @@ public class SettingsPanel extends JPanel {
         this.cancelButton = new JButton("Cancel");
         this.cancelButton.setMnemonic(KeyEvent.VK_C);
         this.cancelButton.addActionListener(e -> {
-            if (this.callbacks != null) {
-                loadSavedFieldValues();
-                enableButtons(false);
-            }
+            loadSavedFieldValues();
+            enableButtons(false);
         });
         final GridBagConstraints cancelConstraints = createButtonConstraints(1, 5);
         buttonPanel.add(this.cancelButton, cancelConstraints);
@@ -224,13 +215,11 @@ public class SettingsPanel extends JPanel {
 
     private void loadSavedFieldValues() {
         this.valueTextFieldMap.forEach((configurationName, configurationField) -> {
-            if (this.callbacks != null) {
-                final String savedValue = this.callbacks.loadExtensionSetting(configurationName);
-                if (Utils.isBlank(savedValue)) {
-                    calculateDefaultConfigurationValue(configurationName, configurationField);
-                } else {
-                    configurationField.setText(savedValue);
-                }
+            final String savedValue = this.settings.loadExtensionSetting(configurationName);
+            if (Utils.isBlank(savedValue)) {
+                calculateDefaultConfigurationValue(configurationName, configurationField);
+            } else {
+                configurationField.setText(savedValue);
             }
         });
 
@@ -256,7 +245,7 @@ public class SettingsPanel extends JPanel {
 
             saveConfigValues();
         } catch (Exception e) {
-            this.callbacks.printError("Could not load default value(s): " + e.getMessage());
+            this.settings.logError(String.format("Could not load default value(s): '%s'.", e.getMessage()));
         }
     }
 
@@ -309,7 +298,7 @@ public class SettingsPanel extends JPanel {
     public static void main(String[] args) {
         final JFrame frame = new JFrame("Test the Settings Panel");
         frame.setLayout(new GridLayout());
-        frame.add(new SettingsPanel());
+        frame.add(new SettingsPanel(new GeneralSettings.Builder().build()));
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setVisible(true);
         frame.pack();

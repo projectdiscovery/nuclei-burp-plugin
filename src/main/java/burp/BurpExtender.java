@@ -25,6 +25,8 @@
 
 package burp;
 
+import io.projectdiscovery.nuclei.gui.GeneralSettings;
+import io.projectdiscovery.nuclei.gui.NucleiGeneratorSettings;
 import io.projectdiscovery.nuclei.gui.SettingsPanel;
 import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
 import io.projectdiscovery.nuclei.model.*;
@@ -56,31 +58,38 @@ public class BurpExtender implements burp.IBurpExtender {
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         callbacks.setExtensionName("Nuclei");
 
-        initializeNucleiYamlSchema(callbacks);
+        final GeneralSettings generalSettings = new GeneralSettings.Builder()
+                .withOutputConsumer(callbacks::printOutput)
+                .withErrorConsumer(callbacks::printError)
+                .withExtensionSettingSaver(callbacks::saveExtensionSetting)
+                .withExtensionSettingLoader(callbacks::loadExtensionSetting)
+                .build();
 
-        callbacks.registerContextMenuFactory(createContextMenuFactory(callbacks));
+        initializeNucleiYamlSchema(generalSettings);
 
-        callbacks.addSuiteTab(createConfigurationTab(callbacks));
+        callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
+
+        callbacks.addSuiteTab(createConfigurationTab(generalSettings));
 
         this.nucleiBinaryName = Utils.getNucleiBinaryName();
     }
 
-    private void initializeNucleiYamlSchema(IBurpExtenderCallbacks callbacks) {
+    private void initializeNucleiYamlSchema(GeneralSettings generalSettings) {
         final String errorMessage = "AutoCompletion will be disabled, because there was an error while downloading and parsing the nuclei JSON schema.";
 
         try {
             this.yamlFieldDescriptionMap = SchemaUtils.retrieveYamlFieldWithDescriptions();
             if (!this.yamlFieldDescriptionMap.isEmpty()) {
-                callbacks.printOutput("JSON schema loaded and parsed!");
+                generalSettings.log("JSON schema loaded and parsed!");
             } else {
-                callbacks.printError(errorMessage);
+                generalSettings.logError(errorMessage);
             }
         } catch (Exception e) {
-            callbacks.printError(errorMessage + '\n' + e.getMessage());
+            generalSettings.logError(errorMessage + '\n' + e.getMessage());
         }
     }
 
-    private ITab createConfigurationTab(IBurpExtenderCallbacks callbacks) {
+    private ITab createConfigurationTab(GeneralSettings generalSettings) {
         return new ITab() {
             @Override
             public String getTabCaption() {
@@ -90,24 +99,23 @@ public class BurpExtender implements burp.IBurpExtender {
             @Override
             public Component getUiComponent() {
                 final JTabbedPane jTabbedPane = new JTabbedPane();
-                jTabbedPane.addTab("Configuration", new SettingsPanel(callbacks));
+                jTabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
                 jTabbedPane.setVisible(true);
                 return jTabbedPane;
             }
         };
     }
 
-    private IContextMenuFactory createContextMenuFactory(IBurpExtenderCallbacks callbacks) {
+    private IContextMenuFactory createContextMenuFactory(GeneralSettings generalSettings, IExtensionHelpers extensionHelpers) {
         return (IContextMenuInvocation invocation) -> {
             List<JMenuItem> menuItems = null;
 
             final IHttpRequestResponse[] selectedMessages = invocation.getSelectedMessages();
             if (selectedMessages.length > 0) {
-                final IExtensionHelpers helpers = callbacks.getHelpers();
 
                 final IHttpRequestResponse requestResponse = selectedMessages[0];
                 final byte[] requestBytes = requestResponse.getRequest();
-                final URL targetUrlWithPath = helpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
+                final URL targetUrlWithPath = extensionHelpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
                 final URL targetUrl;
                 try {
                     targetUrl = new URL(targetUrlWithPath.getProtocol(), targetUrlWithPath.getHost(), targetUrlWithPath.getPort(), "/");
@@ -115,35 +123,35 @@ public class BurpExtender implements burp.IBurpExtender {
                     switch (invocation.getInvocationContext()) {
                         case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
                         case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
-                            menuItems = generateRequestTemplate(callbacks, invocation, helpers, requestBytes, targetUrl);
+                            menuItems = generateRequestTemplate(generalSettings, invocation, extensionHelpers, requestBytes, targetUrl);
                             break;
                         }
                         case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
                         case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
-                            menuItems = List.of(messageEditorContextMenu(() -> generateTemplate(targetUrl, requestResponse, invocation.getSelectionBounds(), callbacks), DEFAULT_CONTEXT_MENU_TEXT));
+                            menuItems = List.of(messageEditorContextMenu(() -> generateTemplate(generalSettings, targetUrl, requestResponse, invocation.getSelectionBounds(), extensionHelpers), DEFAULT_CONTEXT_MENU_TEXT));
                             break;
                         }
                         case IContextMenuInvocation.CONTEXT_INTRUDER_PAYLOAD_POSITIONS: {
-                            final String request = helpers.bytesToString(requestBytes);
-                            menuItems = generateIntruderTemplate(targetUrl, request, callbacks);
+                            final String request = extensionHelpers.bytesToString(requestBytes);
+                            menuItems = generateIntruderTemplate(generalSettings, targetUrl, request);
                             break;
                         }
                     }
                 } catch (MalformedURLException e) {
-                    callbacks.printError(e.getMessage());
+                    generalSettings.logError(e.getMessage());
                 }
             }
             return menuItems;
         };
     }
 
-    private List<JMenuItem> generateIntruderTemplate(URL targetUrl, String request, IBurpExtenderCallbacks callbacks) {
+    private List<JMenuItem> generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request) {
         final List<JMenuItem> menuItems;
         if (request.chars().filter(c -> c == Utils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
-            menuItems = List.of(messageEditorContextMenu(() -> generateIntruderTemplate(targetUrl, request, Requests.AttackType.batteringram, callbacks), DEFAULT_CONTEXT_MENU_TEXT));
+            menuItems = List.of(messageEditorContextMenu(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Requests.AttackType.batteringram), DEFAULT_CONTEXT_MENU_TEXT));
         } else {
             menuItems = Arrays.stream(Requests.AttackType.values())
-                              .map(attackType -> messageEditorContextMenu(() -> generateIntruderTemplate(targetUrl, request, attackType, callbacks), DEFAULT_CONTEXT_MENU_TEXT + " - " + attackType))
+                              .map(attackType -> messageEditorContextMenu(() -> generateIntruderTemplate(generalSettings, targetUrl, request, attackType), DEFAULT_CONTEXT_MENU_TEXT + " - " + attackType))
                               .collect(Collectors.toList());
         }
         return menuItems;
@@ -155,22 +163,20 @@ public class BurpExtender implements burp.IBurpExtender {
         return menuItem;
     }
 
-    private List<JMenuItem> generateRequestTemplate(IBurpExtenderCallbacks callbacks, IContextMenuInvocation invocation, IExtensionHelpers helpers, byte[] requestBytes, URL targetUrl) {
+    private List<JMenuItem> generateRequestTemplate(GeneralSettings generalSettings, IContextMenuInvocation invocation, IExtensionHelpers helpers, byte[] requestBytes, URL targetUrl) {
         return List.of(messageEditorContextMenu(() -> {
             final int[] selectionBounds = invocation.getSelectionBounds();
             final StringBuilder requestModifier = new StringBuilder(helpers.bytesToString(requestBytes));
             requestModifier.insert(selectionBounds[0], Utils.INTRUDER_PAYLOAD_MARKER);
             requestModifier.insert(selectionBounds[1] + 1, Utils.INTRUDER_PAYLOAD_MARKER);
 
-            generateIntruderTemplate(targetUrl, requestModifier.toString(), Requests.AttackType.batteringram, callbacks);
+            generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Requests.AttackType.batteringram);
         }, DEFAULT_CONTEXT_MENU_TEXT));
     }
 
-    private void generateTemplate(URL targetUrl, IHttpRequestResponse requestResponse, int[] selectionBounds, IBurpExtenderCallbacks callbacks) {
+    private void generateTemplate(GeneralSettings generalSettings, URL targetUrl, IHttpRequestResponse requestResponse, int[] selectionBounds, IExtensionHelpers helpers) {
         final byte[] responseBytes = requestResponse.getResponse();
         final byte[] requestBytes = requestResponse.getRequest();
-
-        final IExtensionHelpers helpers = callbacks.getHelpers();
 
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
         final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo.getBodyOffset(), selectionBounds, helpers::bytesToString);
@@ -180,25 +186,30 @@ public class BurpExtender implements burp.IBurpExtender {
         requests.setRaw(requestBytes);
         requests.setMatchers(contentMatcher, new Status(statusCode));
 
-        generateTemplate(targetUrl, requests, callbacks);
+        generateTemplate(generalSettings, targetUrl, requests);
     }
 
-    private void generateIntruderTemplate(URL targetUrl, String request, Requests.AttackType attackType, IBurpExtenderCallbacks callbacks) {
+    private void generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request, Requests.AttackType attackType) {
         final Requests requests = new Requests();
         final TransformedRequest intruderRequest = Utils.transformRequestWithPayloads(attackType, request);
         requests.setTransformedRequest(intruderRequest);
 
-        generateTemplate(targetUrl, requests, callbacks);
+        generateTemplate(generalSettings, targetUrl, requests);
     }
 
-    private void generateTemplate(URL targetUrl, Requests requests, IBurpExtenderCallbacks callbacks) {
-        final String author = callbacks.loadExtensionSetting(SettingsPanel.AUTHOR_SETTING_NAME);
+    private void generateTemplate(GeneralSettings generalSettings, URL targetUrl, Requests requests) {
+        final String author = generalSettings.loadExtensionSetting(SettingsPanel.AUTHOR_SETTING_NAME);
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Template template = new Template("template-id", info, requests);
         final String normalizedTemplate = Utils.normalizeTemplate(YamlUtil.dump(template));
 
-        final Path configuredNucleiPath = Utils.getConfiguredNucleiPath(callbacks.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME), this.nucleiBinaryName);
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(configuredNucleiPath, targetUrl, normalizedTemplate, this.yamlFieldDescriptionMap, callbacks));
+        final Path configuredNucleiPath = Utils.getConfiguredNucleiPath(generalSettings.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME), this.nucleiBinaryName);
+
+        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, configuredNucleiPath, targetUrl, normalizedTemplate)
+                .withYamlFieldDescriptionMap(this.yamlFieldDescriptionMap)
+                .build();
+
+        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(nucleiGeneratorSettings));
     }
 }

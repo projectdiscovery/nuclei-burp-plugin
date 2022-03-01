@@ -1,6 +1,5 @@
 package io.projectdiscovery.nuclei.gui;
 
-import burp.IBurpExtenderCallbacks;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
@@ -26,42 +25,38 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class TemplateGeneratorWindow extends JFrame {
 
+    private final NucleiGeneratorSettings nucleiGeneratorSettings;
     private JTextArea templateEditor;
     private JTextField commandLineField;
     private AnsiColorTextPane outputPane;
 
-    private final IBurpExtenderCallbacks callbacks;
     private Path templatePath;
     private final Path nucleiPath;
     private final Map<String, String> yamlFieldDescriptionMap;
 
-    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap) {
-        this(nucleiPath, targetUrl, templateYaml, yamlFieldDescriptionMap, null);
-    }
-
-    public TemplateGeneratorWindow(Path nucleiPath, URL targetUrl, String templateYaml, Map<String, String> yamlFieldDescriptionMap, IBurpExtenderCallbacks callbacks) {
+    public TemplateGeneratorWindow(NucleiGeneratorSettings nucleiGeneratorSettings) {
         super("Nuclei Template Generator");
         this.setLayout(new GridBagLayout());
 
-        this.callbacks = callbacks;
-        this.yamlFieldDescriptionMap = yamlFieldDescriptionMap;
-        this.nucleiPath = nucleiPath;
+        this.nucleiPath = nucleiGeneratorSettings.getNucleiPath();
+        this.yamlFieldDescriptionMap = nucleiGeneratorSettings.getYamlFieldDescriptionMap();
+        this.nucleiGeneratorSettings = nucleiGeneratorSettings;
 
         setKeyboardShortcuts();
 
-        final String command = createCommand(nucleiPath, targetUrl);
+        final String command = createCommand(this.nucleiPath, nucleiGeneratorSettings.getTargetUrl());
         cleanupOnClose();
 
         final Container contentPane = this.getContentPane();
         createControlPanel(contentPane, command);
-        createSplitPane(contentPane, templateYaml);
+        createSplitPane(contentPane, nucleiGeneratorSettings.getTemplateYaml());
 
-        this.setJMenuBar(new MenuHelper(this::logError).createMenuBar());
+        this.setJMenuBar(new MenuHelper(this.nucleiGeneratorSettings::logError).createMenuBar());
         this.setLocationRelativeTo(null); // center of the screen
         this.setPreferredSize(new Dimension(800, 600));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
@@ -92,8 +87,8 @@ public class TemplateGeneratorWindow extends JFrame {
                         Files.deleteIfExists(TemplateGeneratorWindow.this.templatePath);
                     }
                 } catch (IOException ex) {
-                    logError(String.format("Could not delete temporary file: %s", TemplateGeneratorWindow.this.templatePath));
-                    logError(ex.getMessage());
+                    TemplateGeneratorWindow.this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", TemplateGeneratorWindow.this.templatePath));
+                    TemplateGeneratorWindow.this.nucleiGeneratorSettings.logError(ex.getMessage());
                 }
 
                 super.windowClosing(e);
@@ -105,7 +100,7 @@ public class TemplateGeneratorWindow extends JFrame {
         try {
             this.templatePath = Files.createTempFile("nuclei", ".yaml");
         } catch (IOException e) {
-            logError("Could not create temporary file: " + e.getMessage());
+            this.nucleiGeneratorSettings.logError(String.format("Could not create temporary file: '%s'.", e.getMessage()));
         }
 
         return String.format("%s -v -t %s -u %s",
@@ -125,7 +120,7 @@ public class TemplateGeneratorWindow extends JFrame {
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> this.commandLineField.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this::logError));
+        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this.nucleiGeneratorSettings::logError));
         setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> {
             deriveFont(this.outputPane, size -> ++size);
             deriveFont(this.templateEditor, size -> ++size);
@@ -175,7 +170,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private Component createOutputPane() {
-        this.outputPane = new AnsiColorTextPane(this::logError);
+        this.outputPane = new AnsiColorTextPane(this.nucleiGeneratorSettings::logError);
         this.outputPane.setEditable(false);
         this.outputPane.setVisible(true);
         this.outputPane.setAutoscrolls(true);
@@ -202,7 +197,7 @@ public class TemplateGeneratorWindow extends JFrame {
                 theme = Theme.load(resourceAsStream);
                 theme.apply(textEditor);
             } catch (IOException e) {
-                logError(e.getMessage());
+                this.nucleiGeneratorSettings.logError(e.getMessage());
             }
         }
 
@@ -235,14 +230,12 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private RSyntaxTextArea createSmartTextEditor(String templateYaml) {
-        if (this.callbacks != null) {
-            // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
-            JTextComponent.removeKeymap("RTextAreaKeymap");
-            UIManager.put("RSyntaxTextAreaUI.actionMap", null);
-            UIManager.put("RSyntaxTextAreaUI.inputMap", null);
-            UIManager.put("RTextAreaUI.actionMap", null);
-            UIManager.put("RTextAreaUI.inputMap", null);
-        }
+        // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
+        JTextComponent.removeKeymap("RTextAreaKeymap");
+        UIManager.put("RSyntaxTextAreaUI.actionMap", null);
+        UIManager.put("RSyntaxTextAreaUI.inputMap", null);
+        UIManager.put("RTextAreaUI.actionMap", null);
+        UIManager.put("RTextAreaUI.inputMap", null);
 
         final boolean experimental = true; // TODO move to settings
         final RSyntaxTextArea textEditor;
@@ -337,7 +330,9 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void saveTemplateToFile() {
-        final Path targetTemplatePath = this.callbacks == null ? getTempPath() : Paths.get(this.callbacks.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME));
+        final Path targetTemplatePath = Optional.ofNullable(this.nucleiGeneratorSettings.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME))
+                                                .map(Paths::get)
+                                                .orElseGet(this::getTempPath);
 
         final String yamlTemplate = this.templateEditor.getText();
         final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
@@ -379,7 +374,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
                 if (option == JFileChooser.APPROVE_OPTION) {
                     final File userSelectedFile = fileChooser.getSelectedFile();
-                    final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this::logError);
+                    final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this.nucleiGeneratorSettings::logError);
                     if (ok) {
                         final String command = this.commandLineField.getText();
                         if (!Utils.isBlank(command) && command.contains(Utils.NUCLEI_BASE_BINARY_NAME)) {
@@ -387,9 +382,9 @@ public class TemplateGeneratorWindow extends JFrame {
                             this.commandLineField.setText(Utils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
                         }
                     } else {
-                        JOptionPane.showMessageDialog(this, "Error while writing file to: " + userSelectedFile, "File write error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, String.format("Error while writing file to: '%s'.", userSelectedFile), "File write error", JOptionPane.ERROR_MESSAGE);
                     }
-                    log("Generated nuclei template saved to: " + userSelectedFile);
+                    this.nucleiGeneratorSettings.log(String.format("Generated nuclei template saved to: '%s'.", userSelectedFile));
                 }
             }
         }
@@ -403,7 +398,7 @@ public class TemplateGeneratorWindow extends JFrame {
         String command = this.commandLineField.getText();
 
         if (!Utils.isBlank(command)) {
-            Utils.writeToFile(this.templateEditor.getText(), this.templatePath, this::logError);
+            Utils.writeToFile(this.templateEditor.getText(), this.templatePath, this.nucleiGeneratorSettings::logError);
 
             this.outputPane.setText(null);
 
@@ -421,23 +416,7 @@ public class TemplateGeneratorWindow extends JFrame {
                                                                      this.outputPane.repaint();
                                                                  })),
                                  exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
-                                 this::logError);
-        }
-    }
-
-    private void log(String message) {
-        System.out.println(message);
-
-        if (Objects.nonNull(this.callbacks)) {
-            this.callbacks.printOutput(message);
-        }
-    }
-
-    private void logError(String message) {
-        System.err.println(message);
-
-        if (Objects.nonNull(this.callbacks)) {
-            this.callbacks.printError(message);
+                                 this.nucleiGeneratorSettings::logError);
         }
     }
 
@@ -460,7 +439,12 @@ public class TemplateGeneratorWindow extends JFrame {
                                 "      status:\n" +
                                 "      - 200\n";
 
-        final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(Paths.get("nuclei"), url, template, SchemaUtils.retrieveYamlFieldWithDescriptions());
+        final GeneralSettings generalSettings = new GeneralSettings.Builder().build();
+        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, Paths.get("nuclei"), url, template)
+                .withYamlFieldDescriptionMap(SchemaUtils.retrieveYamlFieldWithDescriptions())
+                .build();
+
+        final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(nucleiGeneratorSettings);
         templateGeneratorWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 }
