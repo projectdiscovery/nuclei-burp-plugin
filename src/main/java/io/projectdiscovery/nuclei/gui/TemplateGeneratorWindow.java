@@ -115,17 +115,17 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void setKeyboardShortcuts() {
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> this.commandLineField.requestFocus());
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), () -> MenuHelper.openDocumentationLink(this.nucleiGeneratorSettings::logError));
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> {
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), this::executeButtonClick);
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> this.commandLineField.requestFocus());
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(this.nucleiGeneratorSettings::logError));
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> {
             deriveFont(this.outputPane, size -> ++size);
             deriveFont(this.templateEditor, size -> ++size);
         });
-        setKeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> {
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> {
             deriveFont(this.outputPane, size -> --size);
             deriveFont(this.templateEditor, size -> --size);
         });
@@ -135,25 +135,6 @@ public class TemplateGeneratorWindow extends JFrame {
         final Font font = component.getFont();
         final int fontSize = font.getSize();
         component.setFont(font.deriveFont((float) fontSizeModifier.apply(fontSize)));
-    }
-
-    private void setKeyboardShortcut(KeyStroke keyStroke, Action action) {
-        final InputMap frameInputMap = this.rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        final ActionMap frameActionMap = this.rootPane.getActionMap();
-
-        final String shortcutKey = keyStroke.toString();
-        frameInputMap.put(keyStroke, shortcutKey);
-
-        frameActionMap.put(shortcutKey, action);
-    }
-
-    private void setKeyboardShortcut(KeyStroke keyStroke, Runnable actionPerformed) {
-        setKeyboardShortcut(keyStroke, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                actionPerformed.run();
-            }
-        });
     }
 
     private static class CloseAction extends AbstractAction {
