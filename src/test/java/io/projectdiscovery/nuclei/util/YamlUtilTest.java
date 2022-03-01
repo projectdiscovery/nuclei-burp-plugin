@@ -27,11 +27,9 @@ package io.projectdiscovery.nuclei.util;
 
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
+import io.projectdiscovery.nuclei.yaml.YamlUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.Yaml;
-
-import java.util.Map;
 
 class YamlUtilTest {
 
@@ -113,26 +111,25 @@ class YamlUtilTest {
     @Test
     void testDeserializeYaml() {
         final String expected = "id: template-id\n" +
+                                "\n" +
                                 "info:\n" +
-                                "  author: forgedhallpass\n" +
-                                "  description: description\n" +
                                 "  name: Template Name\n" +
+                                "  author: forgedhallpass\n" +
+                                "  severity: high\n" +
+                                "  description: description\n" +
                                 "  reference: https://\n" +
-                                "  severity: info\n" +
                                 "  tags: tags\n" +
+                                "\n" +
                                 "requests:\n" +
-                                "- matchers-condition: or\n" +
+                                "- raw:\n" +
+                                "  - |-\n" +
+                                "    GET / HTTP/1.1\n" +
+                                "    Host: {{Hostname}}\n" +
+                                "    Accept: */*\n" +
+                                "    HeaderOne: {{param1}}\n" +
+                                "    HeaderTwo: {{param2}}\n" +
+                                "\n" +
                                 "  attack: clusterbomb\n" +
-                                "  matchers:\n" +
-                                "  - part: all\n" +
-                                "    type: word\n" +
-                                "    words:\n" +
-                                "    - word1\n" +
-                                "    - word2\n" +
-                                "  - status:\n" +
-                                "    - 200\n" +
-                                "    - 500\n" +
-                                "    type: status\n" +
                                 "  payloads:\n" +
                                 "    param1:\n" +
                                 "    - headerOne\n" +
@@ -140,17 +137,22 @@ class YamlUtilTest {
                                 "    param2:\n" +
                                 "    - headerTwo\n" +
                                 "    - two\n" +
-                                "  raw:\n" +
-                                "  - |-\n" +
-                                "    GET / HTTP/1.1\n" +
-                                "    Host: {{Hostname}}\n" +
-                                "    Accept: */*\n" +
-                                "    HeaderOne: {{param1}}\n" +
-                                "    HeaderTwo: {{param2}}\n";
+                                "\n" +
+                                "  matchers-condition: or\n" +
+                                "  matchers:\n" +
+                                "  - type: word\n" +
+                                "    part: all\n" +
+                                "    condition: and\n" +
+                                "    words:\n" +
+                                "    - word1\n" +
+                                "    - word2\n" +
+                                "  - type: status\n" +
+                                "    status:\n" +
+                                "    - 200\n" +
+                                "    - 500\n";
 
-
-        final Yaml yaml = new Yaml();
-        final Map<?, ?> map = yaml.loadAs(expected, Map.class);
+        final Template template = YamlUtil.load(expected, Template.class);
+        Assertions.assertEquals(expected, Utils.normalizeTemplate(YamlUtil.dump(template)));
     }
 
     @Test

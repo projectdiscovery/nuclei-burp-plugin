@@ -32,7 +32,6 @@ import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 @YamlPropertyOrder({"name", "author", "severity", "description", "reference", "classification", "tags"})
 public class Info {
 
-    @YamlProperty
     public enum Severity {
         info, low, medium, high, critical
     }
@@ -61,7 +60,7 @@ public class Info {
     @YamlProperty
     private final String tags = "tags";
     // @YamlProperty
-    private final Classification classification = new Classification();
+    private Classification classification;
     @YamlProperty
     private final String description = "description";
 
@@ -72,5 +71,33 @@ public class Info {
         this.name = name;
         this.author = author;
         this.severity = severity;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getAuthor() {
+        return this.author;
+    }
+
+    public Severity getSeverity() {
+        return this.severity;
+    }
+
+    public String getReference() {
+        return this.reference;
+    }
+
+    public String getTags() {
+        return this.tags;
+    }
+
+    public Classification getClassification() {
+        return this.classification;
+    }
+
+    public String getDescription() {
+        return this.description;
     }
 }

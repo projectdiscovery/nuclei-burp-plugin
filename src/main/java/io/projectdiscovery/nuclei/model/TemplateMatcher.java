@@ -28,6 +28,8 @@ package io.projectdiscovery.nuclei.model;
 @SuppressWarnings("unused")
 public interface TemplateMatcher {
 
+    String TYPE_FIELD_NAME = "type";
+
     enum Part {
         header, body, all
     }

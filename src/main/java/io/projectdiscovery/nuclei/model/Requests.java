@@ -36,17 +36,15 @@ import java.util.stream.Stream;
 @YamlPropertyOrder({"raw", "attack", "payloads", "matchers-condition", "matchers"})
 public class Requests {
 
-    @YamlProperty("matchers-condition")
     public enum MatchersCondition {
         and, or
     }
 
-    @YamlProperty
     public enum AttackType {
         batteringram, pitchfork, clusterbomb
     }
 
-    @YamlProperty
+    @YamlProperty("matchers-condition")
     private MatchersCondition matchersCondition;
     @YamlProperty
     private List<String> raw;

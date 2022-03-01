@@ -23,43 +23,41 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.nuclei.yaml;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import org.yaml.snakeyaml.introspector.FieldProperty;
+import org.yaml.snakeyaml.introspector.GenericProperty;
 
-import java.util.Arrays;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.List;
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+class CustomNameFieldProperty extends GenericProperty {
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    private final FieldProperty fieldProperty;
 
-    public Template() {
+    CustomNameFieldProperty(String name, Field field) {
+        super(name, field.getType(), field.getGenericType());
+        this.fieldProperty = new FieldProperty(field);
     }
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
+    @Override
+    public void set(Object object, Object value) throws Exception {
+        this.fieldProperty.set(object, value);
     }
 
-    public String getId() {
-        return this.id;
+    @Override
+    public Object get(Object object) {
+        return this.fieldProperty.get(object);
     }
 
-    public Info getInfo() {
-        return this.info;
+    @Override
+    public List<Annotation> getAnnotations() {
+        return this.fieldProperty.getAnnotations();
     }
 
-    public List<Requests> getRequests() {
-        return this.requests;
+    @Override
+    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
+        return this.fieldProperty.getAnnotation(annotationType);
     }
 }

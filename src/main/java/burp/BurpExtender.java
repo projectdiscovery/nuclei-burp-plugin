@@ -31,7 +31,7 @@ import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
-import io.projectdiscovery.nuclei.util.YamlUtil;
+import io.projectdiscovery.nuclei.yaml.YamlUtil;
 
 import javax.swing.*;
 import java.awt.*;
