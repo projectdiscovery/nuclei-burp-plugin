@@ -25,7 +25,8 @@
 
 package io.projectdiscovery.nuclei.gui;
 
-import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.nuclei.util.NucleiUtils;
+import io.projectdiscovery.utils.Utils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -230,11 +231,11 @@ public class SettingsPanel extends JPanel {
         try {
             switch (configurationName) {
                 case NUCLEI_PATH_SETTING_NAME: {
-                    Utils.calculateNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
+                    NucleiUtils.calculateNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
                     break;
                 }
                 case TEMPLATE_PATH_SETTING_NAME: {
-                    Utils.detectDefaultTemplatePath().ifPresent(configurationField::setText);
+                    NucleiUtils.detectDefaultTemplatePath().ifPresent(configurationField::setText);
                     break;
                 }
                 case AUTHOR_SETTING_NAME: {

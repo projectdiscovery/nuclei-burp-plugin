@@ -25,6 +25,11 @@
 
 package io.projectdiscovery.nuclei.gui;
 
+import io.projectdiscovery.utils.Utils;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -48,6 +53,20 @@ public class GeneralSettings {
         this.errorConsumer = builder.errorConsumer;
         this.extensionSettingSaver = builder.extensionSettingSaver;
         this.extensionSettingLoader = builder.extensionSettingLoader;
+    }
+
+    public String getAuthor() {
+        return loadExtensionSetting(SettingsPanel.AUTHOR_SETTING_NAME);
+    }
+
+    Optional<Path> getNucleiPathSetting() {
+        return Optional.ofNullable(loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME)).map(Paths::get);
+    }
+
+    public Path getTemplatePath() {
+        return Optional.ofNullable(loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME))
+                       .map(Paths::get)
+                       .orElseGet(Utils::getTempPath);
     }
 
     public String loadExtensionSetting(String key) {

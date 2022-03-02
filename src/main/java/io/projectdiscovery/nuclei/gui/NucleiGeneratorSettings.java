@@ -25,27 +25,27 @@
 
 package io.projectdiscovery.nuclei.gui;
 
+import io.projectdiscovery.nuclei.util.NucleiUtils;
+
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Map;
 
 public final class NucleiGeneratorSettings extends GeneralSettings {
 
-    private final Path nucleiPath;
     private final URL targetUrl;
     private final String templateYaml;
     private final Map<String, String> yamlFieldDescriptionMap;
 
     private NucleiGeneratorSettings(GeneralSettings generalSettings, Builder builder) {
         super(generalSettings);
-        this.nucleiPath = builder.nucleiPath;
         this.targetUrl = builder.targetUrl;
         this.templateYaml = builder.templateYaml;
         this.yamlFieldDescriptionMap = builder.yamlFieldDescriptionMap;
     }
 
     public Path getNucleiPath() {
-        return this.nucleiPath;
+        return NucleiUtils.getConfiguredNucleiPath(getNucleiPathSetting(), NucleiUtils.getNucleiBinaryName());
     }
 
     public URL getTargetUrl() {
@@ -62,14 +62,12 @@ public final class NucleiGeneratorSettings extends GeneralSettings {
 
     public static final class Builder {
         private final GeneralSettings generalSettings;
-        private final Path nucleiPath;
         private final URL targetUrl;
         private final String templateYaml;
         private Map<String, String> yamlFieldDescriptionMap;
 
-        public Builder(GeneralSettings generalSettings, Path nucleiPath, URL targetUrl, String templateYaml) {
+        public Builder(GeneralSettings generalSettings, URL targetUrl, String templateYaml) {
             this.generalSettings = generalSettings;
-            this.nucleiPath = nucleiPath;
             this.targetUrl = targetUrl;
             this.templateYaml = templateYaml;
         }

@@ -152,7 +152,7 @@ class YamlUtilTest {
                                 "    - 500\n";
 
         final Template template = YamlUtil.load(expected, Template.class);
-        Assertions.assertEquals(expected, Utils.normalizeTemplate(YamlUtil.dump(template)));
+        Assertions.assertEquals(expected, TemplateUtils.normalizeTemplate(YamlUtil.dump(template)));
     }
 
     @Test
@@ -165,7 +165,7 @@ class YamlUtilTest {
                                "Pragma: no-cache\n" +
                                "Cache-Control: no-cache\n";
 
-        final TransformedRequest transformedRequest = Utils.transformRequestWithPayloads(Requests.AttackType.batteringram, request);
+        final TransformedRequest transformedRequest = TemplateUtils.transformRequestWithPayloads(Requests.AttackType.batteringram, request);
         final Requests requests = new Requests();
         requests.setTransformedRequest(transformedRequest);
         requests.addPayloads(Requests.AttackType.batteringram, "param1", "Chrome");
@@ -213,7 +213,7 @@ class YamlUtilTest {
                                   "HeaderTwo: §headerTwo§";
         final Requests requests = createRequests(rawRequest);
 
-        requests.setTransformedRequest(Utils.transformRequestWithPayloads(Requests.AttackType.clusterbomb, rawRequest));
+        requests.setTransformedRequest(TemplateUtils.transformRequestWithPayloads(Requests.AttackType.clusterbomb, rawRequest));
         requests.addPayloads(Requests.AttackType.clusterbomb, "param1", "one");
         requests.addPayloads(Requests.AttackType.clusterbomb, "param2", "two");
 

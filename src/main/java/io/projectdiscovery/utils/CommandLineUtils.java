@@ -23,7 +23,7 @@
  *
  */
 
-package io.projectdiscovery.nuclei.util;
+package io.projectdiscovery.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -25,7 +25,7 @@
 
 package io.projectdiscovery.nuclei.gui.editor;
 
-import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.nuclei.util.TemplateUtils;
 import org.fife.ui.rsyntaxtextarea.*;
 
 import javax.swing.text.Segment;
@@ -77,7 +77,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                     }
                 }
             } else {
-                if (currentFragment.startsWith(Utils.PAYLOAD_START_MARKER) && currentFragment.endsWith(Utils.PAYLOAD_END_MARKER)) {
+                if (currentFragment.startsWith(TemplateUtils.PAYLOAD_START_MARKER) && currentFragment.endsWith(TemplateUtils.PAYLOAD_END_MARKER)) {
                     this.currentTokenType = TokenTypes.FUNCTION;
                 }
             }

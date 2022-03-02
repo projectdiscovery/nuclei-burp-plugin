@@ -23,7 +23,7 @@
  *
  */
 
-package io.projectdiscovery.nuclei.util;
+package io.projectdiscovery.utils;
 
 public class ExecutionResult<T> {
     private final int exitCode;

@@ -25,7 +25,7 @@
 
 package io.projectdiscovery.nuclei.gui;
 
-import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.utils.Utils;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;

@@ -2,10 +2,11 @@ package io.projectdiscovery.nuclei.gui;
 
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
-import io.projectdiscovery.nuclei.util.CommandLineUtils;
-import io.projectdiscovery.nuclei.util.ExecutionResult;
+import io.projectdiscovery.nuclei.util.NucleiUtils;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
-import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.utils.CommandLineUtils;
+import io.projectdiscovery.utils.ExecutionResult;
+import io.projectdiscovery.utils.Utils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
@@ -25,9 +26,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
@@ -89,7 +88,7 @@ public class TemplateGeneratorWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
-                    if (TemplateGeneratorWindow.this.templatePath.startsWith(getTempPath())) {
+                    if (TemplateGeneratorWindow.this.templatePath.startsWith(Utils.getTempPath())) {
                         Files.deleteIfExists(TemplateGeneratorWindow.this.templatePath);
                     }
                 } catch (IOException ex) {
@@ -331,7 +330,7 @@ public class TemplateGeneratorWindow extends JFrame {
             try {
                 final Path nucleiPath = generalSettings.getNucleiPath();
                 if (nucleiPath != null) {
-                    final ExecutionResult<Map<String, String>> executionResult = CommandLineUtils.executeCommand(new String[]{nucleiPath.toString(), "-help"}, Utils::getCliArguments);
+                    final ExecutionResult<Map<String, String>> executionResult = CommandLineUtils.executeCommand(new String[]{nucleiPath.toString(), "-help"}, NucleiUtils::getCliArguments);
                     if (executionResult.isSuccessful()) {
                         CLI_ARGUMENT_MAP = executionResult.getResult();
                     }
@@ -343,9 +342,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private void saveTemplateToFile() {
-        final Path targetTemplatePath = Optional.ofNullable(this.nucleiGeneratorSettings.loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME))
-                                                .map(Paths::get)
-                                                .orElseGet(this::getTempPath);
+        final Path targetTemplatePath = this.nucleiGeneratorSettings.getTemplatePath();
 
         final String yamlTemplate = this.templateEditor.getText();
         final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
@@ -390,9 +387,9 @@ public class TemplateGeneratorWindow extends JFrame {
                     final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this.nucleiGeneratorSettings::logError);
                     if (ok) {
                         final String command = this.commandLineField.getText();
-                        if (!Utils.isBlank(command) && command.contains(Utils.NUCLEI_BASE_BINARY_NAME)) {
+                        if (!Utils.isBlank(command) && command.contains(NucleiUtils.NUCLEI_BASE_BINARY_NAME)) {
                             this.templatePath = userSelectedFile.toPath();
-                            this.commandLineField.setText(Utils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
+                            this.commandLineField.setText(NucleiUtils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
                         }
                     } else {
                         JOptionPane.showMessageDialog(this, String.format("Error while writing file to: '%s'.", userSelectedFile), "File write error", JOptionPane.ERROR_MESSAGE);
@@ -401,10 +398,6 @@ public class TemplateGeneratorWindow extends JFrame {
                 }
             }
         }
-    }
-
-    private Path getTempPath() {
-        return Paths.get(System.getProperty("java.io.tmpdir"));
     }
 
     private void executeButtonClick() {
@@ -417,7 +410,7 @@ public class TemplateGeneratorWindow extends JFrame {
 
             final boolean noColor = command.contains(" -nc") || command.contains(" -no-color");
 
-            if (command.startsWith(Utils.NUCLEI_BASE_BINARY_NAME)) {
+            if (command.startsWith(NucleiUtils.NUCLEI_BASE_BINARY_NAME)) {
                 command = command.replaceFirst("nuclei(\\.exe)?", this.nucleiPath.toString());
             }
 
@@ -453,7 +446,7 @@ public class TemplateGeneratorWindow extends JFrame {
                                 "      - 200\n";
 
         final GeneralSettings generalSettings = new GeneralSettings.Builder().build();
-        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, Paths.get("nuclei"), url, template)
+        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, url, template)
                 .withYamlFieldDescriptionMap(SchemaUtils.retrieveYamlFieldWithDescriptions())
                 .build();
 

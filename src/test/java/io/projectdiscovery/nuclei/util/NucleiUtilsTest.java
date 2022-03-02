@@ -36,60 +36,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-class UtilsTest {
+class NucleiUtilsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"nuclei -t \"c:/directory name with space/another one/something.yaml\" -u http://localhost",
                             "nuclei -t 'c:/directory name with space/another one/something.yaml' -u http://localhost",
                             "nuclei -t 'c:/temp/something.yaml' -u http://localhost"})
     void testNucleiTemplateParameterPattern(String testCase) {
-        Assertions.assertEquals("nuclei -t test.yaml -u http://localhost", Utils.replaceTemplatePathInCommand(testCase, "test.yaml"));
-    }
-
-    @Test
-    void testTemplateNormalization() {
-        final String yamlTemplate = "id: template-id\n" +
-                                    "info:\n" +
-                                    "  name: Template Name\n" +
-                                    "  author: istvan\n" +
-                                    "  severity: info\n" +
-                                    "requests:\n" +
-                                    "- raw:\n" +
-                                    "  - |+\n" +
-                                    "    GET / HTTP/1.1\n" +
-                                    "    Host: http://localhost:8080\n" +
-                                    "  matchers-condition: and\n" +
-                                    "  matchers:\n" +
-                                    "  - type: word\n" +
-                                    "    part: body\n" +
-                                    "    condition: or\n" +
-                                    "    words:\n" +
-                                    "    - f=\"bin.bin\">bin.bin</a></li>\n" +
-                                    "    - <li><a href=\"dns.yaml\">dns.yaml</a></li>";
-
-        final String expected = "id: template-id\n" +
-                                "\n" +
-                                "info:\n" +
-                                "  name: Template Name\n" +
-                                "  author: istvan\n" +
-                                "  severity: info\n" +
-                                "\n" +
-                                "requests:\n" +
-                                "- raw:\n" +
-                                "  - |+\n" +
-                                "    GET / HTTP/1.1\n" +
-                                "    Host: http://localhost:8080\n" +
-                                "\n" +
-                                "  matchers-condition: and\n" +
-                                "  matchers:\n" +
-                                "  - type: word\n" +
-                                "    part: body\n" +
-                                "    condition: or\n" +
-                                "    words:\n" +
-                                "    - f=\"bin.bin\">bin.bin</a></li>\n" +
-                                "    - <li><a href=\"dns.yaml\">dns.yaml</a></li>";
-
-        Assertions.assertEquals(expected, Utils.normalizeTemplate(yamlTemplate));
+        Assertions.assertEquals("nuclei -t test.yaml -u http://localhost", NucleiUtils.replaceTemplatePathInCommand(testCase, "test.yaml"));
     }
 
     @Test
@@ -112,7 +66,7 @@ class UtilsTest {
                                          "   -validate                    validate the passed templates to nuclei\n" +
                                          "\n";
 
-        final Map<String, String> computedCliArgumentMap = Utils.getCliArguments(Arrays.stream(nucleiHelpSnippet.split("\n")));
+        final Map<String, String> computedCliArgumentMap = NucleiUtils.getCliArguments(Arrays.stream(nucleiHelpSnippet.split("\n")));
 
         final Map<String, String> expected = Stream.of(Map.entry("-u, -target target URLs/hosts to scan", "-u"),
                                                        Map.entry("-l, -list path to file containing a list of target URLs/hosts to scan (one per line)", "-l"),

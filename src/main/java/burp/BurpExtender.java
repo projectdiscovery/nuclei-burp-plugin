@@ -32,7 +32,7 @@ import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
-import io.projectdiscovery.nuclei.util.Utils;
+import io.projectdiscovery.nuclei.util.TemplateUtils;
 import io.projectdiscovery.nuclei.yaml.YamlUtil;
 
 import javax.swing.*;
@@ -40,7 +40,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,6 @@ public class BurpExtender implements burp.IBurpExtender {
     private static final String DEFAULT_CONTEXT_MENU_TEXT = "Generate template";
 
     private Map<String, String> yamlFieldDescriptionMap;
-    private String nucleiBinaryName;
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
@@ -70,8 +68,6 @@ public class BurpExtender implements burp.IBurpExtender {
         callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
 
         callbacks.addSuiteTab(createConfigurationTab(generalSettings));
-
-        this.nucleiBinaryName = Utils.getNucleiBinaryName();
     }
 
     private void initializeNucleiYamlSchema(GeneralSettings generalSettings) {
@@ -147,7 +143,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private List<JMenuItem> generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request) {
         final List<JMenuItem> menuItems;
-        if (request.chars().filter(c -> c == Utils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
+        if (request.chars().filter(c -> c == TemplateUtils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
             menuItems = List.of(messageEditorContextMenu(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Requests.AttackType.batteringram), DEFAULT_CONTEXT_MENU_TEXT));
         } else {
             menuItems = Arrays.stream(Requests.AttackType.values())
@@ -167,8 +163,8 @@ public class BurpExtender implements burp.IBurpExtender {
         return List.of(messageEditorContextMenu(() -> {
             final int[] selectionBounds = invocation.getSelectionBounds();
             final StringBuilder requestModifier = new StringBuilder(helpers.bytesToString(requestBytes));
-            requestModifier.insert(selectionBounds[0], Utils.INTRUDER_PAYLOAD_MARKER);
-            requestModifier.insert(selectionBounds[1] + 1, Utils.INTRUDER_PAYLOAD_MARKER);
+            requestModifier.insert(selectionBounds[0], TemplateUtils.INTRUDER_PAYLOAD_MARKER);
+            requestModifier.insert(selectionBounds[1] + 1, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
 
             generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Requests.AttackType.batteringram);
         }, DEFAULT_CONTEXT_MENU_TEXT));
@@ -179,7 +175,7 @@ public class BurpExtender implements burp.IBurpExtender {
         final byte[] requestBytes = requestResponse.getRequest();
 
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
-        final TemplateMatcher contentMatcher = Utils.createContentMatcher(responseBytes, responseInfo.getBodyOffset(), selectionBounds, helpers::bytesToString);
+        final TemplateMatcher contentMatcher = TemplateUtils.createContentMatcher(responseBytes, responseInfo.getBodyOffset(), selectionBounds, helpers::bytesToString);
         final int statusCode = responseInfo.getStatusCode();
 
         final Requests requests = new Requests();
@@ -191,22 +187,20 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private void generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request, Requests.AttackType attackType) {
         final Requests requests = new Requests();
-        final TransformedRequest intruderRequest = Utils.transformRequestWithPayloads(attackType, request);
+        final TransformedRequest intruderRequest = TemplateUtils.transformRequestWithPayloads(attackType, request);
         requests.setTransformedRequest(intruderRequest);
 
         generateTemplate(generalSettings, targetUrl, requests);
     }
 
     private void generateTemplate(GeneralSettings generalSettings, URL targetUrl, Requests requests) {
-        final String author = generalSettings.loadExtensionSetting(SettingsPanel.AUTHOR_SETTING_NAME);
+        final String author = generalSettings.getAuthor();
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
         final Template template = new Template("template-id", info, requests);
-        final String normalizedTemplate = Utils.normalizeTemplate(YamlUtil.dump(template));
+        final String normalizedTemplate = TemplateUtils.normalizeTemplate(YamlUtil.dump(template));
 
-        final Path configuredNucleiPath = Utils.getConfiguredNucleiPath(generalSettings.loadExtensionSetting(SettingsPanel.NUCLEI_PATH_SETTING_NAME), this.nucleiBinaryName);
-
-        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, configuredNucleiPath, targetUrl, normalizedTemplate)
+        final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, targetUrl, normalizedTemplate)
                 .withYamlFieldDescriptionMap(this.yamlFieldDescriptionMap)
                 .build();
 

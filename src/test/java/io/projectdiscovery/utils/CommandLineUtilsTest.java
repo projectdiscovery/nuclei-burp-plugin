@@ -23,7 +23,7 @@
  *
  */
 
-package io.projectdiscovery.nuclei.util;
+package io.projectdiscovery.utils;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
