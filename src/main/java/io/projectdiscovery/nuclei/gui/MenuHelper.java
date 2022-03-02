@@ -25,8 +25,6 @@
 
 package io.projectdiscovery.nuclei.gui;
 
-import io.projectdiscovery.nuclei.util.Utils;
-
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.event.KeyEvent;
@@ -68,7 +66,7 @@ public final class MenuHelper {
 
     public static void openDocumentationLink(Consumer<String> errorMessageConsumer) {
         try {
-            Utils.openWebPage(TEMPLATE_DOCUMENTATION_URL);
+            SwingUtils.openWebPage(TEMPLATE_DOCUMENTATION_URL);
         } catch (IOException | URISyntaxException e) {
             errorMessageConsumer.accept("Launching the default browser is not allowed: " + e.getMessage());
         }
@@ -133,7 +131,7 @@ public final class MenuHelper {
             addHyperlinkListener(e -> {
                 if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED)) {
                     try {
-                        Utils.openWebPage(e.getURL());
+                        SwingUtils.openWebPage(e.getURL());
                     } catch (IOException | URISyntaxException ex) {
                         MenuHelper.this.errorMessageConsumer.accept("Launching the default browser is not allowed: " + ex.getMessage());
                     }

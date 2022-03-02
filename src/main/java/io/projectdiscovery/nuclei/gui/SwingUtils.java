@@ -26,11 +26,31 @@
 package io.projectdiscovery.nuclei.gui;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public final class SwingUtils {
 
     private SwingUtils() {
+    }
+
+    public static void openWebPage(String url) throws IOException, URISyntaxException {
+        openWebPage(new URL(url).toURI());
+    }
+
+    public static void openWebPage(URL url) throws IOException, URISyntaxException {
+        openWebPage(url.toURI());
+    }
+
+    public static void openWebPage(URI uri) throws IOException {
+        final Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+            desktop.browse(uri);
+        }
     }
 
     static void setKeyboardShortcut(JComponent rootPane, int keyCode, Runnable actionPerformed) {

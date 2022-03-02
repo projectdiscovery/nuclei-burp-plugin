@@ -8,20 +8,13 @@ import io.projectdiscovery.nuclei.model.TemplateMatcher;
 import io.projectdiscovery.nuclei.model.Word;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 
-import java.awt.*;
 import java.io.*;
 import java.lang.reflect.Type;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -52,69 +45,6 @@ public final class Utils {
     private Utils() {
     }
 
-    public static void asyncExecuteCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
-        final String[] commandParts = stringCommandToChunks(command);
-        asyncExecuteCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
-    }
-
-    static String[] stringCommandToChunks(String command) {
-        return command.replaceAll("^\"", "")
-                      .split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
-    }
-
-    public static <T> ExecutionResult<T> executeCommand(String[] command, Function<BufferedReader, T> processOutputFunction) throws ExecutionException {
-        final ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true);
-
-        try {
-            final Process process = processBuilder.start();
-            process.getOutputStream().close(); // close the process's input stream, because otherwise it will hang waiting for an input
-
-            final T result;
-            try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                result = processOutputFunction.apply(bufferedReader);
-            }
-
-            return new ExecutionResult<>(process.waitFor(), result);
-        } catch (InterruptedException | IOException ex) {
-            throw new ExecutionException(ex);
-        }
-    }
-
-    public static void asyncExecuteCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
-        final ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true);
-
-        final Future<Integer> commandFuture = Executors.newSingleThreadExecutor().submit(() -> {
-            final Process process;
-            try {
-                process = processBuilder.start();
-                process.getOutputStream().close(); // close the process's input stream, because otherwise it will hang waiting for an input
-
-                try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    processOutputConsumer.accept(bufferedReader);
-                }
-
-                return process.waitFor();
-            } catch (InterruptedException | IOException ex) {
-                errorHandler.accept(ex.getMessage());
-                return -1;
-            }
-        });
-
-        Executors.newSingleThreadExecutor().submit(() -> {
-            int commandCode;
-            try {
-                commandCode = commandFuture.get();
-            } catch (InterruptedException | ExecutionException e) {
-                commandCode = -1;
-                errorHandler.accept(e.getMessage());
-            }
-
-            exitCodeConsumer.accept(commandCode);
-        });
-    }
-
     public static boolean writeToFile(String content, Path filePath, Consumer<String> logger) {
         try (final FileWriter fileWriter = new FileWriter(filePath.toFile())) {
             fileWriter.write(content);
@@ -128,21 +58,6 @@ public final class Utils {
 
     public static boolean isBlank(String input) {
         return input == null || input.trim().equals("");
-    }
-
-    public static void openWebPage(String url) throws IOException, URISyntaxException {
-        openWebPage(new URL(url).toURI());
-    }
-
-    public static void openWebPage(URL url) throws IOException, URISyntaxException {
-        openWebPage(url.toURI());
-    }
-
-    public static void openWebPage(URI uri) throws IOException {
-        final Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-            desktop.browse(uri);
-        }
     }
 
     public static boolean isAsciiPrintableNewLine(byte[] input) {

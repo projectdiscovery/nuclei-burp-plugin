@@ -2,6 +2,7 @@ package io.projectdiscovery.nuclei.gui;
 
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
+import io.projectdiscovery.nuclei.util.CommandLineUtils;
 import io.projectdiscovery.nuclei.util.ExecutionResult;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
@@ -330,7 +331,7 @@ public class TemplateGeneratorWindow extends JFrame {
             try {
                 final Path nucleiPath = generalSettings.getNucleiPath();
                 if (nucleiPath != null) {
-                    final ExecutionResult<Map<String, String>> executionResult = Utils.executeCommand(new String[]{nucleiPath.toString(), "-help"}, Utils::getCliArguments);
+                    final ExecutionResult<Map<String, String>> executionResult = CommandLineUtils.executeCommand(new String[]{nucleiPath.toString(), "-help"}, Utils::getCliArguments);
                     if (executionResult.isSuccessful()) {
                         CLI_ARGUMENT_MAP = executionResult.getResult();
                     }
@@ -420,15 +421,15 @@ public class TemplateGeneratorWindow extends JFrame {
                 command = command.replaceFirst("nuclei(\\.exe)?", this.nucleiPath.toString());
             }
 
-            Utils.asyncExecuteCommand(command,
-                                      bufferedReader -> bufferedReader.lines()
-                                                                      .map(line -> line + "\n")
-                                                                      .forEach(line -> SwingUtilities.invokeLater(() -> {
-                                                                          this.outputPane.appendText(line, noColor);
-                                                                          this.outputPane.repaint();
-                                                                      })),
-                                      exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
-                                      this.nucleiGeneratorSettings::logError);
+            CommandLineUtils.asyncExecuteCommand(command,
+                                                 bufferedReader -> bufferedReader.lines()
+                                                                                 .map(line -> line + "\n")
+                                                                                 .forEach(line -> SwingUtilities.invokeLater(() -> {
+                                                                                     this.outputPane.appendText(line, noColor);
+                                                                                     this.outputPane.repaint();
+                                                                                 })),
+                                                 exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
+                                                 this.nucleiGeneratorSettings::logError);
         }
     }
 
