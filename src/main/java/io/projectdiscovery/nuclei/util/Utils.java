@@ -40,6 +40,7 @@ public final class Utils {
     public static final String PAYLOAD_END_MARKER = "}}";
 
     public static final char INTRUDER_PAYLOAD_MARKER = '§';
+    private static final Pattern HELP_LINE_REGEX = Pattern.compile("(?:\t| {3})(-[a-z-]+)(?:, (-[a-z-]+))?(?: [a-z-\\[\\]]+)?\\s+(.*)");
     private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern.compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
 
     private static final char CR = '\r';
@@ -51,9 +52,9 @@ public final class Utils {
     private Utils() {
     }
 
-    public static void executeCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
+    public static void asyncExecuteCommand(String command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
         final String[] commandParts = stringCommandToChunks(command);
-        executeCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
+        asyncExecuteCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
     }
 
     static String[] stringCommandToChunks(String command) {
@@ -61,7 +62,26 @@ public final class Utils {
                       .split("\"?( |$)(?=(([^\"]*\"){2})*[^\"]*$)\"?");
     }
 
-    public static void executeCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
+    public static <T> ExecutionResult<T> executeCommand(String[] command, Function<BufferedReader, T> processOutputFunction) throws ExecutionException {
+        final ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
+
+        try {
+            final Process process = processBuilder.start();
+            process.getOutputStream().close(); // close the process's input stream, because otherwise it will hang waiting for an input
+
+            final T result;
+            try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                result = processOutputFunction.apply(bufferedReader);
+            }
+
+            return new ExecutionResult<>(process.waitFor(), result);
+        } catch (InterruptedException | IOException ex) {
+            throw new ExecutionException(ex);
+        }
+    }
+
+    public static void asyncExecuteCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
         final ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
 
@@ -217,6 +237,27 @@ public final class Utils {
 
         return attackType == Requests.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
                                                               : handleMultiPayloadAttackTypes(attackType, request, matcher);
+    }
+
+    public static Map<String, String> getCliArguments(BufferedReader bufferedReader) {
+        return getCliArguments(bufferedReader.lines());
+    }
+
+    public static Map<String, String> getCliArguments(Stream<String> nucleiHelpStream) {
+        return nucleiHelpStream.filter(line -> line.startsWith("   -"))
+                               .map(Utils::createCliArgument)
+                               .filter(Objects::nonNull)
+                               .collect(Collectors.toMap(CliArgument::toString,
+                                                         CliArgument::getShortName,
+                                                         (a, b) -> a,
+                                                         LinkedHashMap::new));
+    }
+
+    private static CliArgument createCliArgument(String line) {
+        final Matcher matcher = HELP_LINE_REGEX.matcher(line);
+        return matcher.matches() ? matcher.groupCount() == 3 ? new CliArgument(matcher.group(1), matcher.group(2), matcher.group(3))
+                                                             : new CliArgument(matcher.group(1), matcher.group(2))
+                                 : null;
     }
 
     private static TransformedRequest handleMultiPayloadAttackTypes(Requests.AttackType attackType, String request, Matcher matcher) {

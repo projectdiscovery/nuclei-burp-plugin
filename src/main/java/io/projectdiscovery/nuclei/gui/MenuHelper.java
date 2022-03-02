@@ -113,6 +113,7 @@ public final class MenuHelper {
                     "Ctrl + Enter: Execute",
                     "Ctrl + Shift + E: Jump to template editor",
                     "Ctrl + L: Jump to CLI input field",
+                    "Ctrl + R: Show CLI argument helper",
                     "Ctrl + S: Save the current template",
                     "Ctrl + Plus/Minus: Increase/decrease font size",
                     "Ctrl + Q: Quit",

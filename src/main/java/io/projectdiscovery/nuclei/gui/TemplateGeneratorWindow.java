@@ -2,6 +2,7 @@ package io.projectdiscovery.nuclei.gui;
 
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
+import io.projectdiscovery.nuclei.util.ExecutionResult;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.Utils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 public class TemplateGeneratorWindow extends JFrame {
@@ -38,6 +40,7 @@ public class TemplateGeneratorWindow extends JFrame {
     private Path templatePath;
     private final Path nucleiPath;
     private final Map<String, String> yamlFieldDescriptionMap;
+    private static Map<String, String> CLI_ARGUMENT_MAP;
 
     public TemplateGeneratorWindow(NucleiGeneratorSettings nucleiGeneratorSettings) {
         super("Nuclei Template Generator");
@@ -55,6 +58,8 @@ public class TemplateGeneratorWindow extends JFrame {
         final Container contentPane = this.getContentPane();
         createControlPanel(contentPane, command);
         createSplitPane(contentPane, nucleiGeneratorSettings.getTemplateYaml());
+
+        initializeNucleiCliArgumentMap(nucleiGeneratorSettings);
 
         this.setJMenuBar(new MenuHelper(this.nucleiGeneratorSettings::logError).createMenuBar());
         this.setLocationRelativeTo(null); // center of the screen
@@ -250,6 +255,16 @@ public class TemplateGeneratorWindow extends JFrame {
         filterableJComboBox.setPreferredSize(new Dimension(200, 25));
 
         final JTextField textField = filterableJComboBox.getTextField();
+
+        SwingUtils.setKeyboardShortcut(textField, KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK), () -> {
+            if (CLI_ARGUMENT_MAP != null && !CLI_ARGUMENT_MAP.isEmpty()) {
+                new FilterableListWindow(CLI_ARGUMENT_MAP, selectedValue -> {
+                    final String currentCommand = textField.getText();
+                    textField.setText(currentCommand + ' ' + selectedValue);
+                });
+            }
+        });
+
         textField.addActionListener(e -> executeButtonClick());
         this.commandLineField = textField;
 
@@ -308,6 +323,22 @@ public class TemplateGeneratorWindow extends JFrame {
         panelConstraints.fill = GridBagConstraints.BOTH;
 
         contentPane.add(topPanel, panelConstraints);
+    }
+
+    private void initializeNucleiCliArgumentMap(NucleiGeneratorSettings generalSettings) {
+        if (CLI_ARGUMENT_MAP == null) {
+            try {
+                final Path nucleiPath = generalSettings.getNucleiPath();
+                if (nucleiPath != null) {
+                    final ExecutionResult<Map<String, String>> executionResult = Utils.executeCommand(new String[]{nucleiPath.toString(), "-help"}, Utils::getCliArguments);
+                    if (executionResult.isSuccessful()) {
+                        CLI_ARGUMENT_MAP = executionResult.getResult();
+                    }
+                }
+            } catch (ExecutionException e) {
+                generalSettings.logError(String.format("Error while trying to retrieve the nuclei help menu. CLI argument helper will be disabled: '%s'.", e.getMessage()));
+            }
+        }
     }
 
     private void saveTemplateToFile() {
@@ -389,15 +420,15 @@ public class TemplateGeneratorWindow extends JFrame {
                 command = command.replaceFirst("nuclei(\\.exe)?", this.nucleiPath.toString());
             }
 
-            Utils.executeCommand(command,
-                                 bufferedReader -> bufferedReader.lines()
-                                                                 .map(line -> line + "\n")
-                                                                 .forEach(line -> SwingUtilities.invokeLater(() -> {
-                                                                     this.outputPane.appendText(line, noColor);
-                                                                     this.outputPane.repaint();
-                                                                 })),
-                                 exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
-                                 this.nucleiGeneratorSettings::logError);
+            Utils.asyncExecuteCommand(command,
+                                      bufferedReader -> bufferedReader.lines()
+                                                                      .map(line -> line + "\n")
+                                                                      .forEach(line -> SwingUtilities.invokeLater(() -> {
+                                                                          this.outputPane.appendText(line, noColor);
+                                                                          this.outputPane.repaint();
+                                                                      })),
+                                      exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
+                                      this.nucleiGeneratorSettings::logError);
         }
     }
 

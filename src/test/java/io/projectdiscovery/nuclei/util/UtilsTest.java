@@ -30,7 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 class UtilsTest {
 
@@ -97,5 +101,38 @@ class UtilsTest {
                                 "    - <li><a href=\"dns.yaml\">dns.yaml</a></li>";
 
         Assertions.assertEquals(expected, Utils.normalizeTemplate(yamlTemplate));
+    }
+
+    @Test
+    void testNucleiHelpParsing() {
+        final String nucleiHelpSnippet = "Nuclei is a fast, template based vulnerability scanner focusing\n" +
+                                         "on extensive configurability, massive extensibility and ease of use.\n" +
+                                         "\n" +
+                                         "Usage:\n" +
+                                         "  nuclei [flags]\n" +
+                                         "\n" +
+                                         "Flags:\n" +
+                                         "TARGET:\n" +
+                                         "   -u, -target string[]  target URLs/hosts to scan\n" +
+                                         "   -l, -list string      path to file containing a list of target URLs/hosts to scan (one per line)\n" +
+                                         "   -resume               Resume scan using resume.cfg (clustering will be disabled)\n" +
+                                         "\n" +
+                                         "TEMPLATES:\n" +
+                                         "   -tu, -template-url string[]  URL containing list of templates to run\n" +
+                                         "   -nt, -new-templates          run only new templates added in latest nuclei-templates release\n" +
+                                         "   -validate                    validate the passed templates to nuclei\n" +
+                                         "\n";
+
+        final Map<String, String> computedCliArgumentMap = Utils.getCliArguments(Arrays.stream(nucleiHelpSnippet.split("\n")));
+
+        final Map<String, String> expected = Stream.of(Map.entry("-u, -target target URLs/hosts to scan", "-u"),
+                                                       Map.entry("-l, -list path to file containing a list of target URLs/hosts to scan (one per line)", "-l"),
+                                                       Map.entry("-resume Resume scan using resume.cfg (clustering will be disabled)", "-resume"),
+                                                       Map.entry("-tu, -template-url URL containing list of templates to run", "-tu"),
+                                                       Map.entry("-nt, -new-templates run only new templates added in latest nuclei-templates release", "-nt"),
+                                                       Map.entry("-validate validate the passed templates to nuclei", "-validate"))
+                                                   .collect(LinkedHashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), HashMap::putAll);
+
+        Assertions.assertEquals(expected, computedCliArgumentMap);
     }
 }
