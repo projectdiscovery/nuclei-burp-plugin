@@ -39,15 +39,15 @@ public class AnsiColorTextPane extends JTextPane {
 
     private final Consumer<String> errorLogger;
 
-    public AnsiColorTextPane(Consumer<String> errorLogger) {
+    public AnsiColorTextPane(int fontSize, Consumer<String> errorLogger) {
         super();
         super.putClientProperty(RenderingHints.KEY_ANTIALIASING, Boolean.TRUE);
-        super.setFont(new Font(Font.MONOSPACED, Font.PLAIN, (int) SettingsPanel.FONT_SIZE));
+        super.setFont(new Font(Font.MONOSPACED, Font.PLAIN, fontSize));
         this.errorLogger = errorLogger;
     }
 
     public AnsiColorTextPane() {
-        this(System.err::println);
+        this(SettingsPanel.DEFAULT_FONT_SIZE, System.err::println);
     }
 
     public void appendText(String content, boolean noColor) {

@@ -69,6 +69,16 @@ public class GeneralSettings {
                        .orElseGet(Utils::getTempPath);
     }
 
+    public Integer getFontSize() {
+        return Optional.ofNullable(loadExtensionSetting(SettingsPanel.FONT_SIZE_SETTING_NAME))
+                       .map(Integer::parseInt)
+                       .orElse(SettingsPanel.DEFAULT_FONT_SIZE);
+    }
+
+    public void saveFontSize(int fontSize) {
+        saveExtensionSetting(SettingsPanel.FONT_SIZE_SETTING_NAME, String.valueOf(fontSize));
+    }
+
     public String loadExtensionSetting(String key) {
         return this.extensionSettingLoader.apply(key);
     }

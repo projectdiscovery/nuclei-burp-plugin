@@ -26,6 +26,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -125,21 +127,28 @@ public class TemplateGeneratorWindow extends JFrame {
         SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK), () -> this.commandLineField.requestFocus());
         SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
         SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> deriveFont(Arrays.asList(this.templateEditor, this.outputPane), size -> ++size));
+        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> deriveFont(Arrays.asList(this.templateEditor, this.outputPane), size -> --size));
         SwingUtils.setKeyboardShortcut(this.rootPane, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(this.nucleiGeneratorSettings::logError));
-        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> {
-            deriveFont(this.outputPane, size -> ++size);
-            deriveFont(this.templateEditor, size -> ++size);
-        });
-        SwingUtils.setKeyboardShortcut(this.rootPane, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> {
-            deriveFont(this.outputPane, size -> --size);
-            deriveFont(this.templateEditor, size -> --size);
-        });
     }
 
-    private void deriveFont(Component component, Function<Integer, Integer> fontSizeModifier) {
-        final Font font = component.getFont();
-        final int fontSize = font.getSize();
-        component.setFont(font.deriveFont((float) fontSizeModifier.apply(fontSize)));
+    private void deriveFont(Collection<Component> components, Function<Integer, Integer> fontSizeModifier) {
+        if (components.isEmpty()) {
+            throw new IllegalArgumentException("Component list must not be empty when modifying the font size!");
+        } else {
+            // force the same font size of all given components
+            final int currentFontSize = components.iterator().next().getFont().getSize();
+            final Integer newFontSize = fontSizeModifier.apply(currentFontSize);
+
+            if (newFontSize > 8 && newFontSize < 30) {
+                components.forEach(component -> {
+                    final Font font = component.getFont();
+                    component.setFont(font.deriveFont(newFontSize.floatValue()));
+                });
+
+                this.nucleiGeneratorSettings.saveFontSize(newFontSize);
+            }
+        }
     }
 
     private static class CloseAction extends AbstractAction {
@@ -156,7 +165,7 @@ public class TemplateGeneratorWindow extends JFrame {
     }
 
     private Component createOutputPane() {
-        this.outputPane = new AnsiColorTextPane(this.nucleiGeneratorSettings::logError);
+        this.outputPane = new AnsiColorTextPane(this.nucleiGeneratorSettings.getFontSize(), this.nucleiGeneratorSettings::logError);
         this.outputPane.setEditable(false);
         this.outputPane.setVisible(true);
         this.outputPane.setAutoscrolls(true);
@@ -187,6 +196,7 @@ public class TemplateGeneratorWindow extends JFrame {
             }
         }
 
+        textEditor.setFont(textEditor.getFont().deriveFont(this.nucleiGeneratorSettings.getFontSize().floatValue()));
         this.templateEditor = textEditor;
 
         final RTextScrollPane scrollPane = new RTextScrollPane(textEditor, true);
@@ -239,7 +249,6 @@ public class TemplateGeneratorWindow extends JFrame {
         textEditor.setAutoIndentEnabled(true);
         textEditor.setTabSize(2);
         textEditor.setText(templateYaml);
-        textEditor.setFont(textEditor.getFont().deriveFont(SettingsPanel.FONT_SIZE));
 
         setupAutoCompletion(textEditor);
 

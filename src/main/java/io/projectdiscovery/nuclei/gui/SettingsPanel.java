@@ -41,8 +41,8 @@ public class SettingsPanel extends JPanel {
     public static final String NUCLEI_PATH_SETTING_NAME = "nucleiPath";
     public static final String TEMPLATE_PATH_SETTING_NAME = "templatePath";
     public static final String AUTHOR_SETTING_NAME = "author";
-
-    public static final float FONT_SIZE = 14f; // TODO make configurable, store the adjusted value, or try to retrieve burp user config
+    public static final String FONT_SIZE_SETTING_NAME = "fontSize";
+    public static final int DEFAULT_FONT_SIZE = 14;
 
     private final GeneralSettings settings;
     private JButton cancelButton;
