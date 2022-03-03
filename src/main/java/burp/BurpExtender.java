@@ -25,10 +25,7 @@
 
 package burp;
 
-import io.projectdiscovery.nuclei.gui.GeneralSettings;
-import io.projectdiscovery.nuclei.gui.NucleiGeneratorSettings;
-import io.projectdiscovery.nuclei.gui.SettingsPanel;
-import io.projectdiscovery.nuclei.gui.TemplateGeneratorWindow;
+import io.projectdiscovery.nuclei.gui.*;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
@@ -204,6 +201,6 @@ public class BurpExtender implements burp.IBurpExtender {
                 .withYamlFieldDescriptionMap(this.yamlFieldDescriptionMap)
                 .build();
 
-        SwingUtilities.invokeLater(() -> new TemplateGeneratorWindow(nucleiGeneratorSettings));
+        SwingUtilities.invokeLater(() -> TemplateGeneratorWindow.getInstance(nucleiGeneratorSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings)));
     }
 }
