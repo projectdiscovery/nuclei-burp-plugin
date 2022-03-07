@@ -63,6 +63,8 @@ public final class YamlUtil {
     private static DumperOptions createDumperOptions() {
         final DumperOptions options = new DumperOptions();
         options.setIndent(2);
+        options.setIndicatorIndent(2);
+        options.setIndentWithIndicator(true);
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setPrettyFlow(true);
         return options;

@@ -45,22 +45,22 @@ class YamlUtilTest {
                                 "  reference: https://\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
-                                "- raw:\n" +
-                                "  - |-\n" +
-                                "    GET / HTTP/1.1\n" +
-                                "    Host: {{Hostname}}\n" +
-                                "    Accept: */*\n" +
-                                "  matchers-condition: or\n" +
-                                "  matchers:\n" +
-                                "  - type: word\n" +
-                                "    part: all\n" +
-                                "    words:\n" +
-                                "    - word1\n" +
-                                "    - word2\n" +
-                                "  - type: status\n" +
-                                "    status:\n" +
-                                "    - 200\n" +
-                                "    - 500\n";
+                                "  - raw:\n" +
+                                "      - |-\n" +
+                                "        GET / HTTP/1.1\n" +
+                                "        Host: {{Hostname}}\n" +
+                                "        Accept: */*\n" +
+                                "    matchers-condition: or\n" +
+                                "    matchers:\n" +
+                                "      - type: word\n" +
+                                "        part: all\n" +
+                                "        words:\n" +
+                                "          - word1\n" +
+                                "          - word2\n" +
+                                "      - type: status\n" +
+                                "        status:\n" +
+                                "          - 200\n" +
+                                "          - 500\n";
 
         Assertions.assertEquals(expected, YamlUtil.dump(template));
     }
@@ -78,32 +78,32 @@ class YamlUtilTest {
                                 "  reference: https://\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
-                                "- raw:\n" +
-                                "  - |-\n" +
-                                "    GET / HTTP/1.1\n" +
-                                "    Host: {{Hostname}}\n" +
-                                "    Accept: */*\n" +
-                                "    HeaderOne: {{param1}}\n" +
-                                "    HeaderTwo: {{param2}}\n" +
-                                "  attack: clusterbomb\n" +
-                                "  payloads:\n" +
-                                "    param1:\n" +
-                                "    - headerOne\n" +
-                                "    - one\n" +
-                                "    param2:\n" +
-                                "    - headerTwo\n" +
-                                "    - two\n" +
-                                "  matchers-condition: or\n" +
-                                "  matchers:\n" +
-                                "  - type: word\n" +
-                                "    part: all\n" +
-                                "    words:\n" +
-                                "    - word1\n" +
-                                "    - word2\n" +
-                                "  - type: status\n" +
-                                "    status:\n" +
-                                "    - 200\n" +
-                                "    - 500\n";
+                                "  - raw:\n" +
+                                "      - |-\n" +
+                                "        GET / HTTP/1.1\n" +
+                                "        Host: {{Hostname}}\n" +
+                                "        Accept: */*\n" +
+                                "        HeaderOne: {{param1}}\n" +
+                                "        HeaderTwo: {{param2}}\n" +
+                                "    attack: clusterbomb\n" +
+                                "    payloads:\n" +
+                                "      param1:\n" +
+                                "        - headerOne\n" +
+                                "        - one\n" +
+                                "      param2:\n" +
+                                "        - headerTwo\n" +
+                                "        - two\n" +
+                                "    matchers-condition: or\n" +
+                                "    matchers:\n" +
+                                "      - type: word\n" +
+                                "        part: all\n" +
+                                "        words:\n" +
+                                "          - word1\n" +
+                                "          - word2\n" +
+                                "      - type: status\n" +
+                                "        status:\n" +
+                                "          - 200\n" +
+                                "          - 500\n";
 
         Assertions.assertEquals(expected, YamlUtil.dump(template));
     }
@@ -121,35 +121,35 @@ class YamlUtilTest {
                                 "  tags: tags\n" +
                                 "\n" +
                                 "requests:\n" +
-                                "- raw:\n" +
-                                "  - |-\n" +
-                                "    GET / HTTP/1.1\n" +
-                                "    Host: {{Hostname}}\n" +
-                                "    Accept: */*\n" +
-                                "    HeaderOne: {{param1}}\n" +
-                                "    HeaderTwo: {{param2}}\n" +
+                                "  - raw:\n" +
+                                "      - |-\n" +
+                                "        GET / HTTP/1.1\n" +
+                                "        Host: {{Hostname}}\n" +
+                                "        Accept: */*\n" +
+                                "        HeaderOne: {{param1}}\n" +
+                                "        HeaderTwo: {{param2}}\n" +
                                 "\n" +
-                                "  attack: clusterbomb\n" +
-                                "  payloads:\n" +
-                                "    param1:\n" +
-                                "    - headerOne\n" +
-                                "    - one\n" +
-                                "    param2:\n" +
-                                "    - headerTwo\n" +
-                                "    - two\n" +
+                                "    attack: clusterbomb\n" +
+                                "    payloads:\n" +
+                                "      param1:\n" +
+                                "        - headerOne\n" +
+                                "        - one\n" +
+                                "      param2:\n" +
+                                "        - headerTwo\n" +
+                                "        - two\n" +
                                 "\n" +
-                                "  matchers-condition: or\n" +
-                                "  matchers:\n" +
-                                "  - type: word\n" +
-                                "    part: all\n" +
-                                "    condition: and\n" +
-                                "    words:\n" +
-                                "    - word1\n" +
-                                "    - word2\n" +
-                                "  - type: status\n" +
-                                "    status:\n" +
-                                "    - 200\n" +
-                                "    - 500\n";
+                                "    matchers-condition: or\n" +
+                                "    matchers:\n" +
+                                "      - type: word\n" +
+                                "        part: all\n" +
+                                "        condition: and\n" +
+                                "        words:\n" +
+                                "          - word1\n" +
+                                "          - word2\n" +
+                                "      - type: status\n" +
+                                "        status:\n" +
+                                "          - 200\n" +
+                                "          - 500\n";
 
         final Template template = YamlUtil.load(expected, Template.class);
         Assertions.assertEquals(expected, TemplateUtils.normalizeTemplate(YamlUtil.dump(template)));
@@ -172,23 +172,23 @@ class YamlUtilTest {
         requests.addPayloads(Requests.AttackType.batteringram, "param3", "compress");
 
         final String expected = "raw:\n" +
-                                "- |\n" +
-                                "  GET / HTTP/1.1\n" +
-                                "  Host: {{Hostname}}\n" +
-                                "  User-Agent: {{param}} (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0\n" +
-                                "  Accept-Language: en-US,en;{{param}}-Encoding: {{param}}\n" +
-                                "  Pragma: no-cache\n" +
-                                "  Cache-Control: no-cache\n" +
+                                "  - |\n" +
+                                "    GET / HTTP/1.1\n" +
+                                "    Host: {{Hostname}}\n" +
+                                "    User-Agent: {{param}} (Macintosh; Intel Mac OS X 10.15; rv:96.0) Gecko/20100101 Firefox/96.0\n" +
+                                "    Accept-Language: en-US,en;{{param}}-Encoding: {{param}}\n" +
+                                "    Pragma: no-cache\n" +
+                                "    Cache-Control: no-cache\n" +
                                 "attack: batteringram\n" +
                                 "payloads:\n" +
                                 "  param:\n" +
-                                "  - Mozilla/5.0\n" +
-                                "  - |-\n" +
-                                "    q=0.5\n" +
-                                "    Accept\n" +
-                                "  - gzip, deflate\n" +
-                                "  - Chrome\n" +
-                                "  - compress\n";
+                                "    - Mozilla/5.0\n" +
+                                "    - |-\n" +
+                                "      q=0.5\n" +
+                                "      Accept\n" +
+                                "    - gzip, deflate\n" +
+                                "    - Chrome\n" +
+                                "    - compress\n";
 
         Assertions.assertEquals(expected, YamlUtil.dump(requests));
     }
