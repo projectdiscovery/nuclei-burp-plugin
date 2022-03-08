@@ -79,7 +79,7 @@ A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/project
 
 Use `mvn clean package -DskipTests` to build the project yourself. It requires Maven `3.x` and Java `11+`.
 
-On MacOS the dependencies for the plugin can be met using Homebrew: `brew install mvn maven openjdk@11`
+On MacOS the dependencies for the plugin can be met using Homebrew: `brew install mvn openjdk@11` and the project can be built using: `mvn clean package -DskipTests` which will build .jar file at `target/`. 
 
 Alternatively, different builds can be downloaded from the [Actions](https://github.com/projectdiscovery/nuclei-burp-plugin/actions) section. The built artifact can be found under the latest build's `Artifacts`
 section. These artifacts are generated after every commit, but are only stored for a limited amount of time.
