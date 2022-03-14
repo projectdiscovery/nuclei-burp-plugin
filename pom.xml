@@ -53,7 +53,7 @@
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
         <snakeyaml.version>1.30</snakeyaml.version>
-        <rsyntaxtextarea.version>3.1.6</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.2.0</rsyntaxtextarea.version>
 
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
