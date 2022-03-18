@@ -35,11 +35,11 @@ public final class TemplateGeneratorWindow extends JFrame {
         cleanupOnClose();
 
         this.setJMenuBar(new MenuHelper(this.generalSettings::logError).createMenuBar());
-        this.setLocationRelativeTo(null); // center of the screen
         this.setPreferredSize(new Dimension(800, 600));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
-        this.setVisible(true);
         this.pack();
+        this.setVisible(true);
+        this.setLocationRelativeTo(null); // center of the screen
     }
 
     public static TemplateGeneratorWindow getInstance(NucleiGeneratorSettings nucleiGeneratorSettings) {

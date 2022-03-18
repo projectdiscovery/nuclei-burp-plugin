@@ -55,10 +55,10 @@ public class FilterableListWindow extends JFrame {
 
         SwingUtils.setKeyboardShortcut(this.getRootPane(), KeyEvent.VK_ESCAPE, this::dispose);
         this.addWindowListener(createDisposeOnFocusLostWindowAdapter());
-        this.setLocationRelativeTo(null);
         this.setUndecorated(true);
-        this.setVisible(true);
         this.pack();
+        this.setVisible(true);
+        this.setLocationRelativeTo(null);
     }
 
     private WindowAdapter createDisposeOnFocusLostWindowAdapter() {
