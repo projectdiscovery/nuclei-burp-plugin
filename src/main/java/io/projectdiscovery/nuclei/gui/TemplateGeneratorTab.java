@@ -247,10 +247,15 @@ public class TemplateGeneratorTab extends JPanel {
 
         SwingUtils.setKeyboardShortcut(textField, KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK), () -> {
             if (CLI_ARGUMENT_MAP != null && !CLI_ARGUMENT_MAP.isEmpty()) {
-                new FilterableListWindow(CLI_ARGUMENT_MAP, selectedValue -> {
+                final FilterableListWindow cliArgumentHelperWindow = new FilterableListWindow(CLI_ARGUMENT_MAP, selectedValue -> {
                     final String currentCommand = textField.getText();
                     textField.setText(currentCommand + ' ' + selectedValue);
                 });
+                final Container commandLineComboBox = TemplateGeneratorTab.this.commandLineField.getParent();
+                final Point commandLineComboLocation = commandLineComboBox.getLocationOnScreen();
+                final Dimension commandLineComboSize = commandLineComboBox.getSize();
+                cliArgumentHelperWindow.setSize((int) commandLineComboSize.getWidth(), (int) cliArgumentHelperWindow.getSize().getHeight());
+                cliArgumentHelperWindow.setLocation((int) commandLineComboLocation.getX(), (int) (commandLineComboLocation.getY() + commandLineComboSize.getHeight()));
             }
         });
 
