@@ -54,9 +54,16 @@ A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/project
     * **Ctrl + Enter**: execute current template
     * **Ctrl + Shift + E**: jump to the template editor
     * **Ctrl + L**: jump to the CLI input field
+    * **Ctrl + R**: show CLI argument helper
     * **Ctrl + S**: save the current template
     * **Ctrl + Plus/Minus**: increase/decrease font size
     * **Ctrl + Q**: quit
+* Tab support:
+    * **Ctrl + Tab** or **Ctrl + PageDown**: open next tab
+    * **Ctrl + Shift + Tab** or **Ctrl + PageUp**: open previous tab
+    * **Ctrl + [1-9]**: move to n-th tab
+    * **Mouse Scroll Up/Down** over the tabs: navigate to next or previous tab
+    * **Ctrl + W** or **Middle Mouse Button Click**: close current tab
 * The template path is auto-updated if the template is saved to a new location
 * The `template-id` is recommended as file name when saving
 

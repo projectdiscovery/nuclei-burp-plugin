@@ -104,10 +104,12 @@ public final class MenuHelper {
     }
 
     private JMenuItem createShortcutsMenuItem() {
-        final JMenuItem documentationMenuItem = new JMenuItem("Shortcuts");
+        final String menuName = "Productivity";
+        final JMenuItem documentationMenuItem = new JMenuItem(menuName);
         documentationMenuItem.addActionListener(event -> {
             final String[] messages = {
                     "F1: Open nuclei template documentation",
+                    "",
                     "Ctrl + Enter: Execute",
                     "Ctrl + Shift + E: Jump to template editor",
                     "Ctrl + L: Jump to CLI input field",
@@ -115,8 +117,15 @@ public final class MenuHelper {
                     "Ctrl + S: Save the current template",
                     "Ctrl + Plus/Minus: Increase/decrease font size",
                     "Ctrl + Q: Quit",
-                    };
-            JOptionPane.showMessageDialog(null, String.join("\n", messages), "Keyboard shortcuts", JOptionPane.INFORMATION_MESSAGE);
+                    "",
+                    "Tab Support:",
+                    "Ctrl + Tab or Ctrl + PageDown: Open next tab",
+                    "Ctrl + Shift + Tab or Ctrl + PageUp: Open previous tab",
+                    "Ctrl + [1-9]: Jump to n-th tab",
+                    "Mouse Scroll Up/Down over the tabs: Navigate to next or previous tab",
+                    "Ctrl + W or Middle Mouse Button Click: Close current tab"
+            };
+            JOptionPane.showMessageDialog(null, String.join("\n", messages), menuName, JOptionPane.INFORMATION_MESSAGE);
         });
         return documentationMenuItem;
     }
