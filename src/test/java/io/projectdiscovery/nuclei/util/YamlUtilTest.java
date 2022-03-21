@@ -42,7 +42,8 @@ class YamlUtilTest {
                                 "  author: forgedhallpass\n" +
                                 "  severity: info\n" +
                                 "  description: description\n" +
-                                "  reference: https://\n" +
+                                "  reference:\n" +
+                                "    - https://\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
                                 "  - raw:\n" +
@@ -75,7 +76,8 @@ class YamlUtilTest {
                                 "  author: forgedhallpass\n" +
                                 "  severity: info\n" +
                                 "  description: description\n" +
-                                "  reference: https://\n" +
+                                "  reference:\n" +
+                                "    - https://\n" +
                                 "  tags: tags\n" +
                                 "requests:\n" +
                                 "  - raw:\n" +
@@ -117,7 +119,8 @@ class YamlUtilTest {
                                 "  author: forgedhallpass\n" +
                                 "  severity: high\n" +
                                 "  description: description\n" +
-                                "  reference: https://\n" +
+                                "  reference:\n" +
+                                "    - https://\n" +
                                 "  tags: tags\n" +
                                 "\n" +
                                 "requests:\n" +

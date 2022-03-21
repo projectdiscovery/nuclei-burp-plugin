@@ -23,47 +23,18 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve.nist.model.cwe;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import com.google.gson.annotations.SerializedName;
 
-import java.util.Arrays;
 import java.util.List;
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+public class ProblemType {
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    @SerializedName("problemtype_data")
+    private List<ProblemTypeData> problemTypeData;
 
-    public Template() {
-    }
-
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
+    public List<ProblemTypeData> getProblemTypeData() {
+        return this.problemTypeData;
     }
 }

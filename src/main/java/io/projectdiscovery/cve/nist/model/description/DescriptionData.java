@@ -23,47 +23,23 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve.nist.model.description;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import com.google.gson.annotations.Expose;
 
-import java.util.Arrays;
-import java.util.List;
+public class DescriptionData {
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+    @Expose
+    private String lang;
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    @Expose
+    private String value;
 
-    public Template() {
+    public String getLang() {
+        return this.lang;
     }
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
+    public String getValue() {
+        return this.value;
     }
 }

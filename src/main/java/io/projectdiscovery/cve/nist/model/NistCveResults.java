@@ -23,47 +23,24 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve.nist.model;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
-import java.util.Arrays;
-import java.util.List;
+public class NistCveResults {
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+    @Expose
+    private int totalResults;
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    @SerializedName("result")
+    private CveItems results;
 
-    public Template() {
+    public int getTotalResults() {
+        return this.totalResults;
     }
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
+    public CveItems getResults() {
+        return this.results;
     }
 }

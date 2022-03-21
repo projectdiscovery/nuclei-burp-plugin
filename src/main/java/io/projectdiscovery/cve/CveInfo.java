@@ -23,47 +23,47 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import java.util.Set;
 
-import java.util.Arrays;
-import java.util.List;
+/**
+ * Interface to access CVE information from a specific source
+ */
+public interface CveInfo {
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+    /**
+     * @return the CVE id
+     */
+    String getId();
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    /**
+     * @return the CVE description
+     */
+    String getDescription();
 
-    public Template() {
-    }
+    /**
+     * @return the CVE severity
+     */
+    String getSeverity();
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
-    }
+    /**
+     * @return the CVSS score
+     */
+    Double getCvssScore();
 
-    public String getId() {
-        return this.id;
-    }
+    /**
+     * @return the CVSS metrics
+     */
+    String getCvssMetrics();
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    /**
+     * @return the list of references
+     */
+    Set<String> getReferences();
 
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
-    }
+    /**
+     * @return the associated CWE IDs
+     */
+    Set<String> getCweIds();
 }

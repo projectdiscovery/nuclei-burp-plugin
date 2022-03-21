@@ -1,8 +1,13 @@
 package io.projectdiscovery.nuclei.gui;
 
+import io.projectdiscovery.cve.CveInfo;
+import io.projectdiscovery.cve.nist.service.CveInfoRetriever;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMaker;
 import io.projectdiscovery.nuclei.gui.editor.NucleiTokenMakerFactory;
+import io.projectdiscovery.nuclei.model.Info;
+import io.projectdiscovery.nuclei.model.Template;
 import io.projectdiscovery.nuclei.util.NucleiUtils;
+import io.projectdiscovery.nuclei.yaml.YamlUtil;
 import io.projectdiscovery.utils.CommandLineUtils;
 import io.projectdiscovery.utils.ExecutionResult;
 import io.projectdiscovery.utils.Utils;
@@ -12,6 +17,7 @@ import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.*;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -28,8 +34,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class TemplateGeneratorTab extends JPanel {
@@ -229,10 +238,76 @@ public class TemplateGeneratorTab extends JPanel {
         textEditor.setAutoIndentEnabled(true);
         textEditor.setTabSize(2);
         textEditor.setText(templateYaml);
+        textEditor.getPopupMenu().add(createTemplateEditorMenuItems());
 
         setupAutoCompletion(textEditor);
 
         return textEditor;
+    }
+
+    private JMenu createTemplateEditorMenuItems() {
+        final JMenu templateMenu = new JMenu("Add");
+        templateMenu.add(createTemplateEditorClassificationMenu());
+        return templateMenu;
+    }
+
+    private JMenu createTemplateEditorClassificationMenu() {
+        final JMenu classificationMenu = new JMenu("Classification");
+
+        classificationMenu.add(createEmptyClassificationMenuItem());
+        classificationMenu.add(createCveClassificationMenuItem());
+
+        return classificationMenu;
+    }
+
+    private JMenuItem createEmptyClassificationMenuItem() {
+        final JMenuItem emptyClassificationMenuItem = new JMenuItem("Empty");
+        emptyClassificationMenuItem.addActionListener(e -> modifyTemplate(template -> template.getInfo().setClassification(new Info.Classification())));
+        return emptyClassificationMenuItem;
+    }
+
+    private JMenuItem createCveClassificationMenuItem() {
+        final JMenuItem cveMenuItem = new JMenuItem("CVE");
+
+        cveMenuItem.addActionListener(e -> modifyTemplate(template -> {
+            final String cveId = JOptionPane.showInputDialog("Enter CVE ID (e.g. CVE-2021-1234):", "CVE-");
+
+            if (cveId != null) {
+                if (cveId.matches("(?i)cve-\\d{4}-\\d{4,7}")) {
+                    final Optional<CveInfo> cveInfo = CveInfoRetriever.getCveInfo(cveId);
+                    cveInfo.map(cve -> {
+                        template.setId(cveId);
+                        final Info.Classification classification = new Info.Classification(cve.getId(), cve.getCvssMetrics(), cve.getCvssScore(), cve.getCweIds());
+                        final Info templateInfo = template.getInfo();
+                        templateInfo.setSeverity(cve.getSeverity());
+                        templateInfo.setDescriptionIfDefault(cve.getDescription());
+                        templateInfo.setReference(cve.getReferences());
+                        templateInfo.setClassification(classification);
+                        templateInfo.setTags(List.of("cve", cveId.substring(0, "cve-1234".length()).replace("-", "").toLowerCase())); // add cve and cveYEAR tags
+                        return template;
+                    }).orElseGet(() -> {
+                        JOptionPane.showMessageDialog(null, "Could not find CVE information. Please fill it manually.", "Could not find CVE information.", JOptionPane.WARNING_MESSAGE);
+                        template.getInfo().setClassification(new Info.Classification());
+                        return template;
+                    });
+                } else {
+                    JOptionPane.showMessageDialog(null, "Invalid CVE ID. Please use the CVE-2021-1234 format.", "Invalid CVE ID", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }));
+
+        return cveMenuItem;
+    }
+
+    private void modifyTemplate(Consumer<Template> templateConsumer) {
+        final String currentTemplate = this.templateEditor.getText();
+        try {
+            final Template template = YamlUtil.load(currentTemplate, Template.class);
+            templateConsumer.accept(template);
+            this.templateEditor.setText(YamlUtil.dump(template));
+        } catch (YAMLException yamlException) {
+            JOptionPane.showMessageDialog(null, "Please fix the errors and try again:\n" + yamlException.getMessage(), "Invalid template", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void createControlPanel(Container contentPane, String command) {

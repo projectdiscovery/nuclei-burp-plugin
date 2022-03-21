@@ -28,24 +28,55 @@ package io.projectdiscovery.nuclei.model;
 import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 
+import java.util.*;
+
 @SuppressWarnings("unused")
 @YamlPropertyOrder({"name", "author", "severity", "description", "reference", "classification", "tags"})
 public class Info {
 
+    private static final String DEFAULT_REFERENCE = "https://";
+    private static final String DEFAULT_DESCRIPTION = "description";
+    public static final String DEFAULT_TAGS = "tags";
+
     public enum Severity {
-        info, low, medium, high, critical
+        info, low, medium, high, critical, unknown;
+
+        public static Severity of(String value) {
+            return Arrays.stream(Severity.values())
+                         .filter(severity -> severity.toString().equals(value.toLowerCase()))
+                         .findAny()
+                         .orElse(Severity.unknown);
+        }
     }
 
     @YamlPropertyOrder({"cvss-metrics", "cvss-score", "cve-id", "cwe-id"})
     public static class Classification {
         @YamlProperty("cvss-metrics")
-        private final String cvssMetrics = "CVSS:3.0/";
+        private final String cvssMetrics;
         @YamlProperty("cvss-score")
-        private final double cvssScore = 1.0;
+        private final double cvssScore;
         @YamlProperty("cve-id")
-        private final String cveId = "CVE-";
+        private final String cveId;
         @YamlProperty("cwe-id")
-        private final String cweId = "CWE-";
+        private final String cweId;
+
+        public Classification(String cveId, String cvssMetrics, double cvssScore, Set<String> cweIds) {
+            this(cveId, cvssMetrics, cvssScore, cweIds.isEmpty() ? null : String.join(", ", cweIds));
+        }
+
+        public Classification(String cveId, String cvssMetrics, double cvssScore, String cweId) {
+            this.cveId = cveId;
+            this.cvssMetrics = cvssMetrics;
+            this.cvssScore = cvssScore;
+            this.cweId = cweId;
+        }
+
+        public Classification() {
+            this.cveId = "CVE-";
+            this.cvssMetrics = "CVSS:3.0/";
+            this.cvssScore = 1.0;
+            this.cweId = "CWE-";
+        }
     }
 
     @YamlProperty
@@ -53,16 +84,16 @@ public class Info {
     @YamlProperty
     private String author;
     @YamlProperty
-    private Severity severity = Severity.info;
+    private Severity severity = Severity.unknown;
 
     @YamlProperty
-    private final String reference = "https://";
+    private List<String> reference = new ArrayList<>(List.of(DEFAULT_REFERENCE));
     @YamlProperty
-    private final String tags = "tags";
-    // @YamlProperty
+    private String tags = DEFAULT_TAGS;
+    @YamlProperty
     private Classification classification;
     @YamlProperty
-    private final String description = "description";
+    private String description = DEFAULT_DESCRIPTION;
 
     public Info() {
     }
@@ -85,19 +116,63 @@ public class Info {
         return this.severity;
     }
 
-    public String getReference() {
+    public void setSeverity(String severity) {
+        this.severity = Severity.of(severity);
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
+    }
+
+    public Collection<String> getReference() {
         return this.reference;
+    }
+
+    public void setReference(Collection<String> reference) {
+        if (this.reference.size() == 1 && this.reference.iterator().next().equals(DEFAULT_REFERENCE)) {
+            this.reference = new ArrayList<>(reference);
+        } else {
+            this.reference.addAll(reference);
+            this.reference = new ArrayList<>(new LinkedHashSet<>(this.reference)); // remove potential duplicate elements, but enforce list type
+        }
     }
 
     public String getTags() {
         return this.tags;
     }
 
+    public void setTags(Collection<String> tags) {
+        final String[] currentTags = this.tags.split(",");
+
+        final Collection<String> newTags;
+        if (currentTags.length == 1 && currentTags[0].equals(DEFAULT_TAGS)) {
+            newTags = tags;
+        } else {
+            newTags = new LinkedHashSet<>(Arrays.asList(currentTags));
+            newTags.addAll(tags);
+        }
+        this.tags = String.join(",", newTags);
+    }
+
     public Classification getClassification() {
         return this.classification;
     }
 
+    public void setClassification(Classification classification) {
+        this.classification = classification;
+    }
+
     public String getDescription() {
         return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setDescriptionIfDefault(String description) {
+        if (this.description.equals(DEFAULT_DESCRIPTION)) {
+            this.description = description;
+        }
     }
 }

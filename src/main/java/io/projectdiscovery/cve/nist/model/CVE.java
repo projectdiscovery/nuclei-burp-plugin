@@ -23,47 +23,41 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve.nist.model;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.projectdiscovery.cve.nist.model.cwe.ProblemType;
+import io.projectdiscovery.cve.nist.model.description.Description;
+import io.projectdiscovery.cve.nist.model.references.References;
 
-import java.util.Arrays;
-import java.util.List;
+public class CVE {
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+    @SerializedName("CVE_data_meta")
+    private CveMetaData cveMetaData;
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    @Expose
+    private References references;
 
-    public Template() {
+    @Expose
+    private Description description;
+
+    @SerializedName("problemtype")
+    private ProblemType problemType;
+
+    public References getReferences() {
+        return this.references;
     }
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
+    public Description getDescription() {
+        return this.description;
     }
 
-    public String getId() {
-        return this.id;
+    public ProblemType getProblemType() {
+        return this.problemType;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
+    public CveMetaData getCveMetaData() {
+        return this.cveMetaData;
     }
 }

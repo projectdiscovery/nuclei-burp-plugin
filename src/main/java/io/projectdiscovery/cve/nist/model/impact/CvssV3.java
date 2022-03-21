@@ -23,47 +23,30 @@
  *
  */
 
-package io.projectdiscovery.nuclei.model;
+package io.projectdiscovery.cve.nist.model.impact;
 
-import io.projectdiscovery.nuclei.model.util.YamlProperty;
-import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import com.google.gson.annotations.Expose;
 
-import java.util.Arrays;
-import java.util.List;
+public class CvssV3 {
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
-public class Template {
+    @Expose
+    private String vectorString;
 
-    @YamlProperty
-    private String id;
-    @YamlProperty
-    private Info info;
-    @YamlProperty
-    private List<Requests> requests;
+    @Expose
+    private Double baseScore;
 
-    public Template() {
+    @Expose
+    private String baseSeverity;
+
+    public String getVectorString() {
+        return this.vectorString;
     }
 
-    public Template(String id, Info info, Requests... requests) {
-        this.id = id;
-        this.info = info;
-        this.requests = Arrays.asList(requests);
+    public Double getBaseScore() {
+        return this.baseScore;
     }
 
-    public String getId() {
-        return this.id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Info getInfo() {
-        return this.info;
-    }
-
-    public List<Requests> getRequests() {
-        return this.requests;
+    public String getBaseSeverity() {
+        return this.baseSeverity;
     }
 }
