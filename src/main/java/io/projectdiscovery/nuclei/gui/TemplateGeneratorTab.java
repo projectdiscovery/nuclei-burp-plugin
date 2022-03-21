@@ -16,7 +16,6 @@ import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.*;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import javax.swing.*;
@@ -32,11 +31,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -412,61 +408,73 @@ public class TemplateGeneratorTab extends JPanel {
 
     private void saveTemplateToFile() {
         final Path targetTemplatePath = this.nucleiGeneratorSettings.getTemplatePath();
-
         final String yamlTemplate = this.templateEditor.getText();
-        final Map<?, ?> parsedYaml = new Yaml().loadAs(yamlTemplate, Map.class);
-        if (parsedYaml == null) {
-            JOptionPane.showMessageDialog(this, "Invalid template", "Template error", JOptionPane.ERROR_MESSAGE);
-        } else {
-            final String templateId = (String) parsedYaml.get("id"); // TODO it would be nicer to deserialize to Template.class and use the getter for the id
-            if (Utils.isBlank(templateId)) {
-                JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
+
+        try {
+            final Template template = YamlUtil.load(yamlTemplate, Template.class);
+
+            if (template == null) {
+                JOptionPane.showMessageDialog(this, "Invalid template", "Invalid template", JOptionPane.ERROR_MESSAGE);
             } else {
-                final Path generatedFilePath = targetTemplatePath.resolve(templateId + ".yaml");
-
-                final JFileChooser fileChooser = new JFileChooser(generatedFilePath.toFile()) {
-                    @Override
-                    public void approveSelection() {
-                        final File selectedFile = getSelectedFile();
-                        if (selectedFile.exists() && getDialogType() == SAVE_DIALOG) {
-                            final int result = JOptionPane.showConfirmDialog(this, "The selected file already exists. Do you want to overwrite it?",
-                                                                             "Overwrite existing file?",
-                                                                             JOptionPane.YES_NO_CANCEL_OPTION);
-                            switch (result) {
-                                case JOptionPane.YES_OPTION:
-                                    super.approveSelection();
-                                    return;
-                                case JOptionPane.CANCEL_OPTION:
-                                    cancelSelection();
-                                    return;
-                                case JOptionPane.CLOSED_OPTION:
-                                case JOptionPane.NO_OPTION:
-                                default:
-                                    return;
-                            }
-                        }
-                        super.approveSelection();
-                    }
-                };
-                fileChooser.setSelectedFile(generatedFilePath.toFile());
-                final int option = fileChooser.showSaveDialog(this);
-
-                if (option == JFileChooser.APPROVE_OPTION) {
-                    final File userSelectedFile = fileChooser.getSelectedFile();
-                    final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this.nucleiGeneratorSettings::logError);
-                    if (ok) {
-                        final String command = this.commandLineField.getText();
-                        if (!Utils.isBlank(command) && command.contains(NucleiUtils.NUCLEI_BASE_BINARY_NAME)) {
-                            this.templatePath = userSelectedFile.toPath();
-                            this.commandLineField.setText(NucleiUtils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(this, String.format("Error while writing file to: '%s'.", userSelectedFile), "File write error", JOptionPane.ERROR_MESSAGE);
-                    }
-                    this.nucleiGeneratorSettings.log(String.format("Generated nuclei template saved to: '%s'.", userSelectedFile));
+                final String templateId = template.getId();
+                if (Utils.isBlank(templateId)) {
+                    JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    final Path generatedFilePath = targetTemplatePath.resolve(templateId + ".yaml");
+                    saveTemplateToFile(generatedFilePath, yamlTemplate);
                 }
             }
+        } catch (YAMLException e) {
+            JOptionPane.showMessageDialog(this, "Please fix the errors and try again:\n" + e.getMessage(), "Invalid template", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void saveTemplateToFile(Path generatedFilePath, String yamlTemplate) {
+        final JFileChooser fileChooser = createFileChooser(generatedFilePath);
+        fileChooser.setSelectedFile(generatedFilePath.toFile());
+        final int option = fileChooser.showSaveDialog(this);
+
+        if (option == JFileChooser.APPROVE_OPTION) {
+            final File userSelectedFile = fileChooser.getSelectedFile();
+            final boolean ok = Utils.writeToFile(yamlTemplate, userSelectedFile.toPath(), this.nucleiGeneratorSettings::logError);
+            if (ok) {
+                final String command = this.commandLineField.getText();
+                if (!Utils.isBlank(command) && command.contains(NucleiUtils.NUCLEI_BASE_BINARY_NAME)) {
+                    this.templatePath = userSelectedFile.toPath();
+                    this.commandLineField.setText(NucleiUtils.replaceTemplatePathInCommand(command, userSelectedFile.toString()));
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, String.format("Error while writing file to: '%s'.", userSelectedFile), "File write error", JOptionPane.ERROR_MESSAGE);
+            }
+            this.nucleiGeneratorSettings.log(String.format("Generated nuclei template saved to: '%s'.", userSelectedFile));
+        }
+    }
+
+    private JFileChooser createFileChooser(Path generatedFilePath) {
+        return new JFileChooser(generatedFilePath.toFile()) {
+            @Override
+            public void approveSelection() {
+                final File selectedFile = getSelectedFile();
+                if (selectedFile.exists() && getDialogType() == SAVE_DIALOG) {
+                    final int result = JOptionPane.showConfirmDialog(this, "The selected file already exists. Do you want to overwrite it?",
+                                                                     "Overwrite existing file?",
+                                                                     JOptionPane.YES_NO_CANCEL_OPTION);
+                    switch (result) {
+                        case JOptionPane.YES_OPTION:
+                            super.approveSelection();
+                            return;
+                        case JOptionPane.CANCEL_OPTION:
+                            cancelSelection();
+                            return;
+                        case JOptionPane.CLOSED_OPTION:
+                        case JOptionPane.NO_OPTION:
+                        default:
+                            return;
+                    }
+                }
+                super.approveSelection();
+            }
+        };
     }
 
     private void executeButtonClick() {
