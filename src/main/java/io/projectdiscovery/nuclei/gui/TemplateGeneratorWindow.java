@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -16,6 +17,8 @@ public final class TemplateGeneratorWindow extends JFrame {
     private static TemplateGeneratorWindow instance;
     private final TemplateGeneratorTabbedPane tabbedPane;
     private final java.util.List<TemplateGeneratorTab> templateGeneratorTabs = new ArrayList<>();
+
+    private int openedTabCounter = 1;
 
     private TemplateGeneratorWindow(GeneralSettings generalSettings) {
         super("Nuclei Template Generator");
@@ -42,9 +45,9 @@ public final class TemplateGeneratorWindow extends JFrame {
         this.setLocationRelativeTo(null); // center of the screen
     }
 
-    public static TemplateGeneratorWindow getInstance(NucleiGeneratorSettings nucleiGeneratorSettings) {
+    public static TemplateGeneratorWindow getInstance(GeneralSettings generalSettings) {
         if (instance == null) {
-            instance = new TemplateGeneratorWindow(nucleiGeneratorSettings);
+            instance = new TemplateGeneratorWindow(generalSettings);
         }
 
         return instance;
@@ -53,7 +56,8 @@ public final class TemplateGeneratorWindow extends JFrame {
     public void addTab(TemplateGeneratorTab templateGeneratorTab) {
         this.templateGeneratorTabs.add(templateGeneratorTab);
         final String tabName = Optional.ofNullable(templateGeneratorTab.getName())
-                                       .orElseGet(() -> "Tab " + this.templateGeneratorTabs.size());
+                                       .orElseGet(() -> "Tab " + this.openedTabCounter++);
+        templateGeneratorTab.setName(tabName);
         this.tabbedPane.addTab(tabName, templateGeneratorTab);
     }
 
