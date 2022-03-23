@@ -59,13 +59,21 @@ public class Requests {
         return this.raw;
     }
 
+    public void addRaw(String... raw) {
+        if (this.raw == null) {
+            setRaw(raw);
+        } else {
+            this.raw.addAll(normalizeRawRequest(Arrays.stream(raw)));
+        }
+    }
+
     public void setRaw(String... raw) {
+        // needed otherwise the dumped raw request will be shown in-line, between double quotes
         this.raw = normalizeRawRequest(Arrays.stream(raw));
     }
 
     public void setRaw(byte[]... raw) {
-        // needed otherwise the dumped raw request will be shown in-line, between double quotes
-        this.raw = normalizeRawRequest(Arrays.stream(raw).map(String::new));
+        setRaw(Arrays.stream(raw).map(String::new).toArray(String[]::new));
     }
 
     public List<TemplateMatcher> getMatchers() {
@@ -76,7 +84,11 @@ public class Requests {
      * For requests with payloads, use {@link #setTransformedRequest} instead
      */
     public void setMatchers(TemplateMatcher... matchers) {
-        this.matchers = List.of(matchers);
+        setMatchers(List.of(matchers));
+    }
+
+    public void setMatchers(Collection<TemplateMatcher> matchers) {
+        this.matchers = new ArrayList<>(matchers);
 
         if (Objects.isNull(this.matchersCondition) && this.matchers.size() > 1) {
             this.matchersCondition = MatchersCondition.and;

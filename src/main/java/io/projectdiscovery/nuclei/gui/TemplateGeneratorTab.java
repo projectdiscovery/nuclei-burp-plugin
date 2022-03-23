@@ -78,6 +78,25 @@ public class TemplateGeneratorTab extends JPanel {
         initializeNucleiCliArgumentMap(nucleiGeneratorSettings);
     }
 
+    public Optional<Template> getTemplate() {
+        return parseTemplate(this.templateEditor.getText());
+    }
+
+    public void setTemplate(Template template) {
+        this.templateEditor.setText(YamlUtil.dump(template));
+    }
+
+    public void cleanup() {
+        try {
+            if (TemplateGeneratorTab.this.templatePath.startsWith(Utils.getTempPath())) {
+                Files.deleteIfExists(TemplateGeneratorTab.this.templatePath);
+            }
+        } catch (IOException ex) {
+            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", TemplateGeneratorTab.this.templatePath));
+            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(ex.getMessage());
+        }
+    }
+
     private void createSplitPane(Container contentPane, String templateYaml) {
         final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createTextEditor(templateYaml), createOutputPane());
         splitPane.setOneTouchExpandable(true);
@@ -90,17 +109,6 @@ public class TemplateGeneratorTab extends JPanel {
         outputConstraints.weighty = 0.9;
         outputConstraints.fill = GridBagConstraints.BOTH;
         contentPane.add(splitPane, outputConstraints);
-    }
-
-    public void cleanup() {
-        try {
-            if (TemplateGeneratorTab.this.templatePath.startsWith(Utils.getTempPath())) {
-                Files.deleteIfExists(TemplateGeneratorTab.this.templatePath);
-            }
-        } catch (IOException ex) {
-            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", TemplateGeneratorTab.this.templatePath));
-            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(ex.getMessage());
-        }
     }
 
     private String createCommand(Path nucleiPath, URL targetUrl) {
@@ -409,24 +417,32 @@ public class TemplateGeneratorTab extends JPanel {
     private void saveTemplateToFile() {
         final Path targetTemplatePath = this.nucleiGeneratorSettings.getTemplatePath();
         final String yamlTemplate = this.templateEditor.getText();
+        parseTemplate(yamlTemplate).ifPresent(template -> {
+            final String templateId = template.getId();
+            if (Utils.isBlank(templateId)) {
+                JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                final Path generatedFilePath = targetTemplatePath.resolve(templateId + ".yaml");
+                saveTemplateToFile(generatedFilePath, yamlTemplate);
+            }
+        });
+    }
 
+    private Optional<Template> parseTemplate(String yamlTemplate) {
+        Optional<Template> result = Optional.empty();
         try {
             final Template template = YamlUtil.load(yamlTemplate, Template.class);
 
             if (template == null) {
                 JOptionPane.showMessageDialog(this, "Invalid template", "Invalid template", JOptionPane.ERROR_MESSAGE);
             } else {
-                final String templateId = template.getId();
-                if (Utils.isBlank(templateId)) {
-                    JOptionPane.showMessageDialog(this, "Missing mandatory template id!", "Template error", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    final Path generatedFilePath = targetTemplatePath.resolve(templateId + ".yaml");
-                    saveTemplateToFile(generatedFilePath, yamlTemplate);
-                }
+                result = Optional.of(template);
             }
         } catch (YAMLException e) {
             JOptionPane.showMessageDialog(this, "Please fix the errors and try again:\n" + e.getMessage(), "Invalid template", JOptionPane.ERROR_MESSAGE);
         }
+
+        return result;
     }
 
     private void saveTemplateToFile(Path generatedFilePath, String yamlTemplate) {

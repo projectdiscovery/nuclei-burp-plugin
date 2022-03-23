@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -86,5 +87,11 @@ public final class Utils {
 
     public static <T extends Enum<T>> List<String> getEnumValues(Class<T> enumClass) {
         return Arrays.stream(enumClass.getEnumConstants()).map(Enum::name).collect(Collectors.toList());
+    }
+
+    @SafeVarargs
+    public static <T> List<T> createNewList(Collection<T> collection, T... elements) {
+        return collection == null ? Arrays.asList(elements) : Stream.concat(Stream.of(elements), collection.stream())
+                                                                    .collect(Collectors.toList());
     }
 }

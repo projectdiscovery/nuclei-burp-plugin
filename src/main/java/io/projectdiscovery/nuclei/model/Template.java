@@ -66,4 +66,8 @@ public class Template {
     public List<Requests> getRequests() {
         return this.requests;
     }
+
+    public void setRequests(List<Requests> requests) {
+        this.requests = requests;
+    }
 }

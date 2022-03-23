@@ -41,7 +41,6 @@ public final class TemplateGeneratorWindow extends JFrame {
         this.setPreferredSize(new Dimension(800, 600));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
         this.pack();
-        this.setVisible(true);
         this.setLocationRelativeTo(null); // center of the screen
     }
 
@@ -54,11 +53,20 @@ public final class TemplateGeneratorWindow extends JFrame {
     }
 
     public void addTab(TemplateGeneratorTab templateGeneratorTab) {
+        this.setVisible(true);
         this.templateGeneratorTabs.add(templateGeneratorTab);
         final String tabName = Optional.ofNullable(templateGeneratorTab.getName())
                                        .orElseGet(() -> "Tab " + this.openedTabCounter++);
         templateGeneratorTab.setName(tabName);
         this.tabbedPane.addTab(tabName, templateGeneratorTab);
+    }
+
+    public List<TemplateGeneratorTab> getTabs() {
+        return this.templateGeneratorTabs;
+    }
+
+    public Optional<TemplateGeneratorTab> getTab(String tabName) {
+        return this.templateGeneratorTabs.stream().filter(tab -> tab.getName().equals(tabName)).findAny();
     }
 
     private void cleanupOnClose() {
