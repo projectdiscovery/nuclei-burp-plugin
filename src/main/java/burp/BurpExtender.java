@@ -133,6 +133,12 @@ public class BurpExtender implements burp.IBurpExtender {
                             menuItems = generateIntruderTemplate(generalSettings, targetUrl, request);
                             break;
                         }
+                        case IContextMenuInvocation.CONTEXT_PROXY_HISTORY: {
+                            final Requests templateRequests = new Requests();
+                            templateRequests.setRaw(Arrays.stream(selectedMessages).map(IHttpRequestResponse::getRequest).toArray(byte[][]::new));
+                            menuItems = List.of(createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, templateRequests), GENERATE_CONTEXT_MENU_TEXT));
+                            break;
+                        }
                     }
                 } catch (MalformedURLException e) {
                     generalSettings.logError(e.getMessage());
@@ -173,7 +179,8 @@ public class BurpExtender implements burp.IBurpExtender {
         final List<TemplateGeneratorTab> tabs = templateGeneratorWindow.getTabs();
 
         return createAddToTabContextMenuItems(templateGeneratorWindow, template -> {
-            createContextMenuActionHandlingMultiRequests(template, requestBytes, firstRequest -> firstRequest.addRaw(extensionHelpers.bytesToString(requestBytes)), "request");
+            final Consumer<Requests> firstRequestConsumer = firstRequest -> firstRequest.addRaw(extensionHelpers.bytesToString(requestBytes));
+            createContextMenuActionHandlingMultiRequests(template, requestBytes, firstRequestConsumer, "request");
         }, "Add request to ");
     }
 
@@ -197,10 +204,11 @@ public class BurpExtender implements burp.IBurpExtender {
     private Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, byte[] httpRequest, IExtensionHelpers extensionHelpers) {
         final TemplateGeneratorWindow templateGeneratorWindow = TemplateGeneratorWindow.getInstance(generalSettings);
         return createAddToTabContextMenuItems(templateGeneratorWindow, template -> {
-            createContextMenuActionHandlingMultiRequests(template, httpRequest, firstRequest -> {
+            final Consumer<Requests> firstRequestConsumer = firstRequest -> {
                 final List<TemplateMatcher> matchers = firstRequest.getMatchers();
                 firstRequest.setMatchers(Utils.createNewList(matchers, contentMatcher));
-            }, "matcher");
+            };
+            createContextMenuActionHandlingMultiRequests(template, httpRequest, firstRequestConsumer, "matcher");
         }, "Add matcher to ");
     }
 
