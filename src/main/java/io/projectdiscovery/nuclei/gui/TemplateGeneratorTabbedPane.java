@@ -29,11 +29,19 @@ import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 
-class TemplateGeneratorTabbedPane extends JTabbedPane {
+public class TemplateGeneratorTabbedPane extends JTabbedPane {
     private final List<TemplateGeneratorTab> templateGeneratorTabs;
+
+    private int openedTabCounter = 1;
+
+    public TemplateGeneratorTabbedPane() {
+        this(new ArrayList<>());
+    }
 
     public TemplateGeneratorTabbedPane(List<TemplateGeneratorTab> templateGeneratorTabs) {
         super(TOP, SCROLL_TAB_LAYOUT);
@@ -45,13 +53,35 @@ class TemplateGeneratorTabbedPane extends JTabbedPane {
         this.setVisible(true);
     }
 
+    public void addTab(TemplateGeneratorTab templateGeneratorTab) {
+        this.templateGeneratorTabs.add(templateGeneratorTab);
+        final String tabName = Optional.ofNullable(templateGeneratorTab.getName())
+                                       .orElseGet(() -> "Tab " + this.openedTabCounter++);
+        templateGeneratorTab.setName(tabName);
+        this.addTab(tabName, templateGeneratorTab);
+    }
+
+    public Optional<TemplateGeneratorTab> getTab(String tabName) {
+        return this.templateGeneratorTabs.stream().filter(tab -> tab.getName().equals(tabName)).findAny();
+    }
+
+    public List<TemplateGeneratorTab> getTabs() {
+        return this.templateGeneratorTabs;
+    }
+
     @Override
     public void remove(int index) {
         if (index >= 0) {
             Executors.newSingleThreadExecutor().submit(() -> this.templateGeneratorTabs.get(index).cleanup());
-            this.templateGeneratorTabs.remove(index);
             super.remove(index);
+            this.templateGeneratorTabs.remove(index);
         }
+    }
+
+    @Override
+    public void removeAll() {
+        super.removeAll();
+        this.templateGeneratorTabs.clear();
     }
 
     private void navigateTabsWithMouseScroll(MouseWheelEvent e) {

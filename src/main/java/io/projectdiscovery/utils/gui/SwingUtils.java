@@ -23,15 +23,18 @@
  *
  */
 
-package io.projectdiscovery.nuclei.gui;
+package io.projectdiscovery.utils.gui;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.stream.IntStream;
 
 public final class SwingUtils {
 
@@ -53,11 +56,26 @@ public final class SwingUtils {
         }
     }
 
-    static void setKeyboardShortcut(JComponent rootPane, int keyCode, Runnable actionPerformed) {
+    public static void setTabSupportKeyboardShortcuts(JTabbedPane tabbedPane, JComponent parentComponent) {
+        SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK), () -> tabbedPane.remove(tabbedPane.getSelectedIndex()));
+
+        IntStream.rangeClosed(1, 9).forEach(keyIndex -> {
+            final char digit = Character.forDigit(keyIndex, 16);
+            SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(digit, InputEvent.CTRL_DOWN_MASK), () -> {
+
+                final int tabIndex = keyIndex - 1;
+                if (tabbedPane.getTabCount() > tabIndex) {
+                    tabbedPane.setSelectedIndex(tabIndex);
+                }
+            });
+        });
+    }
+
+    public static void setKeyboardShortcut(JComponent rootPane, int keyCode, Runnable actionPerformed) {
         setKeyboardShortcut(rootPane, KeyStroke.getKeyStroke(keyCode, 0), actionPerformed);
     }
 
-    static void setKeyboardShortcut(JComponent rootPane, KeyStroke keyStroke, Runnable actionPerformed) {
+    public static void setKeyboardShortcut(JComponent rootPane, KeyStroke keyStroke, Runnable actionPerformed) {
         setKeyboardShortcut(rootPane, keyStroke, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -66,7 +84,7 @@ public final class SwingUtils {
         });
     }
 
-    static void setKeyboardShortcut(JComponent container, KeyStroke keyStroke, Action action) {
+    public static void setKeyboardShortcut(JComponent container, KeyStroke keyStroke, Action action) {
         final InputMap frameInputMap = container.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap frameActionMap = container.getActionMap();
 

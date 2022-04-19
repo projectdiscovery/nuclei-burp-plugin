@@ -88,5 +88,4 @@ public final class NucleiUtils {
                                                              : new CliArgument(matcher.group(1), matcher.group(2))
                                  : null;
     }
-
 }
