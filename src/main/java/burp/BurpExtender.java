@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public class BurpExtender implements burp.IBurpExtender {
@@ -51,6 +52,7 @@ public class BurpExtender implements burp.IBurpExtender {
     private static final String GENERATE_CONTEXT_MENU_TEXT = "Generate template";
 
     private Map<String, String> yamlFieldDescriptionMap;
+    private JTabbedPane nucleiTabbedPane;
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
@@ -94,10 +96,11 @@ public class BurpExtender implements burp.IBurpExtender {
 
             @Override
             public Component getUiComponent() {
-                final JTabbedPane jTabbedPane = new JTabbedPane();
-                jTabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
-                jTabbedPane.setVisible(true);
-                return jTabbedPane;
+                final JTabbedPane nucleiTabbedPane = new JTabbedPane();
+                BurpExtender.this.nucleiTabbedPane = nucleiTabbedPane;
+                nucleiTabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
+                nucleiTabbedPane.setVisible(true);
+                return nucleiTabbedPane;
             }
         };
     }
@@ -175,10 +178,10 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, IExtensionHelpers extensionHelpers, byte[] requestBytes) {
-        final TemplateGeneratorWindow templateGeneratorWindow = TemplateGeneratorWindow.getInstance(generalSettings);
-        final List<TemplateGeneratorTab> tabs = templateGeneratorWindow.getTabs();
+        final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+        final List<TemplateGeneratorTab> tabs = templateGeneratorTabContainer.getTabs();
 
-        return createAddToTabContextMenuItems(templateGeneratorWindow, template -> {
+        return createAddToTabContextMenuItems(templateGeneratorTabContainer, template -> {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> firstRequest.addRaw(extensionHelpers.bytesToString(requestBytes));
             createContextMenuActionHandlingMultiRequests(template, requestBytes, firstRequestConsumer, "request");
         }, "Add request to ");
@@ -202,8 +205,8 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, byte[] httpRequest, IExtensionHelpers extensionHelpers) {
-        final TemplateGeneratorWindow templateGeneratorWindow = TemplateGeneratorWindow.getInstance(generalSettings);
-        return createAddToTabContextMenuItems(templateGeneratorWindow, template -> {
+        final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+        return createAddToTabContextMenuItems(templateGeneratorTabContainer, template -> {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> {
                 final List<TemplateMatcher> matchers = firstRequest.getMatchers();
                 firstRequest.setMatchers(Utils.createNewList(matchers, contentMatcher));
@@ -228,15 +231,15 @@ public class BurpExtender implements burp.IBurpExtender {
         }
     }
 
-    private Set<JMenuItem> createAddToTabContextMenuItems(TemplateGeneratorWindow templateGeneratorWindow, Consumer<Template> consumer, String contextMenuAddToTabPrefix) {
-        return templateGeneratorWindow.getTabs().stream().map(tab -> {
+    private Set<JMenuItem> createAddToTabContextMenuItems(TemplateGeneratorTabContainer templateGeneratorTabContainer, Consumer<Template> consumer, String contextMenuAddToTabPrefix) {
+        return templateGeneratorTabContainer.getTabs().stream().map(tab -> {
             final String tabName = tab.getName();
             // TODO add scrollable menu?
-            final Runnable action = () -> templateGeneratorWindow.getTab(tabName)
-                                                                 .ifPresent(templateGeneratorTab -> templateGeneratorTab.getTemplate().ifPresent(template -> {
-                                                                     consumer.accept(template);
-                                                                     templateGeneratorTab.setTemplate(template);
-                                                                 }));
+            final Runnable action = () -> templateGeneratorTabContainer.getTab(tabName)
+                                                                       .ifPresent(templateGeneratorTab -> templateGeneratorTab.getTemplate().ifPresent(template -> {
+                                                                           consumer.accept(template);
+                                                                           templateGeneratorTab.setTemplate(template);
+                                                                       }));
             return createContextMenuItem(action, contextMenuAddToTabPrefix + tabName);
         }).collect(Collectors.toSet());
     }
@@ -303,6 +306,30 @@ public class BurpExtender implements burp.IBurpExtender {
                 .withYamlFieldDescriptionMap(this.yamlFieldDescriptionMap)
                 .build();
 
-        SwingUtilities.invokeLater(() -> TemplateGeneratorWindow.getInstance(generalSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings)));
+        SwingUtilities.invokeLater(() -> {
+            final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+
+            if (true) { // TODO read from config
+                templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
+                final String generatorTabName = "Generator";
+                final boolean isBurpNucleiGeneratorTabPresent = IntStream.range(0, this.nucleiTabbedPane.getTabCount())
+                                                                         .mapToObj(i -> Map.entry(this.nucleiTabbedPane.getTitleAt(i), (Container) this.nucleiTabbedPane.getComponentAt(i)))
+                                                                         .anyMatch(entry -> entry.getKey().equals(generatorTabName));
+
+                if (!isBurpNucleiGeneratorTabPresent) {
+                    this.nucleiTabbedPane.addTab(generatorTabName, templateGeneratorTabContainer.getContainer());
+                }
+            } else {
+                TemplateGeneratorWindow.getInstance(generalSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
+            }
+        });
+    }
+
+    private TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
+        if (true) { // TODO read from config
+            return TemplateGeneratorEmbeddedContainer.getInstance();
+        } else {
+            return TemplateGeneratorWindow.getInstance(generalSettings);
+        }
     }
 }

@@ -11,6 +11,7 @@ import io.projectdiscovery.nuclei.yaml.YamlUtil;
 import io.projectdiscovery.utils.CommandLineUtils;
 import io.projectdiscovery.utils.ExecutionResult;
 import io.projectdiscovery.utils.Utils;
+import io.projectdiscovery.utils.gui.SwingUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
@@ -88,12 +89,12 @@ public class TemplateGeneratorTab extends JPanel {
 
     public void cleanup() {
         try {
-            if (TemplateGeneratorTab.this.templatePath.startsWith(Utils.getTempPath())) {
-                Files.deleteIfExists(TemplateGeneratorTab.this.templatePath);
+            if (this.templatePath.startsWith(Utils.getTempPath())) {
+                Files.deleteIfExists(this.templatePath);
             }
         } catch (IOException ex) {
-            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", TemplateGeneratorTab.this.templatePath));
-            TemplateGeneratorTab.this.nucleiGeneratorSettings.logError(ex.getMessage());
+            this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", this.templatePath));
+            this.nucleiGeneratorSettings.logError(ex.getMessage());
         }
     }
 

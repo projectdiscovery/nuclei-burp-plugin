@@ -25,6 +25,8 @@
 
 package io.projectdiscovery.nuclei.gui;
 
+import io.projectdiscovery.utils.gui.SwingUtils;
+
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.event.KeyEvent;
