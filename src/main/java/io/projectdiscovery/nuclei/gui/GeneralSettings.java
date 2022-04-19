@@ -25,6 +25,7 @@
 
 package io.projectdiscovery.nuclei.gui;
 
+import io.projectdiscovery.nuclei.gui.settings.SettingsPanel;
 import io.projectdiscovery.utils.Utils;
 
 import java.nio.file.Path;
@@ -67,6 +68,10 @@ public class GeneralSettings {
         return Optional.ofNullable(loadExtensionSetting(SettingsPanel.TEMPLATE_PATH_SETTING_NAME))
                        .map(Paths::get)
                        .orElseGet(Utils::getTempPath);
+    }
+
+    public boolean isDetachedGeneratorWindow() {
+        return Boolean.parseBoolean(loadExtensionSetting(SettingsPanel.DETACHED_TABS_SETTING_NAME));
     }
 
     public Integer getFontSize() {

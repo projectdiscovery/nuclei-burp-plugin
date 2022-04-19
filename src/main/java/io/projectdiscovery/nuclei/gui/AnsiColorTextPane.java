@@ -46,10 +46,6 @@ public class AnsiColorTextPane extends JTextPane {
         this.errorLogger = errorLogger;
     }
 
-    public AnsiColorTextPane() {
-        this(SettingsPanel.DEFAULT_FONT_SIZE, System.err::println);
-    }
-
     public void appendText(String content, boolean noColor) {
         if (noColor) {
             appendText(content);

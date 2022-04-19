@@ -23,8 +23,9 @@
  *
  */
 
-package io.projectdiscovery.nuclei.gui;
+package io.projectdiscovery.nuclei.gui.settings;
 
+import io.projectdiscovery.nuclei.gui.GeneralSettings;
 import io.projectdiscovery.nuclei.util.NucleiUtils;
 import io.projectdiscovery.utils.Utils;
 
@@ -33,7 +34,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 
 public class SettingsPanel extends JPanel {
@@ -41,13 +44,14 @@ public class SettingsPanel extends JPanel {
     public static final String NUCLEI_PATH_SETTING_NAME = "nucleiPath";
     public static final String TEMPLATE_PATH_SETTING_NAME = "templatePath";
     public static final String AUTHOR_SETTING_NAME = "author";
+    public static final String DETACHED_TABS_SETTING_NAME = "detachedTabs";
     public static final String FONT_SIZE_SETTING_NAME = "fontSize";
     public static final int DEFAULT_FONT_SIZE = 14;
 
     private final GeneralSettings settings;
     private JButton cancelButton;
     private JButton saveButton;
-    private Map<String, JTextField> valueTextFieldMap;
+    private final Collection<ConfigOption> configParameters = new ArrayList<>();
 
     public SettingsPanel(GeneralSettings generalSettings) {
         this.settings = generalSettings;
@@ -78,7 +82,7 @@ public class SettingsPanel extends JPanel {
     }
 
     private void saveConfigValues() {
-        this.valueTextFieldMap.forEach((k, v) -> this.settings.saveExtensionSetting(k, v.getText()));
+        this.configParameters.forEach(parameter -> this.settings.saveExtensionSetting(parameter.getName(), parameter.getValue()));
         enableButtons(false);
     }
 
@@ -117,6 +121,8 @@ public class SettingsPanel extends JPanel {
 
         createTextFields(topPanel);
 
+        createComboBox(topPanel);
+
         createButtons(topPanel);
 
         addAlignmentBoxes(topPanel);
@@ -124,9 +130,17 @@ public class SettingsPanel extends JPanel {
         return topPanel;
     }
 
+    private void createComboBox(JPanel topPanel) {
+        final JCheckBox detachedWindowCheckBox = new JCheckBox();
+        detachedWindowCheckBox.addActionListener(e -> enableButtons(true));
+        this.configParameters.add(new CheckBoxConfigOption(DETACHED_TABS_SETTING_NAME, detachedWindowCheckBox));
+        final GridBagConstraints detachedWindowConstraints = createConfigValueConstraints(this.configParameters.size());
+        topPanel.add(detachedWindowCheckBox, detachedWindowConstraints);
+    }
+
     private void addAlignmentBoxes(JPanel topPanel) {
         // create empty cells on the right, so that the previously created buttons can be centered against the text fields
-        for (int i = 0; i <= this.valueTextFieldMap.size() + 1; i++) {
+        for (int i = 0; i <= this.configParameters.size() + 1; i++) {
             final Box horizontalBox = Box.createHorizontalBox();
             final GridBagConstraints boxConstraints = new GridBagConstraints();
             boxConstraints.gridx = 3;
@@ -151,9 +165,9 @@ public class SettingsPanel extends JPanel {
         final GridBagConstraints authorFieldConstraints = createTextFieldConstraints(authorTextField, ++gridY);
         topPanel.add(authorTextField, authorFieldConstraints);
 
-        this.valueTextFieldMap = Map.ofEntries(Map.entry(NUCLEI_PATH_SETTING_NAME, nucleiPathTextField),
-                                               Map.entry(TEMPLATE_PATH_SETTING_NAME, templatePathTextField),
-                                               Map.entry(AUTHOR_SETTING_NAME, authorTextField));
+        this.configParameters.addAll(Arrays.asList(new TextFieldConfigOption(NUCLEI_PATH_SETTING_NAME, nucleiPathTextField),
+                                                   new TextFieldConfigOption(TEMPLATE_PATH_SETTING_NAME, templatePathTextField),
+                                                   new TextFieldConfigOption(AUTHOR_SETTING_NAME, authorTextField)));
     }
 
     private void createButtons(JPanel topPanel) {
@@ -177,7 +191,7 @@ public class SettingsPanel extends JPanel {
         final GridBagConstraints buttonPanelConstraints = new GridBagConstraints();
         buttonPanelConstraints.gridx = 1;
         buttonPanelConstraints.gridwidth = 2;
-        buttonPanelConstraints.gridy = 4;
+        buttonPanelConstraints.gridy = this.configParameters.size() + 1;
         buttonPanelConstraints.weightx = 0.01;
         buttonPanelConstraints.fill = GridBagConstraints.HORIZONTAL;
 
@@ -197,7 +211,7 @@ public class SettingsPanel extends JPanel {
     }
 
     private void createLabels(Container container) {
-        final String[] labels = {"Path to nuclei", "Template default save path", "Template author"};
+        final String[] labels = {"Path to nuclei", "Template default save path", "Template author", "Use dedicated window"};
         for (int index = 1; index <= labels.length; index++) {
             final JLabel jLabel = new JLabel(labels[index - 1]);
             final GridBagConstraints nucleiLabelConstraints = createLabelConstraints(index);
@@ -215,31 +229,36 @@ public class SettingsPanel extends JPanel {
     }
 
     private void loadSavedFieldValues() {
-        this.valueTextFieldMap.forEach((configurationName, configurationField) -> {
+        this.configParameters.forEach(config -> {
+            final String configurationName = config.getName();
             final String savedValue = this.settings.loadExtensionSetting(configurationName);
             if (Utils.isBlank(savedValue)) {
-                calculateDefaultConfigurationValue(configurationName, configurationField);
+                calculateDefaultConfigurationValue(config);
             } else {
-                configurationField.setText(savedValue);
+                config.setValue(savedValue);
             }
         });
 
         enableButtons(false);
     }
 
-    private void calculateDefaultConfigurationValue(String configurationName, JTextField configurationField) {
+    private void calculateDefaultConfigurationValue(ConfigOption configOption) {
         try {
-            switch (configurationName) {
+            switch (configOption.getName()) {
                 case NUCLEI_PATH_SETTING_NAME: {
-                    NucleiUtils.calculateNucleiPath().ifPresent(nucleiPath -> configurationField.setText(nucleiPath.toString()));
+                    NucleiUtils.calculateNucleiPath().ifPresent(nucleiPath -> configOption.setValue(nucleiPath.toString()));
                     break;
                 }
                 case TEMPLATE_PATH_SETTING_NAME: {
-                    NucleiUtils.detectDefaultTemplatePath().ifPresent(configurationField::setText);
+                    NucleiUtils.detectDefaultTemplatePath().ifPresent(configOption::setValue);
                     break;
                 }
                 case AUTHOR_SETTING_NAME: {
-                    Optional.ofNullable(System.getProperty("user.name")).ifPresent(configurationField::setText);
+                    Optional.ofNullable(System.getProperty("user.name")).ifPresent(configOption::setValue);
+                    break;
+                }
+                case DETACHED_TABS_SETTING_NAME: {
+                    configOption.setValue(Boolean.TRUE.toString());
                     break;
                 }
             }
@@ -280,6 +299,10 @@ public class SettingsPanel extends JPanel {
             }
         });
 
+        return createConfigValueConstraints(gridY);
+    }
+
+    private GridBagConstraints createConfigValueConstraints(int gridY) {
         final GridBagConstraints fieldConstraints = new GridBagConstraints();
         fieldConstraints.gridx = 1;
         fieldConstraints.gridy = gridY;
