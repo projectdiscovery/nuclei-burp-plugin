@@ -84,7 +84,7 @@ public final class MenuHelper {
         final String aboutTitle = "About";
         final JMenuItem aboutMenuItem = new JMenuItem(aboutTitle);
         aboutMenuItem.addActionListener(e -> {
-            final URL pdIconUrl = SettingsPanel.class.getResource("/ProjectDiscovery-Icon.png");
+            final URL pdIconUrl = MenuHelper.class.getResource("/ProjectDiscovery-Icon.png");
             final String bodyStyle = getHtmlBodyStyle();
 
             if (pdIconUrl != null) {

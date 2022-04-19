@@ -26,6 +26,7 @@
 package burp;
 
 import io.projectdiscovery.nuclei.gui.*;
+import io.projectdiscovery.nuclei.gui.settings.SettingsPanel;
 import io.projectdiscovery.nuclei.model.*;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
 import io.projectdiscovery.nuclei.util.SchemaUtils;
@@ -309,7 +310,9 @@ public class BurpExtender implements burp.IBurpExtender {
         SwingUtilities.invokeLater(() -> {
             final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
 
-            if (true) { // TODO read from config
+            if (generalSettings.isDetachedGeneratorWindow()) {
+                TemplateGeneratorWindow.getInstance(generalSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
+            } else {
                 templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
                 final String generatorTabName = "Generator";
                 final boolean isBurpNucleiGeneratorTabPresent = IntStream.range(0, this.nucleiTabbedPane.getTabCount())
@@ -319,17 +322,11 @@ public class BurpExtender implements burp.IBurpExtender {
                 if (!isBurpNucleiGeneratorTabPresent) {
                     this.nucleiTabbedPane.addTab(generatorTabName, templateGeneratorTabContainer.getContainer());
                 }
-            } else {
-                TemplateGeneratorWindow.getInstance(generalSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
             }
         });
     }
 
     private TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
-        if (true) { // TODO read from config
-            return TemplateGeneratorEmbeddedContainer.getInstance();
-        } else {
-            return TemplateGeneratorWindow.getInstance(generalSettings);
-        }
+        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance();
     }
 }
