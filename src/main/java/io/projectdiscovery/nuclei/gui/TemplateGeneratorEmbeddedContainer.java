@@ -39,9 +39,8 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
 
     private final TemplateGeneratorTabbedPane tabbedPane;
 
-    private TemplateGeneratorEmbeddedContainer() {
+    private TemplateGeneratorEmbeddedContainer(GeneralSettings generalSettings) {
         super(new GridBagLayout());
-        this.tabbedPane = new TemplateGeneratorTabbedPane();
 
         final GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -50,15 +49,21 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
         gridBagConstraints.weighty = 1;
         gridBagConstraints.fill = GridBagConstraints.BOTH;
 
+        this.tabbedPane = new TemplateGeneratorTabbedPane();
+        this.tabbedPane.addChangeListener(e -> {
+            if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
+                cleanupOnClose();
+            }
+        });
         this.add(this.tabbedPane, gridBagConstraints);
 
         SwingUtils.setTabSupportKeyboardShortcuts(this.tabbedPane, this);
-        SwingUtils.setKeyboardShortcut(this, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(System.err::println/* TODO errorMessageConsumer*/));
+        SwingUtils.setKeyboardShortcut(this, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(generalSettings::logError));
     }
 
-    public static TemplateGeneratorEmbeddedContainer getInstance() {
+    public static TemplateGeneratorEmbeddedContainer getInstance(GeneralSettings generalSettings) {
         if (instance == null) {
-            instance = new TemplateGeneratorEmbeddedContainer();
+            instance = new TemplateGeneratorEmbeddedContainer(generalSettings);
         }
         return instance;
     }
