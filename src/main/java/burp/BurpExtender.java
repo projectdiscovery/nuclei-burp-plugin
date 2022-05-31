@@ -309,11 +309,9 @@ public class BurpExtender implements burp.IBurpExtender {
 
         SwingUtilities.invokeLater(() -> {
             final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+            templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
 
-            if (generalSettings.isDetachedGeneratorWindow()) {
-                TemplateGeneratorWindow.getInstance(generalSettings).addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
-            } else {
-                templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
+            if (!generalSettings.isDetachedGeneratorWindow()) {
                 final String generatorTabName = "Generator";
                 final boolean isBurpNucleiGeneratorTabPresent = IntStream.range(0, this.nucleiTabbedPane.getTabCount())
                                                                          .mapToObj(i -> Map.entry(this.nucleiTabbedPane.getTitleAt(i), (Container) this.nucleiTabbedPane.getComponentAt(i)))
@@ -327,6 +325,6 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
-        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance();
+        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance(generalSettings);
     }
 }

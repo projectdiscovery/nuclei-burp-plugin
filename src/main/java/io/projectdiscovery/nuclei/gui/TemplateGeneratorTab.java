@@ -90,7 +90,9 @@ public class TemplateGeneratorTab extends JPanel {
     public void cleanup() {
         try {
             if (this.templatePath.startsWith(Utils.getTempPath())) {
-                Files.deleteIfExists(this.templatePath);
+                if (Files.deleteIfExists(this.templatePath)) {
+                    this.nucleiGeneratorSettings.log(String.format("Deleted temporary template at '%s'.", this.templatePath));
+                }
             }
         } catch (IOException ex) {
             this.nucleiGeneratorSettings.logError(String.format("Could not delete temporary file: '%s'.", this.templatePath));
