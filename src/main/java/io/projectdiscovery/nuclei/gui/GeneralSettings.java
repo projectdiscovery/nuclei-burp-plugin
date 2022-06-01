@@ -30,6 +30,9 @@ import io.projectdiscovery.utils.Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -93,11 +96,11 @@ public class GeneralSettings {
     }
 
     public void logError(String content) {
-        this.errorConsumer.accept(content);
+        this.errorConsumer.accept(addTimePrefix(content));
     }
 
     public void log(String content) {
-        this.outputConsumer.accept(content);
+        this.outputConsumer.accept(addTimePrefix(content));
     }
 
     public static final class Builder {
@@ -148,5 +151,9 @@ public class GeneralSettings {
 
             return new GeneralSettings(this);
         }
+    }
+
+    private String addTimePrefix(String content) {
+        return String.format("[%s] %s", DateTimeFormatter.ISO_LOCAL_TIME.format(LocalTime.now().truncatedTo(ChronoUnit.SECONDS)), content);
     }
 }
