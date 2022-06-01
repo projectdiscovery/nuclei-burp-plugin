@@ -49,15 +49,10 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
         gridBagConstraints.weighty = 1;
         gridBagConstraints.fill = GridBagConstraints.BOTH;
 
-        this.tabbedPane = new TemplateGeneratorTabbedPane();
-        this.tabbedPane.addChangeListener(e -> {
-            if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
-                cleanupOnClose();
-            }
-        });
+        this.tabbedPane = new TemplateGeneratorTabbedPane(generalSettings);
         this.add(this.tabbedPane, gridBagConstraints);
 
-        SwingUtils.setTabSupportKeyboardShortcuts(this.tabbedPane, this);
+        SwingUtils.setTabSupportKeyboardShortcuts(this, this.tabbedPane);
         SwingUtils.setKeyboardShortcut(this, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(generalSettings::logError));
     }
 
@@ -86,11 +81,6 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
     @Override
     public Optional<TemplateGeneratorTab> getTab(String tabName) {
         return this.tabbedPane.getTab(tabName);
-    }
-
-    private void cleanupOnClose() {
-        getTabs().forEach(TemplateGeneratorTab::cleanup);
-        this.tabbedPane.removeAll();
     }
 }
 

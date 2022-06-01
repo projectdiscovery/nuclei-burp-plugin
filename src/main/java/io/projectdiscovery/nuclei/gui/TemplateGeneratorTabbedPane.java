@@ -26,6 +26,7 @@
 package io.projectdiscovery.nuclei.gui;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -39,18 +40,35 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
 
     private int openedTabCounter = 1;
 
-    public TemplateGeneratorTabbedPane() {
-        this(new ArrayList<>());
+    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings) {
+        this(generalSettings, new ArrayList<>(), () -> {
+        });
     }
 
-    public TemplateGeneratorTabbedPane(List<TemplateGeneratorTab> templateGeneratorTabs) {
+    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings, Runnable closeAction) {
+        this(generalSettings, new ArrayList<>(), closeAction);
+    }
+
+    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings, List<TemplateGeneratorTab> templateGeneratorTabs, Runnable closeAction) {
         super(TOP, SCROLL_TAB_LAYOUT);
         this.templateGeneratorTabs = templateGeneratorTabs;
+
+        this.addChangeListener(e -> {
+            if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
+                cleanUp();
+                closeAction.run();
+            }
+        });
 
         this.addMouseWheelListener(this::navigateTabsWithMouseScroll);
         this.addMouseListener(closeTabWithMiddleMouseButtonAdapter());
 
         this.setVisible(true);
+    }
+
+    public void cleanUp() {
+        getTabs().forEach(TemplateGeneratorTab::cleanup);
+        this.removeAll();
     }
 
     public void addTab(TemplateGeneratorTab templateGeneratorTab) {
@@ -59,6 +77,15 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
                                        .orElseGet(() -> "Tab " + this.openedTabCounter++);
         templateGeneratorTab.setName(tabName);
         this.addTab(tabName, templateGeneratorTab);
+    }
+
+    @Override
+    public void insertTab(String title, Icon icon, Component component, String tip, int index) {
+        if (component.getClass().isAssignableFrom(TemplateGeneratorTab.class)) {
+            super.insertTab(title, icon, component, tip, index);
+        } else {
+            throw new IllegalStateException("Programming error: Incorrect JTabbedPane.addTab() method invoked");
+        }
     }
 
     public Optional<TemplateGeneratorTab> getTab(String tabName) {
@@ -113,7 +140,7 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
         };
     }
 
-    public void removeTab() {
+    private void removeTab() {
         this.remove(this.getSelectedIndex());
     }
 }

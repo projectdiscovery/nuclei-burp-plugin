@@ -21,19 +21,14 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         super("Nuclei Template Generator");
         this.setLayout(new BorderLayout());
 
-        this.tabbedPane = new TemplateGeneratorTabbedPane();
-        this.tabbedPane.addChangeListener(e -> {
-            if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
-                new CloseAction(TemplateGeneratorWindow.this).actionPerformed(null);
-            }
-        });
+        this.tabbedPane = new TemplateGeneratorTabbedPane(generalSettings, () -> new CloseAction(TemplateGeneratorWindow.this).actionPerformed(null));
         this.add(this.tabbedPane);
 
-        setKeyboardShortcuts(this.tabbedPane, this.rootPane, generalSettings::logError);
-        cleanupOnClose();
+        setKeyboardShortcuts(this.rootPane, this.tabbedPane, generalSettings::logError);
+        setCleanUpOnWindowClosingEvent();
 
-        this.setJMenuBar(new MenuHelper(this.generalSettings::logError).createMenuBar());
-        this.setPreferredSize(new Dimension(800, 600));
+        this.setJMenuBar(new MenuHelper(generalSettings::logError).createMenuBar());
+        this.setPreferredSize(new Dimension(1400, 1100));
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
         this.pack();
         this.setLocationRelativeTo(null); // center of the screen
@@ -68,22 +63,21 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         return this.tabbedPane.getTab(tabName);
     }
 
-    private void cleanupOnClose() {
+    private void setCleanUpOnWindowClosingEvent() {
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                getTabs().forEach(TemplateGeneratorTab::cleanup);
-                TemplateGeneratorWindow.this.tabbedPane.removeAll();
+                TemplateGeneratorWindow.this.tabbedPane.cleanUp();
                 instance = null;
                 super.windowClosing(e);
             }
         });
     }
 
-    public void setKeyboardShortcuts(TemplateGeneratorTabbedPane tabbedPane, JComponent parentComponent, Consumer<String> errorMessageConsumer) {
+    public void setKeyboardShortcuts(JComponent parentComponent, JTabbedPane tabbedPane, Consumer<String> errorMessageConsumer) {
         SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
 
-        SwingUtils.setTabSupportKeyboardShortcuts(tabbedPane, parentComponent);
+        SwingUtils.setTabSupportKeyboardShortcuts(parentComponent, tabbedPane);
 
         SwingUtils.setKeyboardShortcut(parentComponent, KeyEvent.VK_F1, () -> MenuHelper.openDocumentationLink(errorMessageConsumer));
     }

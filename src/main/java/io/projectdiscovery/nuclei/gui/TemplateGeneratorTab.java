@@ -71,7 +71,6 @@ public class TemplateGeneratorTab extends JPanel {
         setKeyboardShortcuts();
 
         final String command = createCommand(this.nucleiPath, nucleiGeneratorSettings.getTargetUrl());
-        cleanup();
 
         createControlPanel(this, command);
         createSplitPane(this, nucleiGeneratorSettings.getTemplateYaml());
