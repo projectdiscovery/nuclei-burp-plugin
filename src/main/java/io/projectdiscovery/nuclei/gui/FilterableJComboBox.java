@@ -32,12 +32,12 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Deque;
 
-public class FilterableJComboBox extends JComboBox<String> {
+public final class FilterableJComboBox extends JComboBox<String> {
 
-    private static final List<Integer> KEYS_TO_IGNORE = List.of(KeyEvent.VK_ENTER, KeyEvent.VK_BACK_SPACE, KeyEvent.VK_ESCAPE);
-    private final ArrayDeque<String> commandHistory;
+    private static final Integer[] KEYS_TO_IGNORE = {KeyEvent.VK_ENTER, KeyEvent.VK_BACK_SPACE, KeyEvent.VK_ESCAPE};
+    private final Deque<String> commandHistory;
 
     public FilterableJComboBox(String item) {
         this(new String[]{item});
@@ -56,7 +56,7 @@ public class FilterableJComboBox extends JComboBox<String> {
             @Override
             public void keyPressed(KeyEvent keyEvent) {
                 final String text = textField.getText();
-                if (keyEvent.getModifiersEx() == 0 && !keyEvent.isActionKey() && KEYS_TO_IGNORE.stream().noneMatch(k -> k == keyEvent.getKeyCode())) {
+                if (keyEvent.getModifiersEx() == 0 && !keyEvent.isActionKey() && Arrays.stream(KEYS_TO_IGNORE).noneMatch(k -> k == keyEvent.getKeyCode())) {
                     filterComboModel(text);
                 } else {
                     if (Utils.isBlank(text)) {
@@ -73,6 +73,11 @@ public class FilterableJComboBox extends JComboBox<String> {
         textField.addActionListener(e -> updateComboModel(textField));
     }
 
+    JTextField getTextField() {
+        final ComboBoxEditor comboBoxEditor = this.getEditor();
+        return (JTextField) comboBoxEditor.getEditorComponent();
+    }
+
     /**
      * If a new command is entered, save it and add to the model.
      * Both new and re-executed commands are added/moved to the top of the history.
@@ -81,20 +86,17 @@ public class FilterableJComboBox extends JComboBox<String> {
         final String command = textfield.getText();
         if (this.commandHistory.stream().noneMatch(v -> v.equals(command))) {
             this.commandHistory.addFirst(command);
-            FilterableJComboBox.this.setModel(new DefaultComboBoxModel<>(FilterableJComboBox.this.commandHistory.toArray(String[]::new)));
+            this.setModel(new DefaultComboBoxModel<>(this.commandHistory.toArray(String[]::new)));
         } else {
             this.commandHistory.remove(command);
             this.commandHistory.addFirst(command);
         }
     }
 
-    public JTextField getTextField() {
-        final ComboBoxEditor comboBoxEditor = this.getEditor();
-        return (JTextField) comboBoxEditor.getEditorComponent();
-    }
-
-    public void filterComboModel(String enteredText) {
-        if (!Utils.isBlank(enteredText)) {
+    private void filterComboModel(String enteredText) {
+        if (Utils.isBlank(enteredText)) {
+            this.hidePopup();
+        } else {
             final String[] matchedCommands = this.commandHistory.stream().filter(v -> v.contains(enteredText)).toArray(String[]::new);
             if (matchedCommands.length > 0) {
                 this.setModel(new DefaultComboBoxModel<>(matchedCommands));
@@ -103,8 +105,6 @@ public class FilterableJComboBox extends JComboBox<String> {
             } else {
                 this.hidePopup();
             }
-        } else {
-            this.hidePopup();
         }
     }
 }

@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class TemplateGeneratorTab extends JPanel {
+public final class TemplateGeneratorTab extends JPanel {
 
     private static Map<String, String> CLI_ARGUMENT_MAP;
 
@@ -86,7 +86,7 @@ public class TemplateGeneratorTab extends JPanel {
         this.templateEditor.setText(YamlUtil.dump(template));
     }
 
-    public void cleanup() {
+    void cleanup() {
         try {
             if (this.templatePath.startsWith(Utils.getTempPath())) {
                 if (Files.deleteIfExists(this.templatePath)) {
@@ -126,7 +126,7 @@ public class TemplateGeneratorTab extends JPanel {
                              wrapWithQuotesIfNecessary(targetUrl.toString()));
     }
 
-    private String wrapWithQuotesIfNecessary(String input) {
+    private static String wrapWithQuotesIfNecessary(String input) {
         return input.contains(" ") ? String.format("\"%s\"", input)
                                    : input;
     }
@@ -332,7 +332,7 @@ public class TemplateGeneratorTab extends JPanel {
                     final String currentCommand = textField.getText();
                     textField.setText(currentCommand + ' ' + selectedValue);
                 });
-                final Container commandLineComboBox = TemplateGeneratorTab.this.commandLineField.getParent();
+                final Container commandLineComboBox = this.commandLineField.getParent();
                 final Point commandLineComboLocation = commandLineComboBox.getLocationOnScreen();
                 final Dimension commandLineComboSize = commandLineComboBox.getSize();
                 cliArgumentHelperWindow.setSize((int) commandLineComboSize.getWidth(), (int) cliArgumentHelperWindow.getSize().getHeight());
@@ -400,7 +400,7 @@ public class TemplateGeneratorTab extends JPanel {
         contentPane.add(topPanel, panelConstraints);
     }
 
-    private void initializeNucleiCliArgumentMap(NucleiGeneratorSettings generalSettings) {
+    private static void initializeNucleiCliArgumentMap(NucleiGeneratorSettings generalSettings) {
         if (CLI_ARGUMENT_MAP == null) {
             try {
                 final Path nucleiPath = generalSettings.getNucleiPath();

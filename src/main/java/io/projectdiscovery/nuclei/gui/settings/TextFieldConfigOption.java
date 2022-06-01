@@ -32,7 +32,7 @@ class TextFieldConfigOption implements ConfigOption {
     private final String name;
     private final JTextField textField;
 
-    public TextFieldConfigOption(String name, JTextField textField) {
+    TextFieldConfigOption(String name, JTextField textField) {
         this.name = name;
         this.textField = textField;
     }

@@ -35,13 +35,13 @@ import java.awt.event.*;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class FilterableListWindow extends JFrame {
+public final class FilterableListWindow extends JFrame {
 
     private final Map<String, String> listModelMap;
     private final JList<String> jList;
     private final JTextField textField;
 
-    public FilterableListWindow(Map<String, String> listModelMap, Consumer<String> selectedValueConsumerOnAction) {
+    FilterableListWindow(Map<String, String> listModelMap, Consumer<String> selectedValueConsumerOnAction) {
         this.listModelMap = listModelMap;
 
         this.jList = createJList();
@@ -115,9 +115,9 @@ public class FilterableListWindow extends JFrame {
     }
 
     private void onActionPerformed(String selectedElement, Consumer<String> onActionPerformed) {
-        final String selectedShortFlag = FilterableListWindow.this.listModelMap.get(selectedElement);
+        final String selectedShortFlag = this.listModelMap.get(selectedElement);
         onActionPerformed.accept(selectedShortFlag);
-        FilterableListWindow.this.dispose();
+        this.dispose();
     }
 
     private JTextField createTextField() {
@@ -157,7 +157,7 @@ public class FilterableListWindow extends JFrame {
         return model;
     }
 
-    public void filterModel(DefaultListModel<String> model, String filter) {
+    private void filterModel(DefaultListModel<String> model, String filter) {
         for (String value : this.listModelMap.keySet()) {
             if (value.contains(filter)) {
                 if (!model.contains(value)) {
@@ -169,9 +169,5 @@ public class FilterableListWindow extends JFrame {
                 }
             }
         }
-    }
-
-    public JList<String> getList() {
-        return this.jList;
     }
 }

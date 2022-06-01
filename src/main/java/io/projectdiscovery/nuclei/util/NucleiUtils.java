@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.projectdiscovery.nuclei.model.TemplateMatcher;
 import io.projectdiscovery.utils.Utils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,8 +24,8 @@ import java.util.stream.Stream;
 public final class NucleiUtils {
 
     public static final String NUCLEI_BASE_BINARY_NAME = "nuclei";
-    public static final Pattern NUCLEI_TEMPLATE_PARAMETER_PATTERN = Pattern.compile("(-t)\\s+(\"[^\"]+\"|'[^']+'|[^ ]+)");
 
+    private static final Pattern NUCLEI_TEMPLATE_PARAMETER_PATTERN = Pattern.compile("(-t)\\s+(\"[^\"]+\"|'[^']+'|[^ ]+)");
     private static final Pattern HELP_LINE_REGEX = Pattern.compile("(?:\t| {3})(-[a-z-]+)(?:, (-[a-z-]+))?(?: [a-z-\\[\\]]+)?\\s+(.*)");
 
     private NucleiUtils() {
@@ -82,6 +83,7 @@ public final class NucleiUtils {
                                                          LinkedHashMap::new));
     }
 
+    @Nullable
     private static CliArgument createCliArgument(String line) {
         final Matcher matcher = HELP_LINE_REGEX.matcher(line);
         return matcher.matches() ? matcher.groupCount() == 3 ? new CliArgument(matcher.group(1), matcher.group(2), matcher.group(3))

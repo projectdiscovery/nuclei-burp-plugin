@@ -57,6 +57,7 @@ public final class CveInfoRetriever {
                                                return cveId.equalsIgnoreCase(id);
                                            })
                                            .map(NistCveInfo::new);
+        // TODO
         } catch (NullPointerException e) {
             System.err.println(e.getMessage());
             e.printStackTrace();
@@ -74,7 +75,7 @@ public final class CveInfoRetriever {
             final HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return Optional.of(GSON.fromJson(httpResponse.body(), NistCveResults.class));
         } catch (URISyntaxException | IOException | InterruptedException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // TODO
             return Optional.empty();
         }
     }

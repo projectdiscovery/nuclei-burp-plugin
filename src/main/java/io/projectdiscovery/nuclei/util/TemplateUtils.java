@@ -79,7 +79,7 @@ public final class TemplateUtils {
         if (Utils.isAsciiPrintableNewLine(selectedBytes)) {
             contentMatcher = createWordMatcher(selectionPart, byteToStringFunction.apply(selectedBytes));
         } else {
-            final Binary binaryMatcher = new Binary(selectedBytes);
+            final TemplateMatcher binaryMatcher = new Binary(selectedBytes);
             binaryMatcher.setPart(selectionPart);
             contentMatcher = binaryMatcher;
         }

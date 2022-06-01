@@ -334,7 +334,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private void configureEmbeddedGeneratorTab(GeneralSettings generalSettings, TemplateGeneratorTabContainer templateGeneratorTabContainer) {
         if (getTabComponentByName(this.nucleiTabbedPane, GENERATOR_TAB_NAME).isEmpty()) {
-            this.nucleiTabbedPane.addTab(GENERATOR_TAB_NAME, templateGeneratorTabContainer.getContainer());
+            this.nucleiTabbedPane.addTab(GENERATOR_TAB_NAME, templateGeneratorTabContainer.getComponent());
 
             final TemplateGeneratorTabbedPane tabbedPane = templateGeneratorTabContainer.getTabbedPane();
             tabbedPane.addChangeListener(e -> {

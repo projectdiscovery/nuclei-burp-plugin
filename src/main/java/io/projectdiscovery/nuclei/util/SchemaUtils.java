@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -45,7 +47,7 @@ public final class SchemaUtils {
 
     public static Map<String, String> retrieveYamlFieldWithDescriptions() throws IOException {
         final URL jsonSchemaUrl = new URL(NUCLEI_JSON_SCHEMA_URL);
-        try (final InputStreamReader inputStreamReader = new InputStreamReader(jsonSchemaUrl.openStream())) {
+        try (final InputStreamReader inputStreamReader = new InputStreamReader(jsonSchemaUrl.openStream(), StandardCharsets.UTF_8)) {
             return retrieveYamlFieldWithDescriptions(inputStreamReader);
         }
     }
@@ -71,7 +73,7 @@ public final class SchemaUtils {
                 }
             } else {
                 final Map<String, Object> enumFieldMap = ((Map<String, Object>) definitionEntry.getValue());
-                final List<String> enums = (List<String>) enumFieldMap.get("enum");
+                final Collection<String> enums = (Collection<String>) enumFieldMap.get("enum");
 
                 if (enums != null) {
                     for (String enumValue : enums) {

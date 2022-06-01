@@ -35,21 +35,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 
-public class TemplateGeneratorTabbedPane extends JTabbedPane {
+public final class TemplateGeneratorTabbedPane extends JTabbedPane {
     private final List<TemplateGeneratorTab> templateGeneratorTabs;
 
     private int openedTabCounter = 1;
 
-    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings) {
+    TemplateGeneratorTabbedPane(GeneralSettings generalSettings) {
         this(generalSettings, new ArrayList<>(), () -> {
         });
     }
 
-    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings, Runnable closeAction) {
+    TemplateGeneratorTabbedPane(GeneralSettings generalSettings, Runnable closeAction) {
         this(generalSettings, new ArrayList<>(), closeAction);
     }
 
-    public TemplateGeneratorTabbedPane(GeneralSettings generalSettings, List<TemplateGeneratorTab> templateGeneratorTabs, Runnable closeAction) {
+    private TemplateGeneratorTabbedPane(GeneralSettings generalSettings, List<TemplateGeneratorTab> templateGeneratorTabs, Runnable closeAction) {
         super(TOP, SCROLL_TAB_LAYOUT);
         this.templateGeneratorTabs = templateGeneratorTabs;
 
@@ -69,7 +69,7 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
     }
 
     public void cleanup() {
-        Executors.newSingleThreadExecutor().submit(() -> getTabs().forEach(TemplateGeneratorTab::cleanup));
+        Executors.newSingleThreadExecutor().submit(() -> this.templateGeneratorTabs.forEach(TemplateGeneratorTab::cleanup));
         this.removeAll();
     }
 

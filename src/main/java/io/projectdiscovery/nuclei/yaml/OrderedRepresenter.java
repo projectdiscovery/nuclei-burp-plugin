@@ -26,6 +26,7 @@
 package io.projectdiscovery.nuclei.yaml;
 
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -44,6 +45,7 @@ class OrderedRepresenter extends Representer {
         this.propertyUtils = propertyUtils;
     }
 
+    @Nullable
     @Override
     protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
         if (Objects.isNull(propertyValue)) {

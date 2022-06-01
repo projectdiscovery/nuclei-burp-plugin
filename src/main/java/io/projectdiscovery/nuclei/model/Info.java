@@ -36,16 +36,16 @@ public class Info {
 
     private static final String DEFAULT_REFERENCE = "https://";
     private static final String DEFAULT_DESCRIPTION = "description";
-    public static final String DEFAULT_TAGS = "tags";
+    private static final String DEFAULT_TAGS = "tags";
 
     public enum Severity {
         info, low, medium, high, critical, unknown;
 
         public static Severity of(String value) {
-            return Arrays.stream(Severity.values())
+            return Arrays.stream(values())
                          .filter(severity -> severity.toString().equals(value.toLowerCase()))
                          .findAny()
-                         .orElse(Severity.unknown);
+                         .orElse(unknown);
         }
     }
 

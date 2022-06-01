@@ -25,6 +25,8 @@
 
 package io.projectdiscovery.nuclei.gui;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
@@ -46,7 +48,7 @@ public class AnsiColorTextPane extends JTextPane {
         this.errorLogger = errorLogger;
     }
 
-    public void appendText(String content, boolean noColor) {
+    void appendText(String content, boolean noColor) {
         if (noColor) {
             appendText(content);
         } else {
@@ -55,7 +57,7 @@ public class AnsiColorTextPane extends JTextPane {
         }
     }
 
-    public void appendText(String content) {
+    void appendText(String content) {
         appendRichText(content, null);
     }
 
@@ -83,9 +85,9 @@ public class AnsiColorTextPane extends JTextPane {
     private AttributeSet createAnsiAttributes(String content) {
         final SimpleAttributeSet simpleAttributeSet = new SimpleAttributeSet();
 
-        if (content.equals("\u001B[1m")) {
+        if ("\u001B[1m".equals(content)) {
             StyleConstants.setBold(simpleAttributeSet, true);
-        } else if (content.equals("\u001B[4m")) {
+        } else if ("\u001B[4m".equals(content)) {
             StyleConstants.setUnderline(simpleAttributeSet, true);
         } else {
             Optional.ofNullable(toColor(content)).ifPresent(color -> StyleConstants.setForeground(simpleAttributeSet, color));
@@ -99,7 +101,8 @@ public class AnsiColorTextPane extends JTextPane {
         return simpleAttributeSet;
     }
 
-    private Color toBackgroundColor(String ansiColor) {
+    @Nullable
+    private static Color toBackgroundColor(String ansiColor) {
         switch (ansiColor) {
             case "\u001b[40m":
                 return Color.BLACK.darker();
@@ -140,7 +143,8 @@ public class AnsiColorTextPane extends JTextPane {
         }
     }
 
-    private Color toColor(String ansiColor) {
+    @Nullable
+    private static Color toColor(String ansiColor) {
         switch (ansiColor) {
             case "\u001B[30m":
             case "\u001B[0;30m":

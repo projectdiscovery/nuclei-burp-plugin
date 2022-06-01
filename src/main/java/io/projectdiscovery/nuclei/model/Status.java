@@ -27,6 +27,7 @@ package io.projectdiscovery.nuclei.model;
 
 import io.projectdiscovery.nuclei.model.util.YamlProperty;
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +62,7 @@ public class Status implements TemplateMatcher {
         return this.type;
     }
 
+    @Nullable
     @Override
     public Part getPart() {
         return null; // the part is ignored by the status matcher

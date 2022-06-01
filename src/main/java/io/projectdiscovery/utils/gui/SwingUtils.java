@@ -49,7 +49,7 @@ public final class SwingUtils {
         openWebPage(url.toURI());
     }
 
-    public static void openWebPage(URI uri) throws IOException {
+    private static void openWebPage(URI uri) throws IOException {
         final Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
         if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
             desktop.browse(uri);
@@ -57,11 +57,11 @@ public final class SwingUtils {
     }
 
     public static void setTabSupportKeyboardShortcuts(JComponent parentComponent, JTabbedPane tabbedPane) {
-        SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK), () -> tabbedPane.remove(tabbedPane.getSelectedIndex()));
+        setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK), () -> tabbedPane.remove(tabbedPane.getSelectedIndex()));
 
         IntStream.rangeClosed(1, 9).forEach(keyIndex -> {
             final char digit = Character.forDigit(keyIndex, 16);
-            SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(digit, InputEvent.CTRL_DOWN_MASK), () -> {
+            setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(digit, InputEvent.CTRL_DOWN_MASK), () -> {
 
                 final int tabIndex = keyIndex - 1;
                 if (tabbedPane.getTabCount() > tabIndex) {

@@ -39,7 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 
-public class SettingsPanel extends JPanel {
+public final class SettingsPanel extends JPanel {
 
     public static final String NUCLEI_PATH_SETTING_NAME = "nucleiPath";
     public static final String TEMPLATE_PATH_SETTING_NAME = "templatePath";
@@ -198,7 +198,7 @@ public class SettingsPanel extends JPanel {
         topPanel.add(buttonPanel, buttonPanelConstraints);
     }
 
-    private void createSettingsHeader(Container container) {
+    private static void createSettingsHeader(Container container) {
         final JLabel heading = new JLabel("Template generator constants");
         heading.setFont(heading.getFont().deriveFont(Font.PLAIN, 18));
         final GridBagConstraints headerConstraints = new GridBagConstraints();
@@ -210,7 +210,7 @@ public class SettingsPanel extends JPanel {
         container.add(heading, headerConstraints);
     }
 
-    private void createLabels(Container container) {
+    private static void createLabels(Container container) {
         final String[] labels = {"Path to nuclei", "Template default save path", "Template author", "Use dedicated window"};
         for (int index = 1; index <= labels.length; index++) {
             final JLabel jLabel = new JLabel(labels[index - 1]);
@@ -219,7 +219,7 @@ public class SettingsPanel extends JPanel {
         }
     }
 
-    private GridBagConstraints createButtonConstraints(int gridx, int inset) {
+    private static GridBagConstraints createButtonConstraints(int gridx, int inset) {
         final GridBagConstraints buttonConstraint = new GridBagConstraints();
         buttonConstraint.gridx = gridx;
         buttonConstraint.gridy = 0;
@@ -269,7 +269,7 @@ public class SettingsPanel extends JPanel {
         }
     }
 
-    private GridBagConstraints createLabelConstraints(int gridY) {
+    private static GridBagConstraints createLabelConstraints(int gridY) {
         final GridBagConstraints nucleiLabelConstraints = new GridBagConstraints();
         nucleiLabelConstraints.gridx = 0;
         nucleiLabelConstraints.gridy = gridY;
@@ -302,7 +302,7 @@ public class SettingsPanel extends JPanel {
         return createConfigValueConstraints(gridY);
     }
 
-    private GridBagConstraints createConfigValueConstraints(int gridY) {
+    private static GridBagConstraints createConfigValueConstraints(int gridY) {
         final GridBagConstraints fieldConstraints = new GridBagConstraints();
         fieldConstraints.gridx = 1;
         fieldConstraints.gridy = gridY;

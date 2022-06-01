@@ -28,6 +28,7 @@ package io.projectdiscovery.utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -48,7 +49,7 @@ public final class CommandLineUtils {
             process.getOutputStream().close(); // close the process's input stream, because otherwise it will hang waiting for an input
 
             final T result;
-            try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 result = processOutputFunction.apply(bufferedReader);
             }
 
@@ -63,7 +64,7 @@ public final class CommandLineUtils {
         asyncExecuteCommand(commandParts, processOutputConsumer, exitCodeConsumer, errorHandler);
     }
 
-    public static void asyncExecuteCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
+    private static void asyncExecuteCommand(String[] command, Consumer<BufferedReader> processOutputConsumer, Consumer<Integer> exitCodeConsumer, Consumer<String> errorHandler) {
         final ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
 
@@ -73,7 +74,7 @@ public final class CommandLineUtils {
                 process = processBuilder.start();
                 process.getOutputStream().close(); // close the process's input stream, because otherwise it will hang waiting for an input
 
-                try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                try (final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                     processOutputConsumer.accept(bufferedReader);
                 }
 

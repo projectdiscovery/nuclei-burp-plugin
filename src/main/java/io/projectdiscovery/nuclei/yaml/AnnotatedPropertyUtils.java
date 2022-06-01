@@ -41,7 +41,7 @@ class AnnotatedPropertyUtils extends PropertyUtils {
         final Map<String, Property> properties = new LinkedHashMap<>();
 
         if (beanAccess == BeanAccess.FIELD) {
-            return super.getPropertiesMap(type, beanAccess);
+            return super.getPropertiesMap(type, BeanAccess.FIELD);
         } else {
             for (Class<?> currentClass = type; currentClass != null; currentClass = currentClass.getSuperclass()) {
                 for (Field field : currentClass.getDeclaredFields()) {
@@ -50,8 +50,8 @@ class AnnotatedPropertyUtils extends PropertyUtils {
                         final YamlProperty yamlPropertyAnnotation = field.getAnnotation(YamlProperty.class);
                         if (yamlPropertyAnnotation != null) {
                             final String yamlPropertyName = yamlPropertyAnnotation.value();
-                            if (yamlPropertyName.equals("")) {
-                                final String transformedFieldName = AnnotatedPropertyUtils.toSnakeCase(field.getName());
+                            if (yamlPropertyName.isEmpty()) {
+                                final String transformedFieldName = toSnakeCase(field.getName());
                                 properties.put(transformedFieldName, new CustomNameFieldProperty(transformedFieldName, field));
                             } else {
                                 properties.put(yamlPropertyName, new CustomNameFieldProperty(yamlPropertyName, field));
