@@ -39,10 +39,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -51,6 +49,8 @@ import java.util.stream.IntStream;
 public class BurpExtender implements burp.IBurpExtender {
 
     private static final String GENERATE_CONTEXT_MENU_TEXT = "Generate template";
+
+    private static final String GENERATOR_TAB_NAME = "Generator";
 
     private Map<String, String> yamlFieldDescriptionMap;
     private JTabbedPane nucleiTabbedPane;
@@ -72,7 +72,7 @@ public class BurpExtender implements burp.IBurpExtender {
             callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
 
             callbacks.addSuiteTab(createConfigurationTab(generalSettings));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             generalSettings.logError("Unexpected error", e);
         }
     }
@@ -82,10 +82,10 @@ public class BurpExtender implements burp.IBurpExtender {
 
         try {
             this.yamlFieldDescriptionMap = SchemaUtils.retrieveYamlFieldWithDescriptions();
-            if (!this.yamlFieldDescriptionMap.isEmpty()) {
-                generalSettings.log("JSON schema loaded and parsed!");
-            } else {
+            if (this.yamlFieldDescriptionMap.isEmpty()) {
                 generalSettings.logError(errorMessage);
+            } else {
+                generalSettings.log("JSON schema loaded and parsed!");
             }
         } catch (Exception e) {
             generalSettings.logError(errorMessage, e);
@@ -182,7 +182,11 @@ public class BurpExtender implements burp.IBurpExtender {
         return generateIntruderTemplateMenuItem;
     }
 
-    private Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, IExtensionHelpers extensionHelpers, byte[] requestBytes) {
+    private static TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
+        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance(generalSettings);
+    }
+
+    private static Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, IExtensionHelpers extensionHelpers, byte[] requestBytes) {
         final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
         final List<TemplateGeneratorTab> tabs = templateGeneratorTabContainer.getTabs();
 
@@ -190,6 +194,13 @@ public class BurpExtender implements burp.IBurpExtender {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> firstRequest.addRaw(extensionHelpers.bytesToString(requestBytes));
             createContextMenuActionHandlingMultiRequests(template, requestBytes, firstRequestConsumer, "request");
         }, "Add request to ");
+    }
+
+    private static Optional<Map.Entry<String, Component>> getTabComponentByName(JTabbedPane tabbedPane, String generatorTabName) {
+        return IntStream.range(0, tabbedPane.getTabCount())
+                        .mapToObj(i -> Map.entry(tabbedPane.getTitleAt(i), tabbedPane.getComponentAt(i)))
+                        .filter(entry -> entry.getKey().equals(generatorTabName))
+                        .findFirst();
     }
 
     private JMenuItem createTemplateWithHttpRequestContextMenuItem(GeneralSettings generalSettings, byte[] requestBytes, URL targetUrl) {
@@ -209,7 +220,7 @@ public class BurpExtender implements burp.IBurpExtender {
         return Utils.createNewList(addToTabMenuItems, generateTemplateContextMenuItem);
     }
 
-    private Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, byte[] httpRequest, IExtensionHelpers extensionHelpers) {
+    private static Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, byte[] httpRequest, IExtensionHelpers extensionHelpers) {
         final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
         return createAddToTabContextMenuItems(templateGeneratorTabContainer, template -> {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> {
@@ -220,7 +231,7 @@ public class BurpExtender implements burp.IBurpExtender {
         }, "Add matcher to ");
     }
 
-    private void createContextMenuActionHandlingMultiRequests(Template template, byte[] httpRequest, Consumer<Requests> firstTemplateRequestConsumer, String errorMessageContext) {
+    private static void createContextMenuActionHandlingMultiRequests(Template template, byte[] httpRequest, Consumer<Requests> firstTemplateRequestConsumer, String errorMessageContext) {
         final List<Requests> requests = template.getRequests();
 
         final int requestSize = requests.size();
@@ -236,7 +247,7 @@ public class BurpExtender implements burp.IBurpExtender {
         }
     }
 
-    private Set<JMenuItem> createAddToTabContextMenuItems(TemplateGeneratorTabContainer templateGeneratorTabContainer, Consumer<Template> consumer, String contextMenuAddToTabPrefix) {
+    private static Set<JMenuItem> createAddToTabContextMenuItems(TemplateGeneratorTabContainer templateGeneratorTabContainer, Consumer<Template> consumer, String contextMenuAddToTabPrefix) {
         return templateGeneratorTabContainer.getTabs().stream().map(tab -> {
             final String tabName = tab.getName();
             // TODO add scrollable menu?
@@ -261,7 +272,7 @@ public class BurpExtender implements burp.IBurpExtender {
         return menuItems;
     }
 
-    private JMenuItem createContextMenuItem(Runnable runnable, String menuItemText) {
+    private static JMenuItem createContextMenuItem(Runnable runnable, String menuItemText) {
         final JMenuItem menuItem = new JMenuItem(menuItemText);
         menuItem.addActionListener((ActionEvent e) -> runnable.run());
         return menuItem;
@@ -316,19 +327,25 @@ public class BurpExtender implements burp.IBurpExtender {
             templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
 
             if (!generalSettings.isDetachedGeneratorWindow()) {
-                final String generatorTabName = "Generator";
-                final boolean isBurpNucleiGeneratorTabPresent = IntStream.range(0, this.nucleiTabbedPane.getTabCount())
-                                                                         .mapToObj(i -> Map.entry(this.nucleiTabbedPane.getTitleAt(i), (Container) this.nucleiTabbedPane.getComponentAt(i)))
-                                                                         .anyMatch(entry -> entry.getKey().equals(generatorTabName));
-
-                if (!isBurpNucleiGeneratorTabPresent) {
-                    this.nucleiTabbedPane.addTab(generatorTabName, templateGeneratorTabContainer.getContainer());
-                }
+                configureEmbeddedGeneratorTab(generalSettings, templateGeneratorTabContainer);
             }
         });
     }
 
-    private TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
-        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance(generalSettings);
+    private void configureEmbeddedGeneratorTab(GeneralSettings generalSettings, TemplateGeneratorTabContainer templateGeneratorTabContainer) {
+        if (getTabComponentByName(this.nucleiTabbedPane, GENERATOR_TAB_NAME).isEmpty()) {
+            this.nucleiTabbedPane.addTab(GENERATOR_TAB_NAME, templateGeneratorTabContainer.getContainer());
+
+            final TemplateGeneratorTabbedPane tabbedPane = templateGeneratorTabContainer.getTabbedPane();
+            tabbedPane.addChangeListener(e -> {
+                if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
+                    getTabComponentByName(this.nucleiTabbedPane, GENERATOR_TAB_NAME).map(Map.Entry::getValue)
+                                                                                    .ifPresentOrElse(generatorTab -> this.nucleiTabbedPane.remove(generatorTab),
+                                                                                                   () -> generalSettings.logError("Nuclei Generator tab was not present to remove."));
+                    Arrays.stream(tabbedPane.getChangeListeners())
+                          .forEach(tabbedPane::removeChangeListener);
+                }
+            });
+        }
     }
 }

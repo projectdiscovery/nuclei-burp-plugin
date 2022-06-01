@@ -25,7 +25,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         this.add(this.tabbedPane);
 
         setKeyboardShortcuts(this.rootPane, this.tabbedPane, generalSettings::logError);
-        setCleanUpOnWindowClosingEvent();
+        setCleanupOnWindowClosingEvent();
 
         this.setJMenuBar(new MenuHelper(generalSettings::logError).createMenuBar());
         this.setPreferredSize(new Dimension(1400, 1100));
@@ -54,6 +54,11 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
     }
 
     @Override
+    public TemplateGeneratorTabbedPane getTabbedPane() {
+        return this.tabbedPane;
+    }
+
+    @Override
     public List<TemplateGeneratorTab> getTabs() {
         return this.tabbedPane.getTabs();
     }
@@ -63,11 +68,11 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         return this.tabbedPane.getTab(tabName);
     }
 
-    private void setCleanUpOnWindowClosingEvent() {
+    private void setCleanupOnWindowClosingEvent() {
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                TemplateGeneratorWindow.this.tabbedPane.cleanUp();
+                TemplateGeneratorWindow.this.tabbedPane.cleanup();
                 instance = null;
                 super.windowClosing(e);
             }
