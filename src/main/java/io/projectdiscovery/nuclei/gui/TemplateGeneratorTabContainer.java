@@ -36,6 +36,8 @@ public interface TemplateGeneratorTabContainer {
 
     JComponent getContainer();
 
+    TemplateGeneratorTabbedPane getTabbedPane();
+
     void addTab(TemplateGeneratorTab templateGeneratorTab);
 
     Optional<TemplateGeneratorTab> getTab(String tabName);

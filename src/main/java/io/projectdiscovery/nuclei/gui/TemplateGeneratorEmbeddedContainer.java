@@ -74,6 +74,11 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
     }
 
     @Override
+    public TemplateGeneratorTabbedPane getTabbedPane() {
+        return this.tabbedPane;
+    }
+
+    @Override
     public List<TemplateGeneratorTab> getTabs() {
         return this.tabbedPane.getTabs();
     }

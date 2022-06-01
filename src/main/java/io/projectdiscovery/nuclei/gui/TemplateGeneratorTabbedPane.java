@@ -55,10 +55,12 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
 
         this.addChangeListener(e -> {
             if (((JTabbedPane) e.getSource()).getTabCount() == 0) {
-                cleanUp();
+                cleanup();
                 closeAction.run();
             }
         });
+
+        this.setTabLayoutPolicy(SCROLL_TAB_LAYOUT);
 
         this.addMouseWheelListener(this::navigateTabsWithMouseScroll);
         this.addMouseListener(closeTabWithMiddleMouseButtonAdapter());
@@ -66,8 +68,8 @@ public class TemplateGeneratorTabbedPane extends JTabbedPane {
         this.setVisible(true);
     }
 
-    public void cleanUp() {
-        getTabs().forEach(TemplateGeneratorTab::cleanup);
+    public void cleanup() {
+        Executors.newSingleThreadExecutor().submit(() -> getTabs().forEach(TemplateGeneratorTab::cleanup));
         this.removeAll();
     }
 
