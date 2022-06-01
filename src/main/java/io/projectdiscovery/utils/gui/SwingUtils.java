@@ -56,7 +56,7 @@ public final class SwingUtils {
         }
     }
 
-    public static void setTabSupportKeyboardShortcuts(JTabbedPane tabbedPane, JComponent parentComponent) {
+    public static void setTabSupportKeyboardShortcuts(JComponent parentComponent, JTabbedPane tabbedPane) {
         SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK), () -> tabbedPane.remove(tabbedPane.getSelectedIndex()));
 
         IntStream.rangeClosed(1, 9).forEach(keyIndex -> {
