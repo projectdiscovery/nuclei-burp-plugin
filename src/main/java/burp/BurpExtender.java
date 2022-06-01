@@ -66,11 +66,15 @@ public class BurpExtender implements burp.IBurpExtender {
                 .withExtensionSettingLoader(callbacks::loadExtensionSetting)
                 .build();
 
-        initializeNucleiYamlSchema(generalSettings);
+        try {
+            initializeNucleiYamlSchema(generalSettings);
 
-        callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
+            callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
 
-        callbacks.addSuiteTab(createConfigurationTab(generalSettings));
+            callbacks.addSuiteTab(createConfigurationTab(generalSettings));
+        } catch (Exception e) {
+            generalSettings.logError("Unexpected error", e);
+        }
     }
 
     private void initializeNucleiYamlSchema(GeneralSettings generalSettings) {
@@ -84,7 +88,7 @@ public class BurpExtender implements burp.IBurpExtender {
                 generalSettings.logError(errorMessage);
             }
         } catch (Exception e) {
-            generalSettings.logError(errorMessage + '\n' + e.getMessage());
+            generalSettings.logError(errorMessage, e);
         }
     }
 

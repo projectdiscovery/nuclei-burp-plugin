@@ -99,6 +99,10 @@ public class GeneralSettings {
         this.errorConsumer.accept(addTimePrefix(content));
     }
 
+    public void logError(String content, Throwable e) {
+        this.errorConsumer.accept(addTimePrefix(String.format("%s:\n%s", content, e.getMessage())));
+    }
+
     public void log(String content) {
         this.outputConsumer.accept(addTimePrefix(content));
     }
