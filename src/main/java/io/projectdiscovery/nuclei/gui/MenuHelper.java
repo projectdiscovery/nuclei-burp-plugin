@@ -53,7 +53,7 @@ public final class MenuHelper {
         this.errorMessageConsumer = errorMessageConsumer;
     }
 
-    public JMenuBar createMenuBar() {
+    JMenuBar createMenuBar() {
         final JMenu menu = new JMenu("Help");
         menu.setMnemonic(KeyEvent.VK_H);
 
@@ -66,7 +66,7 @@ public final class MenuHelper {
         return menuBar;
     }
 
-    public static void openDocumentationLink(Consumer<String> errorMessageConsumer) {
+    static void openDocumentationLink(Consumer<String> errorMessageConsumer) {
         try {
             SwingUtils.openWebPage(TEMPLATE_DOCUMENTATION_URL);
         } catch (IOException | URISyntaxException e) {
@@ -96,7 +96,7 @@ public final class MenuHelper {
         return aboutMenuItem;
     }
 
-    private String getHtmlBodyStyle() {
+    private static String getHtmlBodyStyle() {
         return Optional.ofNullable(UIManager.getColor("Panel.background"))
                        .map(color -> String.format(" style=\"background-color:rgb(%d, %d, %d);\"",
                                                    color.getRed(),
@@ -105,7 +105,7 @@ public final class MenuHelper {
                        .orElse("");
     }
 
-    private JMenuItem createShortcutsMenuItem() {
+    private static JMenuItem createShortcutsMenuItem() {
         final String menuName = "Productivity";
         final JMenuItem documentationMenuItem = new JMenuItem(menuName);
         documentationMenuItem.addActionListener(event -> {
@@ -132,8 +132,8 @@ public final class MenuHelper {
         return documentationMenuItem;
     }
 
-    private class HyperlinkPane extends JEditorPane {
-        public HyperlinkPane(String content) {
+    private final class HyperlinkPane extends JEditorPane {
+        HyperlinkPane(String content) {
             super("text/html", content);
 
             setEditable(false);

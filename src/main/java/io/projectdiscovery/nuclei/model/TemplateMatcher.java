@@ -25,6 +25,8 @@
 
 package io.projectdiscovery.nuclei.model;
 
+import org.jetbrains.annotations.Nullable;
+
 @SuppressWarnings("unused")
 public interface TemplateMatcher {
 
@@ -40,6 +42,7 @@ public interface TemplateMatcher {
 
     String getType();
 
+    @Nullable
     Part getPart();
 
     void setPart(Part part);

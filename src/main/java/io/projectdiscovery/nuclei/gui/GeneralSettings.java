@@ -52,7 +52,7 @@ public class GeneralSettings {
         this.extensionSettingLoader = generalSettings.extensionSettingLoader;
     }
 
-    GeneralSettings(Builder builder) {
+    private GeneralSettings(Builder builder) {
         this.outputConsumer = builder.outputConsumer;
         this.errorConsumer = builder.errorConsumer;
         this.extensionSettingSaver = builder.extensionSettingSaver;
@@ -113,9 +113,6 @@ public class GeneralSettings {
         private BiConsumer<String, String> extensionSettingSaver;
         private Function<String, String> extensionSettingLoader;
 
-        public Builder() {
-        }
-
         public Builder withErrorConsumer(Consumer<String> errorConsumer) {
             this.errorConsumer = errorConsumer;
             return this;
@@ -157,7 +154,7 @@ public class GeneralSettings {
         }
     }
 
-    private String addTimePrefix(String content) {
+    private static String addTimePrefix(String content) {
         return String.format("[%s] %s", DateTimeFormatter.ISO_LOCAL_TIME.format(LocalTime.now().truncatedTo(ChronoUnit.SECONDS)), content);
     }
 }

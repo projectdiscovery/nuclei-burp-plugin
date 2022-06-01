@@ -32,7 +32,7 @@ class CheckBoxConfigOption implements ConfigOption {
     private final String name;
     private final JCheckBox checkBox;
 
-    public CheckBoxConfigOption(String name, JCheckBox checkBox) {
+    CheckBoxConfigOption(String name, JCheckBox checkBox) {
         this.name = name;
         this.checkBox = checkBox;
     }

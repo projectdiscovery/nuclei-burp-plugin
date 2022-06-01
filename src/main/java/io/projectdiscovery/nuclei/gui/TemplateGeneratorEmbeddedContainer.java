@@ -35,7 +35,7 @@ import java.util.Optional;
 
 public final class TemplateGeneratorEmbeddedContainer extends JPanel implements TemplateGeneratorTabContainer {
 
-    private static TemplateGeneratorEmbeddedContainer instance;
+    private static volatile TemplateGeneratorEmbeddedContainer instance;
 
     private final TemplateGeneratorTabbedPane tabbedPane;
 
@@ -58,8 +58,13 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
 
     public static TemplateGeneratorEmbeddedContainer getInstance(GeneralSettings generalSettings) {
         if (instance == null) {
-            instance = new TemplateGeneratorEmbeddedContainer(generalSettings);
+            synchronized (TemplateGeneratorEmbeddedContainer.class) {
+                if (instance == null) {
+                    instance = new TemplateGeneratorEmbeddedContainer(generalSettings);
+                }
+            }
         }
+
         return instance;
     }
 
@@ -69,7 +74,7 @@ public final class TemplateGeneratorEmbeddedContainer extends JPanel implements 
     }
 
     @Override
-    public JComponent getContainer() {
+    public JComponent getComponent() {
         return this;
     }
 

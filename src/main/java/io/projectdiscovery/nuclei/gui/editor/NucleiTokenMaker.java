@@ -44,7 +44,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
 
     public NucleiTokenMaker(Collection<String> preservedWords) {
         this.wordsToHighlight = new TokenMap();
-        preservedWords.forEach(preservedWord -> this.wordsToHighlight.put(preservedWord, Token.RESERVED_WORD));
+        preservedWords.forEach(preservedWord -> this.wordsToHighlight.put(preservedWord, TokenTypes.RESERVED_WORD));
     }
 
     @Override
@@ -92,9 +92,10 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
      * @param text           The text to break into tokens.
      * @param startTokenType The token with which to start tokenizing.
      * @param startOffset    The offset at which the line of tokens begins.
-     * @return A linked list of tokens representing <code>text</code>.
+     * @return A linked list of tokens representing {@code text}.
      * @see <a href="https://github.com/bobbylight/RSyntaxTextArea/wiki/Adding-Syntax-Highlighting-for-a-new-Language">RSyntaxTextArea Documentation: Adding-Syntax-Highlighting-for-a-new-Language</a>
      */
+    @Override
     public Token getTokenList(Segment text, int startTokenType, int startOffset) {
         resetTokenList();
 
@@ -116,19 +117,19 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             final char c = array[i];
 
             switch (this.currentTokenType) {
-                case Token.NULL:
+                case TokenTypes.NULL:
                     nullToken(i, c);
                     break;
-                case Token.WHITESPACE:
+                case TokenTypes.WHITESPACE:
                     whiteSpace(text, newStartOffset, i, c);
                     break;
-                case Token.IDENTIFIER:
+                case TokenTypes.IDENTIFIER:
                     identifier(text, newStartOffset, i, c);
                     break;
-                case Token.LITERAL_NUMBER_DECIMAL_INT:
+                case TokenTypes.LITERAL_NUMBER_DECIMAL_INT:
                     i = decimal(text, newStartOffset, i, c);
                     break;
-                case Token.COMMENT_EOL:
+                case TokenTypes.COMMENT_EOL:
                     i = commentEol(text, end, newStartOffset);
                     break;
                 case TokenTypes.SEPARATOR:
@@ -141,11 +142,11 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
 
         switch (this.currentTokenType) {
             // Remember what token type to begin the next line with.
-            case Token.LITERAL_STRING_DOUBLE_QUOTE:
+            case TokenTypes.LITERAL_STRING_DOUBLE_QUOTE:
                 addToken(text, this.currentTokenStart, end - 1, this.currentTokenType, newStartOffset + this.currentTokenStart);
                 break;
             // Do nothing if everything was okay.
-            case Token.NULL:
+            case TokenTypes.NULL:
                 addNullToken();
                 break;
             // All other token types don't continue to the next line...
@@ -164,7 +165,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             case '\t':
                 addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
-                this.currentTokenType = Token.WHITESPACE;
+                this.currentTokenType = TokenTypes.WHITESPACE;
                 break;
             case YAML_MAPPING_INDICATOR:
                 addToken(text, this.currentTokenStart, i - 1, TokenTypes.SEPARATOR, newStartOffset + this.currentTokenStart);
@@ -172,7 +173,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 break;
             default:
                 if (RSyntaxUtilities.isLetterOrDigit(c) || c == '/' || c == '_') {
-                    this.currentTokenType = Token.IDENTIFIER;
+                    this.currentTokenType = TokenTypes.IDENTIFIER;
                     break;
                 }
         }
@@ -182,7 +183,7 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
         final int i = end - 1;
         addToken(text, this.currentTokenStart, i, this.currentTokenType, newStartOffset + this.currentTokenStart);
         // We need to set token type to null so at the bottom we don't add one more token.
-        this.currentTokenType = Token.NULL;
+        this.currentTokenType = TokenTypes.NULL;
         return i;
     }
 
@@ -190,9 +191,9 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
         switch (c) {
             case ' ':
             case '\t':
-                addToken(text, this.currentTokenStart, i - 1, Token.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
-                this.currentTokenType = Token.WHITESPACE;
+                this.currentTokenType = TokenTypes.WHITESPACE;
                 break;
             default:
                 if (RSyntaxUtilities.isDigit(c) || c == '.' || c == ',') {
@@ -200,9 +201,9 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
                 }
 
                 // Otherwise, remember this was a number and start over.
-                addToken(text, this.currentTokenStart, i - 1, Token.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.LITERAL_NUMBER_DECIMAL_INT, newStartOffset + this.currentTokenStart);
                 i--;
-                this.currentTokenType = Token.NULL;
+                this.currentTokenType = TokenTypes.NULL;
         }
         return i;
     }
@@ -211,19 +212,19 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
         switch (c) {
             case ' ':
             case '\t':
-                addToken(text, this.currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.IDENTIFIER, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
-                this.currentTokenType = Token.WHITESPACE;
+                this.currentTokenType = TokenTypes.WHITESPACE;
                 break;
             case YAML_MAPPING_INDICATOR:
-                addToken(text, this.currentTokenStart, i - 1, Token.IDENTIFIER, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.IDENTIFIER, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
                 // The ':' is only a separator, if it's preceded by a reserved word
-                this.currentTokenType = this.currentTokenType == TokenTypes.RESERVED_WORD ? Token.SEPARATOR
-                                                                                          : Token.IDENTIFIER;
+                this.currentTokenType = this.currentTokenType == TokenTypes.RESERVED_WORD ? TokenTypes.SEPARATOR
+                                                                                          : TokenTypes.IDENTIFIER;
                 break;
             default:
-                this.currentTokenType = Token.IDENTIFIER;
+                this.currentTokenType = TokenTypes.IDENTIFIER;
         }
     }
 
@@ -233,16 +234,16 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
             case '\t':
                 break;   // Still whitespace.
             case '#':
-                addToken(text, this.currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.WHITESPACE, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
-                this.currentTokenType = Token.COMMENT_EOL;
+                this.currentTokenType = TokenTypes.COMMENT_EOL;
                 break;
             default:   // Add the whitespace token and start anew.
-                addToken(text, this.currentTokenStart, i - 1, Token.WHITESPACE, newStartOffset + this.currentTokenStart);
+                addToken(text, this.currentTokenStart, i - 1, TokenTypes.WHITESPACE, newStartOffset + this.currentTokenStart);
                 this.currentTokenStart = i;
 
-                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? Token.LITERAL_NUMBER_DECIMAL_INT
-                                                                    : Token.IDENTIFIER;
+                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? TokenTypes.LITERAL_NUMBER_DECIMAL_INT
+                                                                    : TokenTypes.IDENTIFIER;
         }
     }
 
@@ -251,14 +252,14 @@ public class NucleiTokenMaker extends AbstractTokenMaker {
         switch (c) {
             case ' ':
             case '\t':
-                this.currentTokenType = Token.WHITESPACE;
+                this.currentTokenType = TokenTypes.WHITESPACE;
                 break;
             case '#':
-                this.currentTokenType = Token.COMMENT_EOL;
+                this.currentTokenType = TokenTypes.COMMENT_EOL;
                 break;
             default:
-                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? Token.LITERAL_NUMBER_DECIMAL_INT
-                                                                    : Token.IDENTIFIER;
+                this.currentTokenType = RSyntaxUtilities.isDigit(c) ? TokenTypes.LITERAL_NUMBER_DECIMAL_INT
+                                                                    : TokenTypes.IDENTIFIER;
         }
     }
 }

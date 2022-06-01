@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 public final class TemplateGeneratorWindow extends JFrame implements TemplateGeneratorTabContainer {
 
-    private static TemplateGeneratorWindow instance;
+    private static volatile TemplateGeneratorWindow instance;
 
     private final TemplateGeneratorTabbedPane tabbedPane;
 
@@ -21,7 +21,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         super("Nuclei Template Generator");
         this.setLayout(new BorderLayout());
 
-        this.tabbedPane = new TemplateGeneratorTabbedPane(generalSettings, () -> new CloseAction(TemplateGeneratorWindow.this).actionPerformed(null));
+        this.tabbedPane = new TemplateGeneratorTabbedPane(generalSettings, () -> new CloseAction(this).actionPerformed(null));
         this.add(this.tabbedPane);
 
         setKeyboardShortcuts(this.rootPane, this.tabbedPane, generalSettings::logError);
@@ -37,7 +37,11 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
 
     public static TemplateGeneratorWindow getInstance(GeneralSettings generalSettings) {
         if (instance == null) {
-            instance = new TemplateGeneratorWindow(generalSettings);
+            synchronized (TemplateGeneratorWindow.class) {
+                if (instance == null) {
+                    instance = new TemplateGeneratorWindow(generalSettings);
+                }
+            }
         }
 
         return instance;
@@ -49,7 +53,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
     }
 
     @Override
-    public JComponent getContainer() {
+    public JComponent getComponent() {
         return this.rootPane;
     }
 
@@ -79,7 +83,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         });
     }
 
-    public void setKeyboardShortcuts(JComponent parentComponent, JTabbedPane tabbedPane, Consumer<String> errorMessageConsumer) {
+    private void setKeyboardShortcuts(JComponent parentComponent, JTabbedPane tabbedPane, Consumer<String> errorMessageConsumer) {
         SwingUtils.setKeyboardShortcut(parentComponent, KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), new CloseAction(this));
 
         SwingUtils.setTabSupportKeyboardShortcuts(parentComponent, tabbedPane);
@@ -90,7 +94,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
     private static class CloseAction extends AbstractAction {
         private final JFrame frame;
 
-        public CloseAction(JFrame frame) {
+        CloseAction(JFrame frame) {
             this.frame = frame;
         }
 

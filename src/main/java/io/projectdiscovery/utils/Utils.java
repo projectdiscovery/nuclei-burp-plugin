@@ -27,6 +27,7 @@ package io.projectdiscovery.utils;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +51,7 @@ public final class Utils {
     }
 
     public static boolean writeToFile(String content, Path filePath, Consumer<String> logger) {
-        try (final FileWriter fileWriter = new FileWriter(filePath.toFile())) {
+        try (final FileWriter fileWriter = new FileWriter(filePath.toFile(), StandardCharsets.UTF_8)) {
             fileWriter.write(content);
             fileWriter.flush();
             return true;
@@ -61,7 +62,7 @@ public final class Utils {
     }
 
     public static boolean isBlank(String input) {
-        return input == null || input.trim().equals("");
+        return input == null || input.trim().isEmpty();
     }
 
     public static boolean isAsciiPrintableNewLine(byte[] input) {

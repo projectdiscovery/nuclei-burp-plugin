@@ -63,6 +63,7 @@ class NucleiModelConstructor extends Constructor {
                     }
                 }
             } catch (final ClassCastException e) {
+                // TODO log
                 throw new YAMLException("Could not instantiate TemplateMatcher");
             }
         }
