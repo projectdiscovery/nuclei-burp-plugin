@@ -79,6 +79,7 @@ public final class TemplateGeneratorTabbedPane extends JTabbedPane {
                                        .orElseGet(() -> "Tab " + this.openedTabCounter++);
         templateGeneratorTab.setName(tabName);
         this.addTab(tabName, templateGeneratorTab);
+        this.setSelectedIndex(this.getTabCount() - 1);
     }
 
     @Override
