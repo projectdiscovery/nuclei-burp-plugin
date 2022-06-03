@@ -206,9 +206,7 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private static Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, String[] requests) {
-        final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
-
-        return createAddToTabContextMenuItems(templateGeneratorTabContainer, template -> {
+        return createAddToTabContextMenuItems(generalSettings, template -> {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> firstRequest.addRaw(requests);
             createContextMenuActionHandlingMultiRequests(template, requests, firstRequestConsumer, "request");
         });
@@ -249,8 +247,7 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private static Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, String[] httpRequest) {
-        final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
-        return createAddToTabContextMenuItems(templateGeneratorTabContainer, template -> {
+        return createAddToTabContextMenuItems(generalSettings, template -> {
             final Consumer<Requests> firstRequestConsumer = firstRequest -> {
                 final List<TemplateMatcher> matchers = firstRequest.getMatchers();
                 firstRequest.setMatchers(Utils.createNewList(matchers, contentMatcher));
@@ -275,7 +272,9 @@ public class BurpExtender implements burp.IBurpExtender {
         }
     }
 
-    private static Set<JMenuItem> createAddToTabContextMenuItems(TemplateGeneratorTabContainer templateGeneratorTabContainer, Consumer<Template> templateConsumer) {
+    private static Set<JMenuItem> createAddToTabContextMenuItems(GeneralSettings generalSettings, Consumer<Template> templateConsumer) {
+        final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+
         return templateGeneratorTabContainer.getTabs().stream().map(tab -> {
             final String tabName = tab.getName();
             // TODO add scrollable menu?

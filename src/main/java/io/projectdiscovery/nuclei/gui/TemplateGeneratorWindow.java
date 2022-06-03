@@ -32,7 +32,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
         this.setMinimumSize(this.getSize()); // TODO this is platform dependent, custom logic is needed to enforce it
         this.pack();
         this.setLocationRelativeTo(null); // center of the screen
-        this.setVisible(true);
+        this.setVisible(false);
     }
 
     public static TemplateGeneratorWindow getInstance(GeneralSettings generalSettings) {
@@ -49,6 +49,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
 
     @Override
     public void addTab(TemplateGeneratorTab templateGeneratorTab) {
+        this.setVisible(true);
         this.tabbedPane.addTab(templateGeneratorTab);
     }
 
