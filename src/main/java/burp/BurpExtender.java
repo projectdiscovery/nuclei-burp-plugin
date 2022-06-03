@@ -71,8 +71,9 @@ public class BurpExtender implements burp.IBurpExtender {
             callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
 
             callbacks.addSuiteTab(createConfigurationTab(generalSettings));
-        } catch (RuntimeException e) {
-            generalSettings.logError("Unexpected error", e);
+        } catch (Throwable e) {
+            JOptionPane.showMessageDialog(null, "There was an error while trying to initialize the plugin. Please check the logs.", "An error occurred", JOptionPane.ERROR_MESSAGE);
+            generalSettings.logError("Error while trying to initialize the plugin", e);
         }
     }
 
@@ -339,11 +340,16 @@ public class BurpExtender implements burp.IBurpExtender {
                 .build();
 
         SwingUtilities.invokeLater(() -> {
-            final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
-            templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
+            try {
+                final TemplateGeneratorTabContainer templateGeneratorTabContainer = getTemplateGeneratorContainerInstance(generalSettings);
+                templateGeneratorTabContainer.addTab(new TemplateGeneratorTab(nucleiGeneratorSettings));
 
-            if (!generalSettings.isDetachedGeneratorWindow()) {
-                configureEmbeddedGeneratorTab(generalSettings, templateGeneratorTabContainer);
+                if (!generalSettings.isDetachedGeneratorWindow()) {
+                    configureEmbeddedGeneratorTab(generalSettings, templateGeneratorTabContainer);
+                }
+            } catch (Throwable e) {
+                JOptionPane.showMessageDialog(null, "There was an error while trying to complete the requested action. Please check the logs.", "An error occurred", JOptionPane.ERROR_MESSAGE);
+                generalSettings.logError("Error while trying to generate/show the generated template", e);
             }
         });
     }

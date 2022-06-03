@@ -28,6 +28,9 @@ package io.projectdiscovery.nuclei.gui;
 import io.projectdiscovery.nuclei.gui.settings.SettingsPanel;
 import io.projectdiscovery.utils.Utils;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalTime;
@@ -100,7 +103,13 @@ public class GeneralSettings {
     }
 
     public void logError(String content, Throwable e) {
-        this.errorConsumer.accept(addTimePrefix(String.format("%s:\n%s", content, e.getMessage())));
+        try (StringWriter stringWriter = new StringWriter();
+             PrintWriter printWriter = new PrintWriter(stringWriter)) {
+            e.printStackTrace(printWriter);
+            this.errorConsumer.accept(addTimePrefix(String.format("%s:\n%s", content, stringWriter)));
+        } catch (IOException ex) {
+            this.errorConsumer.accept(addTimePrefix(String.format("Error while trying to extract the stack trace: %s", ex)));
+        }
     }
 
     public void log(String content) {
