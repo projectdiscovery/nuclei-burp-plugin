@@ -51,7 +51,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private static final String GENERATOR_TAB_NAME = "Generator";
 
-    private Map<String, String> yamlFieldDescriptionMap;
+    private Map<String, String> yamlFieldDescriptionMap = new HashMap<>();
     private JTabbedPane nucleiTabbedPane;
 
     @Override
