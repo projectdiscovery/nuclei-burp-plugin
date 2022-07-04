@@ -27,29 +27,89 @@ package io.projectdiscovery.nuclei.util;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.projectdiscovery.nuclei.gui.GeneralSettings;
+import io.projectdiscovery.utils.Utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class SchemaUtils {
 
     private SchemaUtils() {
     }
 
-    private static final String NUCLEI_JSON_SCHEMA_URL = "https://raw.githubusercontent.com/projectdiscovery/nuclei/master/nuclei-jsonschema.json";
+    private static final String NUCLEI_JSON_SCHEMA_FILE_NAME = "nuclei-jsonschema.json";
+    private static final String NUCLEI_JSON_SCHEMA_URL = "https://raw.githubusercontent.com/projectdiscovery/nuclei/master/" + NUCLEI_JSON_SCHEMA_FILE_NAME;
 
-    public static Map<String, String> retrieveYamlFieldWithDescriptions() throws IOException {
-        final URL jsonSchemaUrl = new URL(NUCLEI_JSON_SCHEMA_URL);
-        try (final InputStreamReader inputStreamReader = new InputStreamReader(jsonSchemaUrl.openStream(), StandardCharsets.UTF_8)) {
-            return retrieveYamlFieldWithDescriptions(inputStreamReader);
+    public static Map<String, String> retrieveYamlFieldWithDescriptions(GeneralSettings generalSettings) {
+        Map<String, String> result = Collections.emptyMap();
+
+        try {
+            final URL jsonSchemaUrl = new URL(NUCLEI_JSON_SCHEMA_URL);
+            try (final InputStream inputStream = jsonSchemaUrl.openStream()) {
+                result = yamlFieldDescriptionTransformer(inputStream, generalSettings);
+            } catch (IOException e) {
+                result = retrieveYamlFieldWithDescriptionsFromDisk(generalSettings, e);
+            }
+        } catch (MalformedURLException e) {
+            generalSettings.logError("Malformed URL: " + NUCLEI_JSON_SCHEMA_URL, e);
         }
+
+        return result;
+    }
+
+    private static Map<String, String> retrieveYamlFieldWithDescriptionsFromDisk(GeneralSettings generalSettings, IOException e) {
+        Map<String, String> result = Collections.emptyMap();
+
+        final List<Path> jsonSchemaPaths = Stream.of(NucleiUtils.getNucleiConfigPath(),
+                                                     generalSettings.getTemplatePath(),
+                                                     Utils.getTempPath())
+                                                 .filter(Objects::nonNull)
+                                                 .map(path -> path.resolve(NUCLEI_JSON_SCHEMA_FILE_NAME))
+                                                 .collect(Collectors.toList());
+
+        generalSettings.logError(String.format("Could not download the latest nuclei schema from '%s'.\n" +
+                                               "Try reloading the plugin or manually saving the file to one of the following locations: %s",
+                                               NUCLEI_JSON_SCHEMA_URL,
+                                               jsonSchemaPaths.stream().map(path -> String.format("'%s'", path.toString())).collect(Collectors.joining(", "))), e);
+
+        for (Path jsonSchemaPath : jsonSchemaPaths) {
+            generalSettings.log(String.format("Trying to access alternate nuclei JSON schema from: '%s'", jsonSchemaPath));
+            if (Files.exists(jsonSchemaPath)) {
+                try (final InputStream inputStream = Files.newInputStream(jsonSchemaPath)) {
+                    final Map<String, String> yamlFieldDescriptorMap = yamlFieldDescriptionTransformer(inputStream, generalSettings);
+                    if (!yamlFieldDescriptorMap.isEmpty()) {
+                        result = yamlFieldDescriptorMap;
+                        break;
+                    }
+                } catch (IOException e1) {
+                    generalSettings.logError(String.format("Could not read nuclei JSON schema from: '%s'", jsonSchemaPath), e1);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static Map<String, String> yamlFieldDescriptionTransformer(InputStream inputStream, GeneralSettings generalSettings) {
+        Map<String, String> result = Collections.emptyMap();
+        try (final InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            result = retrieveYamlFieldWithDescriptions(inputStreamReader);
+        } catch (IOException e) {
+            generalSettings.logError("Could not read data from the provided input stream", e);
+        }
+        return result;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -80,7 +140,7 @@ public final class SchemaUtils {
                         result.put(enumValue, (String) enumFieldMap.get("description"));
                     }
                 } else {
-                    System.err.println(enumFieldMap);
+                    System.err.printf("[DEBUG] Ignoring unknown JSON schema attribute type: '%s'%n", enumFieldMap);
                 }
             }
         }

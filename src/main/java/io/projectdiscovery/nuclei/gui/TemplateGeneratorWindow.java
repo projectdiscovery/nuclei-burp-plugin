@@ -126,7 +126,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
 
         final GeneralSettings generalSettings = new GeneralSettings.Builder().build();
         final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, url, template)
-                .withYamlFieldDescriptionMap(SchemaUtils.retrieveYamlFieldWithDescriptions())
+                .withYamlFieldDescriptionMap(SchemaUtils.retrieveYamlFieldWithDescriptions(generalSettings))
                 .build();
 
         final TemplateGeneratorWindow templateGeneratorWindow = new TemplateGeneratorWindow(generalSettings);

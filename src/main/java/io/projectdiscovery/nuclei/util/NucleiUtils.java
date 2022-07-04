@@ -31,10 +31,6 @@ public final class NucleiUtils {
     private NucleiUtils() {
     }
 
-    public static TemplateMatcher.Part getSelectionPart(int bodyOffset, int fromIndex) {
-        return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
-    }
-
     public static String getNucleiBinaryName() {
         return Utils.getOsDependentBinaryName(NUCLEI_BASE_BINARY_NAME);
     }
@@ -50,9 +46,9 @@ public final class NucleiUtils {
     }
 
     public static Optional<String> detectDefaultTemplatePath() throws IOException {
-        final String userHome = System.getProperty("user.home");
-        if (userHome != null) {
-            final Path templatesConfigJsonPath = Paths.get(userHome).resolve(".config").resolve("nuclei").resolve(".templates-config.json");
+        final Path nucleiConfigPath = getNucleiConfigPath();
+        if (nucleiConfigPath != null) {
+            final Path templatesConfigJsonPath = nucleiConfigPath.resolve(".templates-config.json");
             if (Files.exists(templatesConfigJsonPath)) {
                 final Gson gson = new Gson();
                 final Type mapType = new TypeToken<Map<String, String>>() {
@@ -65,6 +61,13 @@ public final class NucleiUtils {
         return Optional.empty();
     }
 
+    @Nullable
+    static Path getNucleiConfigPath() {
+        final String userHome = System.getProperty("user.home");
+        return userHome == null ? null
+                                : Paths.get(userHome).resolve(".config").resolve("nuclei");
+    }
+
     public static String replaceTemplatePathInCommand(String nucleiCommand, String newTemplatePath) {
         return NUCLEI_TEMPLATE_PARAMETER_PATTERN.matcher(nucleiCommand).replaceFirst("$1 " + newTemplatePath);
     }
@@ -73,7 +76,7 @@ public final class NucleiUtils {
         return getCliArguments(bufferedReader.lines());
     }
 
-    public static Map<String, String> getCliArguments(Stream<String> nucleiHelpStream) {
+    static Map<String, String> getCliArguments(Stream<String> nucleiHelpStream) {
         return nucleiHelpStream.filter(line -> line.startsWith("   -"))
                                .map(NucleiUtils::createCliArgument)
                                .filter(Objects::nonNull)
@@ -89,5 +92,9 @@ public final class NucleiUtils {
         return matcher.matches() ? matcher.groupCount() == 3 ? new CliArgument(matcher.group(1), matcher.group(2), matcher.group(3))
                                                              : new CliArgument(matcher.group(1), matcher.group(2))
                                  : null;
+    }
+
+    static TemplateMatcher.Part getSelectionPart(int bodyOffset, int fromIndex) {
+        return (bodyOffset != -1) && (fromIndex < bodyOffset) ? TemplateMatcher.Part.header : TemplateMatcher.Part.body;
     }
 }

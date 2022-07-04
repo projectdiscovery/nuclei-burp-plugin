@@ -66,11 +66,11 @@ public class BurpExtender implements burp.IBurpExtender {
                 .build();
 
         try {
+            callbacks.addSuiteTab(createConfigurationTab(generalSettings));
+
             initializeNucleiYamlSchema(generalSettings);
 
             callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
-
-            callbacks.addSuiteTab(createConfigurationTab(generalSettings));
         } catch (Throwable e) {
             JOptionPane.showMessageDialog(null, "There was an error while trying to initialize the plugin. Please check the logs.", "An error occurred", JOptionPane.ERROR_MESSAGE);
             generalSettings.logError("Error while trying to initialize the plugin", e);
@@ -78,17 +78,11 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private void initializeNucleiYamlSchema(GeneralSettings generalSettings) {
-        final String errorMessage = "AutoCompletion will be disabled, because there was an error while downloading and parsing the nuclei JSON schema.";
-
-        try {
-            this.yamlFieldDescriptionMap = SchemaUtils.retrieveYamlFieldWithDescriptions();
-            if (this.yamlFieldDescriptionMap.isEmpty()) {
-                generalSettings.logError(errorMessage);
-            } else {
-                generalSettings.log("JSON schema loaded and parsed!");
-            }
-        } catch (Exception e) {
-            generalSettings.logError(errorMessage, e);
+        this.yamlFieldDescriptionMap = SchemaUtils.retrieveYamlFieldWithDescriptions(generalSettings);
+        if (this.yamlFieldDescriptionMap.isEmpty()) {
+            generalSettings.logError("AutoCompletion will be disabled, because there was an error while downloading, accessing or parsing the nuclei JSON schema.");
+        } else {
+            generalSettings.log("JSON schema loaded and parsed!");
         }
     }
 
@@ -101,11 +95,12 @@ public class BurpExtender implements burp.IBurpExtender {
 
             @Override
             public Component getUiComponent() {
-                final JTabbedPane nucleiTabbedPane = new JTabbedPane();
-                BurpExtender.this.nucleiTabbedPane = nucleiTabbedPane;
-                nucleiTabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
-                nucleiTabbedPane.setVisible(true);
-                return nucleiTabbedPane;
+                final JTabbedPane tabbedPane = new JTabbedPane();
+                tabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
+                tabbedPane.setVisible(true);
+
+                BurpExtender.this.nucleiTabbedPane = tabbedPane;
+                return tabbedPane;
             }
         };
     }
