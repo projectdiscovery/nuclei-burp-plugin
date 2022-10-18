@@ -12,7 +12,7 @@
 
 <p align="center">
 
-A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/projectdiscovery/nuclei) template generation.
+A `Burp Suite` plugin intended to help with [`nuclei`](https://github.com/projectdiscovery/nuclei) template generation.
 
 </p>
 
@@ -81,7 +81,7 @@ A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/project
 
 * The plugin attempts to auto-detect and complete the configuration values
 * The code searches for the nuclei binary path, using the values from the process's environmental `PATH` variable.  
-  **Note**: the BurpSuite binary, opposed to the stand-alone BurpSuite jar, might not have access to
+  **Note**: the Burp Suite binary, opposed to the stand-alone BurpSuite jar, might not have access to
   the current user's `PATH` variable.
 * The target template path is calculated based on the default nuclei template directory, configured under `<USER_HOME>/.config/nuclei/.templates-config.json`
 * The name of the currently logged-in operating system user is used as a default value for the template author configuration
@@ -89,7 +89,7 @@ A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/project
 
 ### Look and feel
 
-* The template generator window supports Dark and Light themes. The presented theme is chosen based on the selected BurpSuite theme, under `User Options`
+* The template generator window supports Dark and Light themes. The presented theme is chosen based on the selected Burp Suite theme, under `User Options`
 * Support for **colored** nuclei output
 * Modifiable font size in the template editor and command output
 
@@ -104,11 +104,20 @@ section. These artifacts are generated after every commit, but are only stored f
 
 ## Installation
 
+By building the code:
 1. Build the code yourself or download a pre-built/[release](https://github.com/projectdiscovery/nuclei-burp-plugin/releases) version
-2. Go to `Extender` in BurpSuite
+2. Go to `Extender` in `Burp Suite`
 3. Click the `Add` button in the `Extensions` tab
 4. Leave the `Extension Type` on `Java`
 5. Select the path to the plugin (`.jar`)
+
+Through [BApp Store](https://portswigger.net/bappstore/526f5564b7414bfe978e650d8ea6567b):
+1. Go to `Extender` in `Burp Suite`
+2. Select the `BApp Store` tab
+3. Search for **Nuclei Template Generator Plugin**
+4. Clink on **Install**
+
+Note: this plugin does **NOT** require **Burp Suite Professional**.
 
 ## Screenshots
 

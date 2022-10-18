@@ -7,8 +7,8 @@
     <artifactId>nuclei-burp-plugin</artifactId>
     <version>1.1.1-SNAPSHOT</version>
 
-    <name>Nuclei BurpSuite plugin</name>
-    <description>A BurpSuite plugin created to ease nuclei template development.</description>
+    <name>Nuclei Burp Suite plugin</name>
+    <description>A Burp Suite plugin created to ease nuclei template development.</description>
     <url>https://github.com/projectdiscovery/nuclei</url>
 
     <organization>
