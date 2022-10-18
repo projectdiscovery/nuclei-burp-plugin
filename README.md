@@ -18,11 +18,11 @@ A `BurpSuite` plugin intended to help with [`nuclei`](https://github.com/project
 
 <div align="center">
   <br/>
-  <a href="https://www.youtube.com/watch?v=PMHCnaU7dfo"><img src="static/video_thumbnail.png" alt="Nuclei Burp Plugin Demo Video"></a>  
+  <a href="https://www.youtube.com/watch?v=PMHCnaU7dfo" target="_blank"><img src="static/video_thumbnail.png" alt="Nuclei Burp Plugin Demo Video"></a>  
   <br/><br/>
-  <a href="https://nuclei.projectdiscovery.io"><img src="static/demo.gif" alt="Nuclei Burp Plugin Demo"></a>
+  <a href="https://nuclei.projectdiscovery.io" target="_blank"><img src="static/demo.gif" alt="Nuclei Burp Plugin Demo"></a>
   <br/><br/>
-  <a href="https://nuclei.projectdiscovery.io"><img src="static/v1_1_0-demo.gif" alt="Nuclei Burp Plugin v1.1.0 Demo"></a>
+  <a href="https://nuclei.projectdiscovery.io" target="_blank"><img src="static/v1_1_0-demo.gif" alt="Nuclei Burp Plugin v1.1.0 Demo"></a>
 </div>
 
 ## Features
