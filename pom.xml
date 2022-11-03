@@ -49,7 +49,7 @@
 
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
-        <maven-release-plugin.version>3.0.0-M6</maven-release-plugin.version>
+        <maven-release-plugin.version>3.0.0-M7</maven-release-plugin.version>
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
         <snakeyaml.version>1.33</snakeyaml.version>
