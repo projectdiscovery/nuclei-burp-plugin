@@ -69,7 +69,11 @@ public final class NucleiUtils {
     }
 
     public static String replaceTemplatePathInCommand(String nucleiCommand, String newTemplatePath) {
-        return NUCLEI_TEMPLATE_PARAMETER_PATTERN.matcher(nucleiCommand).replaceFirst("$1 " + newTemplatePath);
+        final String normalizedTemplatePath = newTemplatePath.replace("\\", "/");
+        final String replacement = normalizedTemplatePath.contains(" ") ? String.format("\"%s\"", normalizedTemplatePath)
+                                                                        : normalizedTemplatePath;
+
+        return NUCLEI_TEMPLATE_PARAMETER_PATTERN.matcher(nucleiCommand).replaceFirst(String.format("$1 %s", replacement));
     }
 
     public static Map<String, String> getCliArguments(BufferedReader bufferedReader) {

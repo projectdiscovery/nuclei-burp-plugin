@@ -38,12 +38,22 @@ import java.util.stream.Stream;
 
 class NucleiUtilsTest {
 
+    @SuppressWarnings("DuplicateStringLiteralInspection")
     @ParameterizedTest
     @ValueSource(strings = {"nuclei -t \"c:/directory name with space/another one/something.yaml\" -u http://localhost",
                             "nuclei -t 'c:/directory name with space/another one/something.yaml' -u http://localhost",
-                            "nuclei -t 'c:/temp/something.yaml' -u http://localhost"})
+                            "nuclei -t 'c:\\directory\\test name with space\\another one\\something.yaml' -u http://localhost",
+                            "nuclei -t \"c:\\directory\\test name with space\\another one\\something.yaml\" -u http://localhost",
+                            "nuclei -t 'c:/temp/something.yaml' -u http://localhost"
+    })
     void testNucleiTemplateParameterPattern(String testCase) {
-        Assertions.assertEquals("nuclei -t test.yaml -u http://localhost", NucleiUtils.replaceTemplatePathInCommand(testCase, "test.yaml"));
+        Map.of("c:\\Users\\someone\\test.yaml", "c:/Users/someone/test.yaml",
+               "c:/Users/someone/test.yaml", "c:/Users/someone/test.yaml",
+               "c:\\directory with spaces\\level2\\test.yaml", "\"c:/directory with spaces/level2/test.yaml\"",
+               "c:/directory with spaces/level2/test.yaml", "\"c:/directory with spaces/level2/test.yaml\"",
+               "/tmp/directory with spaces/test.yaml", "\"/tmp/directory with spaces/test.yaml\"",
+               "/tmp/directory/test.yaml", "/tmp/directory/test.yaml")
+           .forEach((input, expected) -> Assertions.assertEquals(String.format("nuclei -t %s -u http://localhost", expected), NucleiUtils.replaceTemplatePathInCommand(testCase, input)));
     }
 
     @Test
