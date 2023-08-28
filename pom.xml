@@ -52,7 +52,7 @@
         <maven-release-plugin.version>3.0.0-M7</maven-release-plugin.version>
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <gson.version>2.10.1</gson.version>
         <rsyntaxtextarea.version>3.3.2</rsyntaxtextarea.version>
         <autocomplete.version>3.3.1</autocomplete.version>
