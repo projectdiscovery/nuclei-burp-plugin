@@ -45,7 +45,7 @@ class YamlUtilTest {
                                 "  reference:\n" +
                                 "    - https://\n" +
                                 "  tags: tags\n" +
-                                "requests:\n" +
+                                "http:\n" +
                                 "  - raw:\n" +
                                 "      - |-\n" +
                                 "        GET / HTTP/1.1\n" +
@@ -79,7 +79,7 @@ class YamlUtilTest {
                                 "  reference:\n" +
                                 "    - https://\n" +
                                 "  tags: tags\n" +
-                                "requests:\n" +
+                                "http:\n" +
                                 "  - raw:\n" +
                                 "      - |-\n" +
                                 "        GET / HTTP/1.1\n" +
@@ -123,7 +123,7 @@ class YamlUtilTest {
                                 "    - https://\n" +
                                 "  tags: tags\n" +
                                 "\n" +
-                                "requests:\n" +
+                                "http:\n" +
                                 "  - raw:\n" +
                                 "      - |-\n" +
                                 "        GET / HTTP/1.1\n" +

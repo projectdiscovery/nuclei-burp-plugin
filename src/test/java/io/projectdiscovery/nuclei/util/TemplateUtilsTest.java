@@ -37,7 +37,7 @@ class TemplateUtilsTest {
                                     "  name: Template Name\n" +
                                     "  author: istvan\n" +
                                     "  severity: info\n" +
-                                    "requests:\n" +
+                                    "http:\n" +
                                     "- raw:\n" +
                                     "  - |+\n" +
                                     "    GET / HTTP/1.1\n" +
@@ -58,7 +58,7 @@ class TemplateUtilsTest {
                                 "  author: istvan\n" +
                                 "  severity: info\n" +
                                 "\n" +
-                                "requests:\n" +
+                                "http:\n" +
                                 "- raw:\n" +
                                 "  - |+\n" +
                                 "    GET / HTTP/1.1\n" +
