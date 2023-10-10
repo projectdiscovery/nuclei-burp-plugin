@@ -25,7 +25,7 @@
 
 package io.projectdiscovery.nuclei.model.util;
 
-import io.projectdiscovery.nuclei.model.Requests;
+import io.projectdiscovery.nuclei.model.Http;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,17 +33,17 @@ import java.util.Map;
 
 public class TransformedRequest {
 
-    private final Requests.AttackType attackType;
+    private final Http.AttackType attackType;
     private final String request;
     private final Map<String, List<String>> parameters;
 
-    public TransformedRequest(Requests.AttackType attackType, String request, Map<String, List<String>> parameters) {
+    public TransformedRequest(Http.AttackType attackType, String request, Map<String, List<String>> parameters) {
         this.attackType = attackType;
         this.request = request;
         this.parameters = new LinkedHashMap<>(parameters);
     }
 
-    public Requests.AttackType getAttackType() {
+    public Http.AttackType getAttackType() {
         return this.attackType;
     }
 

@@ -26,7 +26,7 @@
 package io.projectdiscovery.nuclei.util;
 
 import io.projectdiscovery.nuclei.model.Binary;
-import io.projectdiscovery.nuclei.model.Requests;
+import io.projectdiscovery.nuclei.model.Http;
 import io.projectdiscovery.nuclei.model.TemplateMatcher;
 import io.projectdiscovery.nuclei.model.Word;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
@@ -55,14 +55,14 @@ public final class TemplateUtils {
     public static String normalizeTemplate(String yamlTemplate) {
         String result = yamlTemplate;
 
-        for (String fieldName : Arrays.asList("info", "requests", "extractors")) {
+        for (String fieldName : Arrays.asList("info", "http", "extractors")) {
             result = addNewLineBeforeProperty(result, fieldName);
         }
 
-        result = result.contains("matchers-condition: ") ? addNewLineBeforeProperty(result, "matchers-condition", Utils.getEnumValues(Requests.MatchersCondition.class))
+        result = result.contains("matchers-condition: ") ? addNewLineBeforeProperty(result, "matchers-condition", Utils.getEnumValues(Http.MatchersCondition.class))
                                                          : addNewLineBeforeProperty(result, "matchers");
 
-        result = result.contains("attack: ") ? addNewLineBeforeProperty(result, "attack", Utils.getEnumValues(Requests.AttackType.class))
+        result = result.contains("attack: ") ? addNewLineBeforeProperty(result, "attack", Utils.getEnumValues(Http.AttackType.class))
                                              : addNewLineBeforeProperty(result, "payloads");
 
         return result;
@@ -87,14 +87,14 @@ public final class TemplateUtils {
         return contentMatcher;
     }
 
-    public static TransformedRequest transformRequestWithPayloads(Requests.AttackType attackType, String request) {
+    public static TransformedRequest transformRequestWithPayloads(Http.AttackType attackType, String request) {
         final Matcher matcher = INTRUDER_PAYLOAD_PATTERN.matcher(request);
 
-        return attackType == Requests.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
+        return attackType == Http.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
                                                               : handleMultiPayloadAttackTypes(attackType, request, matcher);
     }
 
-    private static TransformedRequest handleMultiPayloadAttackTypes(Requests.AttackType attackType, String request, Matcher matcher) {
+    private static TransformedRequest handleMultiPayloadAttackTypes(Http.AttackType attackType, String request, Matcher matcher) {
         final Map<String, List<String>> payloadParameters = new LinkedHashMap<>();
 
         final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
@@ -107,7 +107,7 @@ public final class TemplateUtils {
         return new TransformedRequest(attackType, transformedRequest, payloadParameters);
     }
 
-    private static TransformedRequest handleBatteringRam(Requests.AttackType attackType, String request, Matcher matcher) {
+    private static TransformedRequest handleBatteringRam(Http.AttackType attackType, String request, Matcher matcher) {
         final List<String> payloadParameters = new ArrayList<>();
         final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
             payloadParameters.add(payloadParameter);

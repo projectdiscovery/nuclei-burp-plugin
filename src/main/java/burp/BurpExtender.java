@@ -139,7 +139,7 @@ public class BurpExtender implements burp.IBurpExtender {
                         case IContextMenuInvocation.CONTEXT_PROXY_HISTORY: {
                             final String[] requests = Arrays.stream(selectedMessages).map(IHttpRequestResponse::getRequest).map(extensionHelpers::bytesToString).toArray(String[]::new);
 
-                            final Requests templateRequests = new Requests();
+                            final Http templateRequests = new Http();
                             templateRequests.setRaw(requests);
                             menuItems = new ArrayList<>(List.of(createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, templateRequests), GENERATE_CONTEXT_MENU_TEXT)));
 
@@ -189,7 +189,7 @@ public class BurpExtender implements burp.IBurpExtender {
                 requestModifier.insert(startSelectionIndex, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
                 requestModifier.insert(endSelectionIndex + 1, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
 
-                generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Requests.AttackType.batteringram);
+                generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Http.AttackType.batteringram);
             }, "Generate Intruder Template");
         } else {
             generateIntruderTemplateMenuItem = null;
@@ -203,7 +203,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private static Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, String[] requests) {
         return createAddToTabContextMenuItems(generalSettings, template -> {
-            final Consumer<Requests> firstRequestConsumer = firstRequest -> firstRequest.addRaw(requests);
+            final Consumer<Http> firstRequestConsumer = firstRequest -> firstRequest.addRaw(requests);
             createContextMenuActionHandlingMultiRequests(template, requests, firstRequestConsumer, "request");
         });
     }
@@ -216,7 +216,7 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private JMenuItem createTemplateWithHttpRequestContextMenuItem(GeneralSettings generalSettings, byte[] requestBytes, URL targetUrl) {
-        final Requests requests = new Requests();
+        final Http requests = new Http();
         requests.setRaw(requestBytes);
         return createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, requests), GENERATE_CONTEXT_MENU_TEXT);
     }
@@ -244,7 +244,7 @@ public class BurpExtender implements burp.IBurpExtender {
 
     private static Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, String[] httpRequest) {
         return createAddToTabContextMenuItems(generalSettings, template -> {
-            final Consumer<Requests> firstRequestConsumer = firstRequest -> {
+            final Consumer<Http> firstRequestConsumer = firstRequest -> {
                 final List<TemplateMatcher> matchers = firstRequest.getMatchers();
                 firstRequest.setMatchers(Utils.createNewList(matchers, contentMatcher));
             };
@@ -252,14 +252,14 @@ public class BurpExtender implements burp.IBurpExtender {
         });
     }
 
-    private static void createContextMenuActionHandlingMultiRequests(Template template, String[] httpRequests, Consumer<Requests> firstTemplateRequestConsumer, String errorMessageContext) {
-        final List<Requests> requests = template.getRequests();
+    private static void createContextMenuActionHandlingMultiRequests(Template template, String[] httpRequests, Consumer<Http> firstTemplateRequestConsumer, String errorMessageContext) {
+        final List<Http> requests = template.getHttp();
 
         final int requestSize = requests.size();
         if (requestSize == 0) {
-            final Requests newRequest = new Requests();
+            final Http newRequest = new Http();
             newRequest.setRaw(httpRequests);
-            template.setRequests(List.of(newRequest));
+            template.setHttp(List.of(newRequest));
         } else {
             if (requestSize > 1) {
                 JOptionPane.showMessageDialog(null, String.format("The %s will be added to the first request!", errorMessageContext), "Multiple requests present", JOptionPane.WARNING_MESSAGE);
@@ -286,9 +286,9 @@ public class BurpExtender implements burp.IBurpExtender {
     private List<JMenuItem> generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request) {
         final List<JMenuItem> menuItems;
         if (request.chars().filter(c -> c == TemplateUtils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
-            menuItems = List.of(createContextMenuItem(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Requests.AttackType.batteringram), GENERATE_CONTEXT_MENU_TEXT));
+            menuItems = List.of(createContextMenuItem(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Http.AttackType.batteringram), GENERATE_CONTEXT_MENU_TEXT));
         } else {
-            menuItems = Arrays.stream(Requests.AttackType.values())
+            menuItems = Arrays.stream(Http.AttackType.values())
                               .map(attackType -> createContextMenuItem(() -> generateIntruderTemplate(generalSettings, targetUrl, request, attackType), GENERATE_CONTEXT_MENU_TEXT + " - " + attackType))
                               .collect(Collectors.toList());
         }
@@ -308,26 +308,26 @@ public class BurpExtender implements burp.IBurpExtender {
         final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
         final int statusCode = responseInfo.getStatusCode();
 
-        final Requests requests = new Requests();
+        final Http requests = new Http();
         requests.setRaw(requestBytes);
         requests.setMatchers(contentMatcher, new Status(statusCode));
 
         generateTemplate(generalSettings, targetUrl, requests);
     }
 
-    private void generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request, Requests.AttackType attackType) {
-        final Requests requests = new Requests();
+    private void generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request, Http.AttackType attackType) {
+        final Http http = new Http();
         final TransformedRequest intruderRequest = TemplateUtils.transformRequestWithPayloads(attackType, request);
-        requests.setTransformedRequest(intruderRequest);
+        http.setTransformedRequest(intruderRequest);
 
-        generateTemplate(generalSettings, targetUrl, requests);
+        generateTemplate(generalSettings, targetUrl, http);
     }
 
-    private void generateTemplate(GeneralSettings generalSettings, URL targetUrl, Requests requests) {
+    private void generateTemplate(GeneralSettings generalSettings, URL targetUrl, Http http) {
         final String author = generalSettings.getAuthor();
         final Info info = new Info("Template Name", author, Info.Severity.info);
 
-        final Template template = new Template("template-id", info, requests);
+        final Template template = new Template("template-id", info, http);
         final String normalizedTemplate = TemplateUtils.normalizeTemplate(YamlUtil.dump(template));
 
         final NucleiGeneratorSettings nucleiGeneratorSettings = new NucleiGeneratorSettings.Builder(generalSettings, targetUrl, normalizedTemplate)

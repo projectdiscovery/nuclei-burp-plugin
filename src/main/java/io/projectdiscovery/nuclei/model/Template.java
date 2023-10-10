@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal"})
-@YamlPropertyOrder({"id", "info", "requests"})
+@YamlPropertyOrder({"id", "info", "http"})
 public class Template {
 
     @YamlProperty
@@ -40,15 +40,15 @@ public class Template {
     @YamlProperty
     private Info info;
     @YamlProperty
-    private List<Requests> requests;
+    private List<Http> http;
 
     public Template() {
     }
 
-    public Template(String id, Info info, Requests... requests) {
+    public Template(String id, Info info, Http... http) {
         this.id = id;
         this.info = info;
-        this.requests = Arrays.asList(requests);
+        this.http = Arrays.asList(http);
     }
 
     public String getId() {
@@ -63,11 +63,11 @@ public class Template {
         return this.info;
     }
 
-    public List<Requests> getRequests() {
-        return this.requests;
+    public List<Http> getHttp() {
+        return this.http;
     }
 
-    public void setRequests(List<Requests> requests) {
-        this.requests = requests;
+    public void setHttp(List<Http> http) {
+        this.http = http;
     }
 }

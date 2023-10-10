@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @YamlPropertyOrder({"raw", "attack", "payloads", "matchers-condition", "matchers"})
-public class Requests {
+public class Http {
 
     public enum MatchersCondition {
         and, or

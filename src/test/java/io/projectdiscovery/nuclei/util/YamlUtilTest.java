@@ -168,11 +168,11 @@ class YamlUtilTest {
                                "Pragma: no-cache\n" +
                                "Cache-Control: no-cache\n";
 
-        final TransformedRequest transformedRequest = TemplateUtils.transformRequestWithPayloads(Requests.AttackType.batteringram, request);
-        final Requests requests = new Requests();
+        final TransformedRequest transformedRequest = TemplateUtils.transformRequestWithPayloads(Http.AttackType.batteringram, request);
+        final Http requests = new Http();
         requests.setTransformedRequest(transformedRequest);
-        requests.addPayloads(Requests.AttackType.batteringram, "param1", "Chrome");
-        requests.addPayloads(Requests.AttackType.batteringram, "param3", "compress");
+        requests.addPayloads(Http.AttackType.batteringram, "param1", "Chrome");
+        requests.addPayloads(Http.AttackType.batteringram, "param3", "compress");
 
         final String expected = "raw:\n" +
                                 "  - |\n" +
@@ -199,7 +199,7 @@ class YamlUtilTest {
     private Template createTemplate() {
         final Info info = new Info("Template Name", "forgedhallpass", Info.Severity.info);
 
-        final Requests requests = createRequests("GET / HTTP/1.1\n" +
+        final Http requests = createRequests("GET / HTTP/1.1\n" +
                                                  "Host: {{Hostname}}\n" +
                                                  "Accept: */*");
 
@@ -214,11 +214,11 @@ class YamlUtilTest {
                                   "Accept: */*\n" +
                                   "HeaderOne: §headerOne§\n" +
                                   "HeaderTwo: §headerTwo§";
-        final Requests requests = createRequests(rawRequest);
+        final Http requests = createRequests(rawRequest);
 
-        requests.setTransformedRequest(TemplateUtils.transformRequestWithPayloads(Requests.AttackType.clusterbomb, rawRequest));
-        requests.addPayloads(Requests.AttackType.clusterbomb, "param1", "one");
-        requests.addPayloads(Requests.AttackType.clusterbomb, "param2", "two");
+        requests.setTransformedRequest(TemplateUtils.transformRequestWithPayloads(Http.AttackType.clusterbomb, rawRequest));
+        requests.addPayloads(Http.AttackType.clusterbomb, "param1", "one");
+        requests.addPayloads(Http.AttackType.clusterbomb, "param2", "two");
 
         requests.setMatchers(new Word("word1", "word2"),
                              new Status(200, 500));
@@ -226,9 +226,9 @@ class YamlUtilTest {
         return new Template("template-id", info, requests);
     }
 
-    private Requests createRequests(String rawRequest) {
-        final Requests requests = new Requests();
-        requests.setMatchersCondition(Requests.MatchersCondition.or);
+    private Http createRequests(String rawRequest) {
+        final Http requests = new Http();
+        requests.setMatchersCondition(Http.MatchersCondition.or);
         requests.setRaw(rawRequest);
 
         requests.setMatchers(new Word("word1", "word2"),
