@@ -40,7 +40,7 @@ public class Word implements TemplateMatcher {
     private final String type = Word.class.getSimpleName().toLowerCase();
 
     @YamlProperty
-    private final Boolean negative = false;
+    private Boolean negative;
 
     @YamlProperty
     private Part part = Part.all;
@@ -85,5 +85,13 @@ public class Word implements TemplateMatcher {
     @Override
     public void setCondition(Condition condition) {
         this.condition = condition;
+    }
+
+    public Boolean getNegative() {
+        return negative;
+    }
+
+    public void setNegative(Boolean negative) {
+        this.negative = negative;
     }
 }
