@@ -33,11 +33,14 @@ import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
-@YamlPropertyOrder({"type", "part", "condition", "words"})
+@YamlPropertyOrder({"type", "negative", "part", "condition", "words"})
 public class Word implements TemplateMatcher {
 
     @YamlProperty
     private final String type = Word.class.getSimpleName().toLowerCase();
+
+    @YamlProperty
+    private Boolean negative;
 
     @YamlProperty
     private Part part = Part.all;
@@ -82,5 +85,13 @@ public class Word implements TemplateMatcher {
     @Override
     public void setCondition(Condition condition) {
         this.condition = condition;
+    }
+
+    public Boolean getNegative() {
+        return negative;
+    }
+
+    public void setNegative(Boolean negative) {
+        this.negative = negative;
     }
 }

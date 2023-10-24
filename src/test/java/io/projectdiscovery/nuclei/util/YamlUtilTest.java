@@ -144,6 +144,7 @@ class YamlUtilTest {
                                 "    matchers-condition: or\n" +
                                 "    matchers:\n" +
                                 "      - type: word\n" +
+                                "        negative: true\n" +
                                 "        part: all\n" +
                                 "        condition: and\n" +
                                 "        words:\n" +
