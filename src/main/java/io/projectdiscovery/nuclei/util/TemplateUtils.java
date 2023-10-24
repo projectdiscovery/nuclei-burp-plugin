@@ -26,7 +26,7 @@
 package io.projectdiscovery.nuclei.util;
 
 import io.projectdiscovery.nuclei.model.Binary;
-import io.projectdiscovery.nuclei.model.Requests;
+import io.projectdiscovery.nuclei.model.Http;
 import io.projectdiscovery.nuclei.model.TemplateMatcher;
 import io.projectdiscovery.nuclei.model.Word;
 import io.projectdiscovery.nuclei.model.util.TransformedRequest;
@@ -45,7 +45,8 @@ public final class TemplateUtils {
     public static final String PAYLOAD_START_MARKER = "{{";
     public static final String PAYLOAD_END_MARKER = "}}";
 
-    private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern.compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
+    private static final Pattern INTRUDER_PAYLOAD_PATTERN = Pattern
+            .compile(String.format("(%1$s.*?%1$s)", INTRUDER_PAYLOAD_MARKER), Pattern.DOTALL);
 
     private static final String BASE_PAYLOAD_PARAMETER_NAME = "param";
 
@@ -55,20 +56,24 @@ public final class TemplateUtils {
     public static String normalizeTemplate(String yamlTemplate) {
         String result = yamlTemplate;
 
-        for (String fieldName : Arrays.asList("info", "requests", "extractors")) {
+        for (String fieldName : Arrays.asList("info", "http", "extractors")) {
             result = addNewLineBeforeProperty(result, fieldName);
         }
 
-        result = result.contains("matchers-condition: ") ? addNewLineBeforeProperty(result, "matchers-condition", Utils.getEnumValues(Requests.MatchersCondition.class))
-                                                         : addNewLineBeforeProperty(result, "matchers");
+        result = result.contains("matchers-condition: ")
+                ? addNewLineBeforeProperty(result, "matchers-condition",
+                        Utils.getEnumValues(Http.MatchersCondition.class))
+                : addNewLineBeforeProperty(result, "matchers");
 
-        result = result.contains("attack: ") ? addNewLineBeforeProperty(result, "attack", Utils.getEnumValues(Requests.AttackType.class))
-                                             : addNewLineBeforeProperty(result, "payloads");
+        result = result.contains("attack: ")
+                ? addNewLineBeforeProperty(result, "attack", Utils.getEnumValues(Http.AttackType.class))
+                : addNewLineBeforeProperty(result, "payloads");
 
         return result;
     }
 
-    public static TemplateMatcher createContentMatcher(byte[] responseBytes, int bodyOffset, int[] selectionBounds, Function<byte[], String> byteToStringFunction) {
+    public static TemplateMatcher createContentMatcher(byte[] responseBytes, int bodyOffset, int[] selectionBounds,
+            Function<byte[], String> byteToStringFunction) {
         final int fromIndex = selectionBounds[0];
         final int toIndex = selectionBounds[1];
 
@@ -87,14 +92,15 @@ public final class TemplateUtils {
         return contentMatcher;
     }
 
-    public static TransformedRequest transformRequestWithPayloads(Requests.AttackType attackType, String request) {
+    public static TransformedRequest transformRequestWithPayloads(Http.AttackType attackType, String request) {
         final Matcher matcher = INTRUDER_PAYLOAD_PATTERN.matcher(request);
 
-        return attackType == Requests.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
-                                                              : handleMultiPayloadAttackTypes(attackType, request, matcher);
+        return attackType == Http.AttackType.batteringram ? handleBatteringRam(attackType, request, matcher)
+                : handleMultiPayloadAttackTypes(attackType, request, matcher);
     }
 
-    private static TransformedRequest handleMultiPayloadAttackTypes(Requests.AttackType attackType, String request, Matcher matcher) {
+    private static TransformedRequest handleMultiPayloadAttackTypes(Http.AttackType attackType, String request,
+            Matcher matcher) {
         final Map<String, List<String>> payloadParameters = new LinkedHashMap<>();
 
         final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
@@ -107,7 +113,7 @@ public final class TemplateUtils {
         return new TransformedRequest(attackType, transformedRequest, payloadParameters);
     }
 
-    private static TransformedRequest handleBatteringRam(Requests.AttackType attackType, String request, Matcher matcher) {
+    private static TransformedRequest handleBatteringRam(Http.AttackType attackType, String request, Matcher matcher) {
         final List<String> payloadParameters = new ArrayList<>();
         final BiFunction<Integer, String, String> payloadFunction = (index, payloadParameter) -> {
             payloadParameters.add(payloadParameter);
@@ -115,10 +121,12 @@ public final class TemplateUtils {
         };
 
         final String transformedRequest = transformRawRequest(request, matcher, payloadFunction);
-        return new TransformedRequest(attackType, transformedRequest, Map.of(BASE_PAYLOAD_PARAMETER_NAME, payloadParameters));
+        return new TransformedRequest(attackType, transformedRequest,
+                Map.of(BASE_PAYLOAD_PARAMETER_NAME, payloadParameters));
     }
 
-    private static String transformRawRequest(String request, Matcher matcher, BiFunction<Integer, String, String> payloadFunction) {
+    private static String transformRawRequest(String request, Matcher matcher,
+            BiFunction<Integer, String, String> payloadFunction) {
         String transformedRequest = request;
         int index = 1;
         while (matcher.find()) {
@@ -127,7 +135,8 @@ public final class TemplateUtils {
 
             final String newParamName = payloadFunction.apply(index++, payloadParameter);
 
-            transformedRequest = transformedRequest.replace(group, PAYLOAD_START_MARKER + newParamName + PAYLOAD_END_MARKER);
+            transformedRequest = transformedRequest.replace(group,
+                    PAYLOAD_START_MARKER + newParamName + PAYLOAD_END_MARKER);
         }
         return transformedRequest;
     }
@@ -138,7 +147,8 @@ public final class TemplateUtils {
             wordMatcher = new Word(selectedString.split(Utils.CRLF));
         } else {
             // TODO could make a config to enable the user to decide on the normalization
-            final String selectedStringWithNormalizedNewLines = selectedString.replaceAll(Utils.CRLF, String.valueOf(Utils.LF)).replace(Utils.CR, Utils.LF);
+            final String selectedStringWithNormalizedNewLines = selectedString
+                    .replaceAll(Utils.CRLF, String.valueOf(Utils.LF)).replace(Utils.CR, Utils.LF);
             final String[] words = selectedStringWithNormalizedNewLines.split(String.valueOf(Utils.LF));
             wordMatcher = new Word(words);
 
@@ -156,9 +166,10 @@ public final class TemplateUtils {
 
     private static String addNewLineBeforeProperty(String input, String propertyName, List<String> values) {
         final String valuesRegexOrExpression = values.isEmpty() ? ""
-                                                                : String.format(" (?:%s)", String.join("|", values));
+                : String.format(" (?:%s)", String.join("|", values));
 
-        final Pattern pattern = Pattern.compile(String.format("(^\\s*%s:%s$)", propertyName, valuesRegexOrExpression), Pattern.MULTILINE);
+        final Pattern pattern = Pattern.compile(
+                String.format("(^\\s*%s:%s(\\n|$))", propertyName, valuesRegexOrExpression), Pattern.MULTILINE);
         final Matcher matcher = pattern.matcher(input);
         while (matcher.find()) {
             final String group = matcher.group(1);

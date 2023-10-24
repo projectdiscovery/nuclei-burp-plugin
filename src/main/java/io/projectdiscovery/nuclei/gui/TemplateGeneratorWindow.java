@@ -113,7 +113,7 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
                                 "  author: forgedhallpass\n" +
                                 "  name: Template Name\n" +
                                 "  severity: info\n" +
-                                "requests:\n" +
+                                "http:\n" +
                                 "  - raw:\n" +
                                 "    - |\n" +
                                 "      GET / HTTP/1.1\n" +
