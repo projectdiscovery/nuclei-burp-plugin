@@ -57,7 +57,7 @@
         <rsyntaxtextarea.version>3.3.2</rsyntaxtextarea.version>
         <autocomplete.version>3.3.1</autocomplete.version>
 
-        <junit-jupiter.version>5.9.2</junit-jupiter.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
     </properties>
 
