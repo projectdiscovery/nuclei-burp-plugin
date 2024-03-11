@@ -48,7 +48,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
-        <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
+        <maven-assembly-plugin.version>3.7.0</maven-assembly-plugin.version>
         <maven-release-plugin.version>3.0.0-M7</maven-release-plugin.version>
 
         <burp-extender-api.version>2.3</burp-extender-api.version>
