@@ -21,4 +21,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nuclei-burp-plugin-SNAPSHOT-build
-          path: target/nuclei-burp-plugin-1.1.2-SNAPSHOT-jar-with-dependencies.jar
+          path: target/nuclei-burp-plugin-1.1.3-SNAPSHOT-jar-with-dependencies.jar
