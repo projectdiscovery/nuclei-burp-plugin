@@ -123,7 +123,7 @@ public final class SchemaUtils {
 
         final Map<String, Object> parsedJsonSchema = gson.fromJson(inputStreamReader, type);
 
-        final Map<String, Object> definitions = (Map<String, Object>) parsedJsonSchema.get("definitions");
+        final Map<String, Object> definitions = (Map<String, Object>) parsedJsonSchema.get("$defs");
         for (Map.Entry<String, Object> definitionEntry : definitions.entrySet()) {
             final Map<String, Map> properties = ((Map<String, Map>) definitionEntry.getValue()).get("properties");
 
