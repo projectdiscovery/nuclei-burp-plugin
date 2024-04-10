@@ -5,7 +5,7 @@
 
     <groupId>io.projectdiscovery</groupId>
     <artifactId>nuclei-burp-plugin</artifactId>
-    <version>1.1.3-SNAPSHOT</version>
+    <version>1.1.3-SNAPSHOT</version> <!-- update version before release -->
 
     <name>Nuclei Burp Suite plugin</name>
     <description>A Burp Suite plugin created to ease nuclei template development.</description>

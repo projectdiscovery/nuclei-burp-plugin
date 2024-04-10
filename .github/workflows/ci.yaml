@@ -25,6 +25,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/nuclei-burp-plugin-1.1.3-SNAPSHOT-jar-with-dependencies.jar
-          asset_name: nuclei-burp-plugin-1.1.3-SNAPSHOT-jar-with-dependencies.jar
+          asset_path: ./target/nuclei-burp-plugin-1.1.3-SNAPSHOT-jar-with-dependencies.jar #update version before release
+          asset_name: nuclei-burp-plugin-1.1.3.jar #update version before release
           asset_content_type: application/java-archive
