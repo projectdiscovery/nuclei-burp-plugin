@@ -137,6 +137,7 @@ public final class TemplateGeneratorTab extends JPanel {
         SwingUtils.setKeyboardShortcut(this, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> this.templateEditor.requestFocus());
         SwingUtils.setKeyboardShortcut(this, KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), this::saveTemplateToFile);
         SwingUtils.setKeyboardShortcut(this, KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, InputEvent.CTRL_DOWN_MASK), () -> deriveFont(Arrays.asList(this.templateEditor, this.outputPane), size -> ++size));
+        SwingUtils.setKeyboardShortcut(this, KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), () -> deriveFont(Arrays.asList(this.templateEditor, this.outputPane), size -> ++size));
         SwingUtils.setKeyboardShortcut(this, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK), () -> deriveFont(Arrays.asList(this.templateEditor, this.outputPane), size -> --size));
     }
 
