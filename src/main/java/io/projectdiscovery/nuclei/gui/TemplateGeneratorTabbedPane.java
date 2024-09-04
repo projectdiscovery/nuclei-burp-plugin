@@ -78,7 +78,28 @@ public final class TemplateGeneratorTabbedPane extends JTabbedPane {
         final String tabName = Optional.ofNullable(templateGeneratorTab.getName())
                                        .orElseGet(() -> "Tab " + this.openedTabCounter++);
         templateGeneratorTab.setName(tabName);
+
+        JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tabPanel.setOpaque(false);
+        JLabel tabLabel = new JLabel(tabName);
+        JButton closeButton = new JButton("x");
+        closeButton.setMargin(new Insets(0, 5, 0, 5));
+        closeButton.setBorderPainted(false);
+        closeButton.setContentAreaFilled(false);
+        closeButton.setFocusPainted(false);
+        closeButton.setOpaque(false);
+        closeButton.addActionListener(e -> {
+            int index = this.indexOfTabComponent(tabPanel);
+            if (index != -1) {
+                this.remove(index);
+            }
+        });
+
+        tabPanel.add(tabLabel);
+        tabPanel.add(closeButton);
+
         this.addTab(tabName, templateGeneratorTab);
+        this.setTabComponentAt(this.getTabCount() - 1, tabPanel);
         this.setSelectedIndex(this.getTabCount() - 1);
     }
 
