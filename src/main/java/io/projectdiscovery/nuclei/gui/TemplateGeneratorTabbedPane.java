@@ -27,9 +27,7 @@ package io.projectdiscovery.nuclei.gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,12 +74,11 @@ public final class TemplateGeneratorTabbedPane extends JTabbedPane {
     public void addTab(TemplateGeneratorTab templateGeneratorTab) {
         this.templateGeneratorTabs.add(templateGeneratorTab);
         final String tabName = Optional.ofNullable(templateGeneratorTab.getName())
-                                       .orElseGet(() -> "Tab " + this.openedTabCounter++);
+                .orElseGet(() -> "Tab " + this.openedTabCounter++);
         templateGeneratorTab.setName(tabName);
 
         JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         tabPanel.setOpaque(false);
-        JLabel tabLabel = new JLabel(tabName);
         JButton closeButton = new JButton("x");
         closeButton.setMargin(new Insets(0, 5, 0, 5));
         closeButton.setBorderPainted(false);
@@ -95,13 +92,59 @@ public final class TemplateGeneratorTabbedPane extends JTabbedPane {
             }
         });
 
+        JLabel tabLabel = new JLabel(tabName);
+        // Create a JTextField for editing the tab name, initially hidden
+        JTextField tabNameEditor = new JTextField(tabName);
+        tabNameEditor.setVisible(false);
+        // Add action listener to handle renaming when the user presses Enter or loses focus
+        tabNameEditor.addActionListener(e -> finishEditingTabName(templateGeneratorTab, tabLabel, tabNameEditor, tabPanel));
+        tabNameEditor.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                finishEditingTabName(templateGeneratorTab, tabLabel, tabNameEditor, tabPanel);
+            }
+        });
+
+        tabLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    // Handle single click: set focus to this tab
+                    int index = indexOfTabComponent(tabPanel);
+                    if (index != -1) {
+                        setSelectedIndex(index);
+                    }
+                } else if (e.getClickCount() == 2) {
+                    // Handle double click: enable editing the tab name
+                    tabLabel.setVisible(false);
+                    tabNameEditor.setVisible(true);
+                    tabNameEditor.requestFocus();
+                    tabNameEditor.selectAll();
+                }
+            }
+        });
+
         tabPanel.add(tabLabel);
+        tabPanel.add(tabNameEditor);
         tabPanel.add(closeButton);
 
         this.addTab(tabName, templateGeneratorTab);
         this.setTabComponentAt(this.getTabCount() - 1, tabPanel);
         this.setSelectedIndex(this.getTabCount() - 1);
     }
+
+    // Method to finish editing the tab name
+    private void finishEditingTabName(TemplateGeneratorTab templateGeneratorTab, JLabel tabLabel, JTextField tabNameEditor, JPanel tabPanel) {
+        String newTabName = tabNameEditor.getText().trim();
+        if (!newTabName.isEmpty()) {
+            templateGeneratorTab.setName(newTabName);  // Update the tab's model name
+            tabLabel.setText(newTabName);  // Update the tab label
+            this.setTitleAt(this.indexOfTabComponent(tabPanel), newTabName);  // Update the tab title
+        }
+        tabNameEditor.setVisible(false);  // Hide the editor
+        tabLabel.setVisible(true);  // Show the label
+    }
+
 
     @Override
     public void insertTab(String title, Icon icon, Component component, String tip, int index) {
