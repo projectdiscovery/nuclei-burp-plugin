@@ -20,15 +20,20 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import javax.swing.*;
+import javax.swing.event.MouseInputAdapter;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -121,14 +126,14 @@ public final class TemplateGeneratorTab extends JPanel {
         }
 
         return String.format("%s -v -t %s -u %s",
-                             wrapWithQuotesIfNecessary(nucleiPath.toString()),
-                             wrapWithQuotesIfNecessary(this.templatePath.toString()),
-                             wrapWithQuotesIfNecessary(targetUrl.toString()));
+                wrapWithQuotesIfNecessary(nucleiPath.toString()),
+                wrapWithQuotesIfNecessary(this.templatePath.toString()),
+                wrapWithQuotesIfNecessary(targetUrl.toString()));
     }
 
     private static String wrapWithQuotesIfNecessary(String input) {
         return input.contains(" ") ? String.format("\"%s\"", input)
-                                   : input;
+                : input;
     }
 
     private void setKeyboardShortcuts() {
@@ -249,7 +254,46 @@ public final class TemplateGeneratorTab extends JPanel {
 
         setupAutoCompletion(textEditor);
 
+        // Add mouse listener for Ctrl + Click
+        textEditor.addMouseListener(new MouseInputAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1 && e.isControlDown()) { // Trigger on Ctrl + Click
+                    int offset = textEditor.viewToModel2D(e.getPoint());
+                    String url = getUrlAtOffset(textEditor, offset);
+                    if (url != null) {
+                        try {
+                            SwingUtils.openWebPage(new URI(url).toURL());
+                        } catch (IOException | URISyntaxException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+
         return textEditor;
+    }
+
+    private String getUrlAtOffset(RSyntaxTextArea textEditor, int offset) {
+        try {
+            int start = offset;
+            int end = offset;
+            while (start > 0 && !Character.isWhitespace(textEditor.getText(start - 1, 1).charAt(0))) {
+                start--;
+            }
+            while (end < textEditor.getDocument().getLength() && !Character.isWhitespace(textEditor.getText(end, 1).charAt(0))) {
+                end++;
+            }
+
+            String potentialUrl = textEditor.getText(start, end - start);
+            if (potentialUrl.startsWith("http://") || potentialUrl.startsWith("https://")) {
+                return potentialUrl;
+            }
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private JMenu createTemplateEditorMenuItems() {
@@ -476,8 +520,8 @@ public final class TemplateGeneratorTab extends JPanel {
                 final File selectedFile = getSelectedFile();
                 if (selectedFile.exists() && getDialogType() == SAVE_DIALOG) {
                     final int result = JOptionPane.showConfirmDialog(this, "The selected file already exists. Do you want to overwrite it?",
-                                                                     "Overwrite existing file?",
-                                                                     JOptionPane.YES_NO_CANCEL_OPTION);
+                            "Overwrite existing file?",
+                            JOptionPane.YES_NO_CANCEL_OPTION);
                     switch (result) {
                         case JOptionPane.YES_OPTION:
                             super.approveSelection();
@@ -511,14 +555,14 @@ public final class TemplateGeneratorTab extends JPanel {
             }
 
             CommandLineUtils.asyncExecuteCommand(command,
-                                                 bufferedReader -> bufferedReader.lines()
-                                                                                 .map(line -> line + "\n")
-                                                                                 .forEach(line -> SwingUtilities.invokeLater(() -> {
-                                                                                     this.outputPane.appendText(line, noColor);
-                                                                                     this.outputPane.repaint();
-                                                                                 })),
-                                                 exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
-                                                 this.nucleiGeneratorSettings::logError);
+                    bufferedReader -> bufferedReader.lines()
+                            .map(line -> line + "\n")
+                            .forEach(line -> SwingUtilities.invokeLater(() -> {
+                                this.outputPane.appendText(line, noColor);
+                                this.outputPane.repaint();
+                            })),
+                    exitCode -> SwingUtilities.invokeLater(() -> this.outputPane.appendText("\nThe process exited with code " + exitCode)),
+                    this.nucleiGeneratorSettings::logError);
         }
     }
 }

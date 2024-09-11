@@ -113,6 +113,8 @@ public final class TemplateGeneratorWindow extends JFrame implements TemplateGen
                                 "  author: forgedhallpass\n" +
                                 "  name: Template Name\n" +
                                 "  severity: info\n" +
+                                "reference:\n"+
+                                "   - https://github.com/projectdiscovery/nuclei-templates\n"+
                                 "http:\n" +
                                 "  - raw:\n" +
                                 "    - |\n" +
