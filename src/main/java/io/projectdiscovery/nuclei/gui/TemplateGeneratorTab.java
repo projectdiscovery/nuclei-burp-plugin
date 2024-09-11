@@ -226,7 +226,6 @@ public final class TemplateGeneratorTab extends JPanel {
         }
     }
 
-
     private RSyntaxTextArea createSmartTextEditor(String templateYaml) {
         // TODO https://github.com/bobbylight/RSyntaxTextArea/issues/269
         JTextComponent.removeKeymap("RTextAreaKeymap");
@@ -255,15 +254,16 @@ public final class TemplateGeneratorTab extends JPanel {
 
         setupAutoCompletion(textEditor);
 
+        // Add mouse listener for Ctrl + Click
         textEditor.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) { // Trigger on double-click
+                if (e.getClickCount() == 1 && e.isControlDown()) { // Trigger on Ctrl + Click
                     int offset = textEditor.viewToModel2D(e.getPoint());
                     String url = getUrlAtOffset(textEditor, offset);
                     if (url != null) {
                         try {
-                            Desktop.getDesktop().browse(new URI(url));
+                            SwingUtils.openWebPage(new URI(url).toURL());
                         } catch (IOException | URISyntaxException ex) {
                             ex.printStackTrace();
                         }
@@ -274,7 +274,6 @@ public final class TemplateGeneratorTab extends JPanel {
 
         return textEditor;
     }
-
 
     private String getUrlAtOffset(RSyntaxTextArea textEditor, int offset) {
         try {
@@ -296,7 +295,6 @@ public final class TemplateGeneratorTab extends JPanel {
         }
         return null;
     }
-
 
     private JMenu createTemplateEditorMenuItems() {
         final JMenu templateMenu = new JMenu("Add");
