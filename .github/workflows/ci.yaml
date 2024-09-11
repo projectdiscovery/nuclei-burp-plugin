@@ -18,7 +18,7 @@ jobs:
         run: mvn --batch-mode --update-snapshots verify
 
       - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nuclei-burp-plugin-SNAPSHOT-build
           path: target/nuclei-burp-plugin-1.1.3-SNAPSHOT-jar-with-dependencies.jar
