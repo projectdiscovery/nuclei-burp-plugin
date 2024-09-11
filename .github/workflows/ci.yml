@@ -1,0 +1,70 @@
+name: Java CI
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      # Bump patch version and set SNAPSHOT
+      - name: Bump patch version and set SNAPSHOT
+        id: patch_version
+        run: |
+          # Extract the current version from the pom.xml
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current version: $VERSION"
+
+          # Check if the current version already contains SNAPSHOT
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
+            # Remove the SNAPSHOT suffix for incrementing
+            BASE_VERSION=$(echo $VERSION | sed 's/-SNAPSHOT$//')
+          else
+            # Use the current version as base if it's not a SNAPSHOT
+            BASE_VERSION=$VERSION
+          fi
+
+          # Split the base version into parts and increment the patch version
+          MAJOR=$(echo $BASE_VERSION | cut -d '.' -f 1)
+          MINOR=$(echo $BASE_VERSION | cut -d '.' -f 2)
+          PATCH=$(echo $BASE_VERSION | cut -d '.' -f 3)
+          NEW_PATCH=$((PATCH+1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH-SNAPSHOT"
+
+          # Update the version in pom.xml
+          mvn versions:set -DnewVersion=$NEW_VERSION
+          mvn versions:commit
+
+          # Commit the updated pom.xml with the new version
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add pom.xml
+          git commit -m "Bump version to $NEW_VERSION"
+          git branch -f main
+          git push origin main
+
+          # Use the new version for the artifact name
+          echo "::set-output name=new_version::$NEW_VERSION"
+
+      - name: Build with Maven
+        run: mvn --batch-mode --update-snapshots verify
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/nuclei-burp-plugin-${{ steps.patch_version.outputs.new_version }}-jar-with-dependencies.jar
+          asset_name: nuclei-burp-plugin-${{ steps.patch_version.outputs.new_version }}.jar
+          asset_content_type: application/java-archive
