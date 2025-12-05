@@ -27,6 +27,7 @@ package io.projectdiscovery.nuclei.yaml;
 
 import io.projectdiscovery.nuclei.model.util.YamlPropertyOrder;
 import org.jetbrains.annotations.Nullable;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -42,6 +43,11 @@ class OrderedRepresenter extends Representer {
     private final PropertyUtils propertyUtils;
 
     OrderedRepresenter(PropertyUtils propertyUtils) {
+        this(propertyUtils, new DumperOptions());
+    }
+
+    OrderedRepresenter(PropertyUtils propertyUtils, DumperOptions dumperOptions) {
+        super(dumperOptions);
         this.propertyUtils = propertyUtils;
     }
 
