@@ -23,16 +23,21 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.impact;
+package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
+/**
+ * A localized value, used by the NVD for both CVE descriptions and CWE weaknesses.
+ */
+public class LangValue {
 
-public class BaseMetricV3 {
+    private String lang;
+    private String value;
 
-    @Expose
-    private CvssV3 cvssV3;
+    public String getLang() {
+        return this.lang;
+    }
 
-    public CvssV3 getCvssV3() {
-        return this.cvssV3;
+    public String getValue() {
+        return this.value;
     }
 }

@@ -23,18 +23,15 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.references;
-
-import com.google.gson.annotations.SerializedName;
+package io.projectdiscovery.cve.nist.model;
 
 import java.util.List;
 
-public class References {
+public class Weakness {
 
-    @SerializedName("reference_data")
-    private List<ReferenceData> referenceData;
+    private List<LangValue> description;
 
-    public List<ReferenceData> getReferenceData() {
-        return this.referenceData;
+    public List<LangValue> getDescription() {
+        return this.description;
     }
 }

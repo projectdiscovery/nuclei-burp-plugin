@@ -25,39 +25,11 @@
 
 package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.projectdiscovery.cve.nist.model.cwe.ProblemType;
-import io.projectdiscovery.cve.nist.model.description.Description;
-import io.projectdiscovery.cve.nist.model.references.References;
+public class Reference {
 
-public class CVE {
+    private String url;
 
-    @SerializedName("CVE_data_meta")
-    private CveMetaData cveMetaData;
-
-    @Expose
-    private References references;
-
-    @Expose
-    private Description description;
-
-    @SerializedName("problemtype")
-    private ProblemType problemType;
-
-    public References getReferences() {
-        return this.references;
-    }
-
-    public Description getDescription() {
-        return this.description;
-    }
-
-    public ProblemType getProblemType() {
-        return this.problemType;
-    }
-
-    public CveMetaData getCveMetaData() {
-        return this.cveMetaData;
+    public String getUrl() {
+        return this.url;
     }
 }

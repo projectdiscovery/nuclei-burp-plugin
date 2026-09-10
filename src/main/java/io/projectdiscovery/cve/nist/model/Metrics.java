@@ -23,30 +23,24 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.impact;
+package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-public class CvssV3 {
+public class Metrics {
 
-    @Expose
-    private String vectorString;
+    private List<CvssMetric> cvssMetricV31;
+    private List<CvssMetric> cvssMetricV30;
 
-    @Expose
-    private Double baseScore;
-
-    @Expose
-    private String baseSeverity;
-
-    public String getVectorString() {
-        return this.vectorString;
-    }
-
-    public Double getBaseScore() {
-        return this.baseScore;
-    }
-
-    public String getBaseSeverity() {
-        return this.baseSeverity;
+    /**
+     * @return the CVSS v3 data, preferring v3.1 over v3.0. Empty for CVEs that the NVD only scored with CVSS v2.
+     */
+    public Optional<CvssData> getCvssV3Data() {
+        return Stream.of(this.cvssMetricV31, this.cvssMetricV30)
+                     .filter(metrics -> metrics != null && !metrics.isEmpty())
+                     .findFirst()
+                     .map(metrics -> metrics.get(0).getCvssData());
     }
 }

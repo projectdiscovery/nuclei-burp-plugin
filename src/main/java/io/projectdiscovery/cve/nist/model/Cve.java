@@ -23,18 +23,35 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.cwe;
-
-import com.google.gson.annotations.SerializedName;
+package io.projectdiscovery.cve.nist.model;
 
 import java.util.List;
 
-public class ProblemTypeData {
+public class Cve {
 
-    @SerializedName("description")
-    private List<ProblemTypeDescription> description;
+    private String id;
+    private List<LangValue> descriptions;
+    private Metrics metrics;
+    private List<Weakness> weaknesses;
+    private List<Reference> references;
 
-    public List<ProblemTypeDescription> getDescription() {
-        return this.description;
+    public String getId() {
+        return this.id;
+    }
+
+    public List<LangValue> getDescriptions() {
+        return this.descriptions;
+    }
+
+    public Metrics getMetrics() {
+        return this.metrics;
+    }
+
+    public List<Weakness> getWeaknesses() {
+        return this.weaknesses;
+    }
+
+    public List<Reference> getReferences() {
+        return this.references;
     }
 }
