@@ -26,6 +26,7 @@
 package io.projectdiscovery.nuclei.yaml;
 
 import io.projectdiscovery.nuclei.model.*;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -37,6 +38,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 class NucleiModelConstructor extends Constructor {
+
+    NucleiModelConstructor(LoaderOptions loaderOptions) {
+        super(loaderOptions);
+    }
 
     @Override
     protected Object newInstance(Node node) {
