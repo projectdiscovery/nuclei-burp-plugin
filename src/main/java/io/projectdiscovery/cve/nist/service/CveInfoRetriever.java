@@ -26,57 +26,83 @@
 package io.projectdiscovery.cve.nist.service;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import io.projectdiscovery.cve.CveInfo;
 import io.projectdiscovery.cve.nist.NistCveInfo;
-import io.projectdiscovery.cve.nist.model.CveMetaData;
-import io.projectdiscovery.cve.nist.model.NistCveResults;
+import io.projectdiscovery.cve.nist.model.Cve;
+import io.projectdiscovery.cve.nist.model.NvdCveResponse;
+import io.projectdiscovery.cve.nist.model.Vulnerability;
+import io.projectdiscovery.nuclei.gui.GeneralSettings;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 
 public final class CveInfoRetriever {
 
     private static final Gson GSON = new Gson();
-    private static final String NIST_SERVICE_URL = "https://services.nvd.nist.gov/rest/json/cve/1.0/";
+    private static final String NVD_CVE_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0";
+    private static final Duration TIMEOUT = Duration.ofSeconds(20);
 
     private CveInfoRetriever() {
     }
 
-    public static Optional<CveInfo> getCveInfo(String cveId) {
-        try {
-            return getNistCveResults(cveId).filter(cveInfo -> cveInfo.getTotalResults() == 1)
-                                           .map(cveInfo -> cveInfo.getResults().getCveItems().get(0))
-                                           .filter(cveInfo -> {
-                                               final CveMetaData cveMetaData = cveInfo.getCve().getCveMetaData();
-                                               final String id = cveMetaData.getId();
-                                               return cveId.equalsIgnoreCase(id);
-                                           })
-                                           .map(NistCveInfo::new);
-        // TODO
-        } catch (NullPointerException e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-            return Optional.empty();
-        }
+    public static Optional<CveInfo> getCveInfo(String cveId, GeneralSettings generalSettings) {
+        final Optional<NistCveInfo> cveInfo = retrieveCve(cveId, generalSettings).map(NistCveInfo::new);
+
+        cveInfo.filter(cve -> !cve.hasCvssV3Score())
+               .ifPresent(cve -> generalSettings.log(String.format("The NVD has no CVSS v3 score for '%s', so the severity and score need to be filled in manually.", cveId)));
+
+        return cveInfo.map(CveInfo.class::cast);
     }
 
-    private static Optional<NistCveResults> getNistCveResults(String cveId) {
+    private static Optional<Cve> retrieveCve(String cveId, GeneralSettings generalSettings) {
+        return sendRequest(cveId, generalSettings).map(NvdCveResponse::getVulnerabilities)
+                                                  .filter(vulnerabilities -> vulnerabilities != null && !vulnerabilities.isEmpty())
+                                                  .map(vulnerabilities -> vulnerabilities.get(0))
+                                                  .map(Vulnerability::getCve)
+                                                  .filter(cve -> cveId.equalsIgnoreCase(cve.getId()));
+    }
+
+    private static Optional<NvdCveResponse> sendRequest(String cveId, GeneralSettings generalSettings) {
+        // The API matches the id case sensitively and answers 404 for a lower case one.
+        final String normalizedCveId = cveId.toUpperCase(Locale.ROOT);
+        final URI uri = URI.create(String.format("%s?cveId=%s", NVD_CVE_API_URL, URLEncoder.encode(normalizedCveId, StandardCharsets.UTF_8)));
+
         try {
-            final HttpRequest httpRequest = HttpRequest.newBuilder(new URI(NIST_SERVICE_URL).resolve(cveId))
+            final HttpRequest httpRequest = HttpRequest.newBuilder(uri)
+                                                       .timeout(TIMEOUT)
                                                        .GET()
                                                        .build();
 
-            final HttpClient httpClient = HttpClient.newHttpClient();
+            final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
             final HttpResponse<String> httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return Optional.of(GSON.fromJson(httpResponse.body(), NistCveResults.class));
-        } catch (URISyntaxException | IOException | InterruptedException e) {
-            e.printStackTrace(); // TODO
-            return Optional.empty();
+
+            final int statusCode = httpResponse.statusCode();
+            if (statusCode != 200) {
+                // The NVD throttles clients without an API key to a few requests per 30 second window.
+                final String hint = (statusCode == 403 || statusCode == 429) ? " Clients without an API key are rate limited, so retrying in a few seconds may work." : "";
+                generalSettings.logError(String.format("The NVD API returned HTTP %d for '%s'.%s", statusCode, normalizedCveId, hint));
+                return Optional.empty();
+            }
+
+            return Optional.ofNullable(GSON.fromJson(httpResponse.body(), NvdCveResponse.class));
+        } catch (JsonParseException e) {
+            generalSettings.logError(String.format("Could not parse the NVD API response for '%s'.", cveId), e);
+        } catch (IOException e) {
+            generalSettings.logError(String.format("Could not reach the NVD API at '%s'.", uri), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            generalSettings.logError(String.format("Interrupted while retrieving '%s' from the NVD API.", cveId), e);
         }
+
+        return Optional.empty();
     }
 }

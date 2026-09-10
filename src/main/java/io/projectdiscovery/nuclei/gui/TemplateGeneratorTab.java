@@ -325,7 +325,7 @@ public final class TemplateGeneratorTab extends JPanel {
 
             if (cveId != null) {
                 if (cveId.matches("(?i)cve-\\d{4}-\\d{4,7}")) {
-                    final Optional<CveInfo> cveInfo = CveInfoRetriever.getCveInfo(cveId);
+                    final Optional<CveInfo> cveInfo = CveInfoRetriever.getCveInfo(cveId, this.nucleiGeneratorSettings);
                     cveInfo.map(cve -> {
                         template.setId(cveId);
                         final Info.Classification classification = new Info.Classification(cve.getId(), cve.getCvssMetrics(), cve.getCvssScore(), cve.getCweIds());

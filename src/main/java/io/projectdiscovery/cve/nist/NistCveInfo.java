@@ -26,55 +26,60 @@
 package io.projectdiscovery.cve.nist;
 
 import io.projectdiscovery.cve.CveInfo;
-import io.projectdiscovery.cve.nist.model.CVE;
-import io.projectdiscovery.cve.nist.model.CveItem;
-import io.projectdiscovery.cve.nist.model.cwe.ProblemTypeDescription;
-import io.projectdiscovery.cve.nist.model.description.DescriptionData;
-import io.projectdiscovery.cve.nist.model.impact.CvssV3;
-import io.projectdiscovery.cve.nist.model.references.ReferenceData;
+import io.projectdiscovery.cve.nist.model.Cve;
+import io.projectdiscovery.cve.nist.model.CvssData;
+import io.projectdiscovery.cve.nist.model.LangValue;
+import io.projectdiscovery.cve.nist.model.Metrics;
+import io.projectdiscovery.cve.nist.model.Reference;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class NistCveInfo implements CveInfo {
 
-    private final String description;
-    private final Set<String> cwes;
-    private final Set<String> references;
-    private final CvssV3 cvss;
+    private static final String ENGLISH = "en";
+    private static final String UNKNOWN_SEVERITY = "unknown";
+    private static final String CWE_PREFIX = "cwe-";
+
     private final String id;
+    private final String description;
+    private final Set<String> cweIds;
+    private final Set<String> references;
+    private final CvssData cvssData;
 
-    public NistCveInfo(CveItem cveItem) {
-        final CVE cve = cveItem.getCve();
+    public NistCveInfo(Cve cve) {
+        this.id = cve.getId();
+        this.description = englishValues(cve.getDescriptions()).findFirst().orElse(null);
 
-        this.id = cve.getCveMetaData().getId();
+        this.cweIds = nullSafe(cve.getWeaknesses()).stream()
+                                                   .flatMap(weakness -> englishValues(weakness.getDescription()))
+                                                   .filter(value -> value.toLowerCase().startsWith(CWE_PREFIX))
+                                                   .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        this.description = cve.getDescription().getDescriptionData().stream()
-                              .findAny()
-                              .map(DescriptionData::getValue)
-                              .orElse(null);
+        this.references = nullSafe(cve.getReferences()).stream()
+                                                       .map(Reference::getUrl)
+                                                       .filter(NistCveInfo::isValidUrl)
+                                                       .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        this.cwes = cve.getProblemType().getProblemTypeData().stream()
-                       .flatMap(r -> r.getDescription().stream())
-                       .map(ProblemTypeDescription::getValue)
-                       .filter(v -> v.toLowerCase().startsWith("cwe-"))
-                       .collect(Collectors.toSet());
+        this.cvssData = Optional.ofNullable(cve.getMetrics())
+                                .flatMap(Metrics::getCvssV3Data)
+                                .orElse(null);
+    }
 
-        this.references = cve.getReferences().getReferenceData().stream()
-                             .map(ReferenceData::getUrl)
-                             .filter(r -> {
-                                 try {
-                                     new URL(r);
-                                     return true;
-                                 } catch (MalformedURLException e) {
-                                     return false;
-                                 }
-                             })
-                             .collect(Collectors.toSet());
-
-        this.cvss = cveItem.getImpact().getBaseMetricV3().getCvssV3();
+    /**
+     * @return whether the NVD scored this CVE with CVSS v3, which is not the case for some older entries
+     */
+    public boolean hasCvssV3Score() {
+        return this.cvssData != null;
     }
 
     @Override
@@ -84,22 +89,23 @@ public class NistCveInfo implements CveInfo {
 
     @Override
     public Double getCvssScore() {
-        return this.cvss.getBaseScore();
+        // Info.Classification stores the score as a primitive, so absent scores fall back to zero.
+        return hasCvssV3Score() ? this.cvssData.getBaseScore() : 0.0;
     }
 
     @Override
     public String getCvssMetrics() {
-        return this.cvss.getVectorString();
+        return hasCvssV3Score() ? this.cvssData.getVectorString() : null;
     }
 
     @Override
     public String getSeverity() {
-        return this.cvss.getBaseSeverity();
+        return hasCvssV3Score() ? this.cvssData.getBaseSeverity() : UNKNOWN_SEVERITY;
     }
 
     @Override
     public Set<String> getCweIds() {
-        return this.cwes;
+        return this.cweIds;
     }
 
     @Override
@@ -110,5 +116,25 @@ public class NistCveInfo implements CveInfo {
     @Override
     public Set<String> getReferences() {
         return this.references;
+    }
+
+    private static Stream<String> englishValues(List<LangValue> langValues) {
+        return nullSafe(langValues).stream()
+                                   .filter(langValue -> ENGLISH.equalsIgnoreCase(langValue.getLang()))
+                                   .map(LangValue::getValue)
+                                   .filter(Objects::nonNull);
+    }
+
+    private static boolean isValidUrl(String url) {
+        try {
+            new URL(url);
+            return true;
+        } catch (MalformedURLException e) {
+            return false;
+        }
+    }
+
+    private static <T> Collection<T> nullSafe(List<T> values) {
+        return values == null ? Collections.emptyList() : values;
     }
 }

@@ -23,16 +23,20 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.impact;
+package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
+import java.util.List;
 
-public class Impact {
+public class NvdCveResponse {
 
-    @Expose
-    private BaseMetricV3 baseMetricV3;
+    private int totalResults;
+    private List<Vulnerability> vulnerabilities;
 
-    public BaseMetricV3 getBaseMetricV3() {
-        return this.baseMetricV3;
+    public int getTotalResults() {
+        return this.totalResults;
+    }
+
+    public List<Vulnerability> getVulnerabilities() {
+        return this.vulnerabilities;
     }
 }

@@ -25,22 +25,11 @@
 
 package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
-import io.projectdiscovery.cve.nist.model.impact.Impact;
+public class CvssMetric {
 
-public class CveItem {
+    private CvssData cvssData;
 
-    @Expose
-    private CVE cve;
-
-    @Expose
-    private Impact impact;
-
-    public CVE getCve() {
-        return this.cve;
-    }
-
-    public Impact getImpact() {
-        return this.impact;
+    public CvssData getCvssData() {
+        return this.cvssData;
     }
 }

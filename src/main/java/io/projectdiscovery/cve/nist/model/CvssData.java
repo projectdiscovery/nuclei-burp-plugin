@@ -23,23 +23,23 @@
  *
  */
 
-package io.projectdiscovery.cve.nist.model.description;
+package io.projectdiscovery.cve.nist.model;
 
-import com.google.gson.annotations.Expose;
+public class CvssData {
 
-public class DescriptionData {
+    private String vectorString;
+    private Double baseScore;
+    private String baseSeverity;
 
-    @Expose
-    private String lang;
-
-    @Expose
-    private String value;
-
-    public String getLang() {
-        return this.lang;
+    public String getVectorString() {
+        return this.vectorString;
     }
 
-    public String getValue() {
-        return this.value;
+    public Double getBaseScore() {
+        return this.baseScore;
+    }
+
+    public String getBaseSeverity() {
+        return this.baseSeverity;
     }
 }
