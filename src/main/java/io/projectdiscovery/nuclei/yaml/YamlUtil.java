@@ -49,15 +49,15 @@ public final class YamlUtil {
 
     private static Yaml createYamlInstance() {
         final PropertyUtils propertyUtils = new AnnotatedPropertyUtils();
-
-        final BaseConstructor baseConstructor = new NucleiModelConstructor();
-        baseConstructor.setPropertyUtils(propertyUtils);
-
-        final Representer representer = new OrderedRepresenter(propertyUtils);
-        final DumperOptions options = createDumperOptions();
+        final DumperOptions dumperOptions = createDumperOptions();
         final LoaderOptions loaderOptions = new LoaderOptions();
 
-        return new Yaml(baseConstructor, representer, options, loaderOptions);
+        final BaseConstructor baseConstructor = new NucleiModelConstructor(loaderOptions);
+        baseConstructor.setPropertyUtils(propertyUtils);
+
+        final Representer representer = new OrderedRepresenter(propertyUtils, dumperOptions);
+
+        return new Yaml(baseConstructor, representer, dumperOptions, loaderOptions);
     }
 
     private static DumperOptions createDumperOptions() {
