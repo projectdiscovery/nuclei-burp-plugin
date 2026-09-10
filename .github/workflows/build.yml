@@ -3,8 +3,8 @@ name: Build
 on:
   push:
     branches: [ main ]
+  # No base branch filter, so stacked pull requests get built too.
   pull_request:
-    branches: [ main ]
 
 # A superseded run tells us nothing, so drop it and keep the latest.
 concurrency:
