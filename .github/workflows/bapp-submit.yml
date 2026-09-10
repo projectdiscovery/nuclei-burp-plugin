@@ -1,0 +1,67 @@
+name: Submit to BApp Store
+
+# Manual on purpose. PortSwigger asks that a failed submission be fixed and
+# resubmitted on the existing issue rather than opened a second time, so the
+# trigger stays a deliberate action instead of firing on every release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to submit, without the leading v (e.g. 1.1.4)'
+        required: true
+
+permissions: {}
+
+env:
+  FORK: PortSwigger/nuclei-template-generator
+  PORTAL: PortSwigger/extension-portal
+  BAPP_NAME: Nuclei Template Generator Plugin
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Updates are only accepted from the parent repository of the fork, so the
+      # head is always projectdiscovery:main.
+      - name: Open the update pull request on the PortSwigger fork
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.BAPP_SUBMISSION_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          url=$(gh pr list --repo "$FORK" --base main --state open \
+                            --json url,headRefName,headRepositoryOwner \
+                            --jq '[.[] | select(.headRefName == "main" and .headRepositoryOwner.login == "projectdiscovery")][0].url // empty')
+          if [ -z "$url" ]; then
+            url=$(gh pr create --repo "$FORK" --base main --head projectdiscovery:main \
+                               --title "v$VERSION" --body "Release v$VERSION of $BAPP_NAME.")
+          else
+            echo "Reusing the open pull request: $url"
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # The portal parses the body literally: '### ' headings, value on the next
+      # line but one. See https://github.com/PortSwigger/extension-portal/blob/main/AGENTS.md
+      - name: Submit the update to the extension portal
+        env:
+          GH_TOKEN: ${{ secrets.BAPP_SUBMISSION_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        run: |
+          set -euo pipefail
+          summary=$(gh release view "v$VERSION" --json body --jq '.body // empty')
+          : "${summary:=Release v$VERSION.}"
+
+          {
+            printf '### Pull request URL\n\n%s\n\n' "$PR_URL"
+            printf '### Version number\n\n%s\n\n' "$VERSION"
+            printf '### Author display name\n\n_No response_\n\n'
+            printf '### Contact Details\n\n_No response_\n\n'
+            printf '### Discord username\n\n_No response_\n\n'
+            printf '### Update summary\n\n%s\n\n' "$summary"
+            printf '### BApp Description update\n\n_No response_\n'
+          } > update.md
+
+          gh issue create --repo "$PORTAL" --title "$BAPP_NAME" --body-file update.md
