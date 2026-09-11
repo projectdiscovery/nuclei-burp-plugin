@@ -93,4 +93,29 @@ public final class SwingUtils {
 
         frameActionMap.put(shortcutKey, action);
     }
+
+    /**
+     * Selects the tab holding the given component in the closest enclosing {@link JTabbedPane}.
+     * <p>
+     * Burp's legacy Extender API has no call to bring a suite tab to the front, so the
+     * enclosing tabbed pane has to be found by walking up the component hierarchy.
+     *
+     * @return whether an enclosing tabbed pane was found and the tab selected
+     */
+    public static boolean selectEnclosingTab(Component component) {
+        Component child = component;
+
+        for (Container parent = child.getParent(); parent != null; parent = parent.getParent()) {
+            if (parent instanceof JTabbedPane) {
+                final JTabbedPane tabbedPane = (JTabbedPane) parent;
+                if (tabbedPane.indexOfComponent(child) != -1) {
+                    tabbedPane.setSelectedComponent(child);
+                    return true;
+                }
+            }
+            child = parent;
+        }
+
+        return false;
+    }
 }

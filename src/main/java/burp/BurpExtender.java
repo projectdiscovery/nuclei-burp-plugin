@@ -33,6 +33,7 @@ import io.projectdiscovery.nuclei.util.SchemaUtils;
 import io.projectdiscovery.nuclei.util.TemplateUtils;
 import io.projectdiscovery.nuclei.yaml.YamlUtil;
 import io.projectdiscovery.utils.Utils;
+import io.projectdiscovery.utils.gui.SwingUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -350,8 +351,10 @@ public class BurpExtender implements burp.IBurpExtender {
     }
 
     private void configureEmbeddedGeneratorTab(GeneralSettings generalSettings, TemplateGeneratorTabContainer templateGeneratorTabContainer) {
+        final JComponent generatorComponent = templateGeneratorTabContainer.getComponent();
+
         if (getTabComponentByName(this.nucleiTabbedPane, GENERATOR_TAB_NAME).isEmpty()) {
-            this.nucleiTabbedPane.addTab(GENERATOR_TAB_NAME, templateGeneratorTabContainer.getComponent());
+            this.nucleiTabbedPane.addTab(GENERATOR_TAB_NAME, generatorComponent);
 
             final TemplateGeneratorTabbedPane tabbedPane = templateGeneratorTabContainer.getTabbedPane();
             tabbedPane.addChangeListener(e -> {
@@ -363,6 +366,14 @@ public class BurpExtender implements burp.IBurpExtender {
                           .forEach(tabbedPane::removeChangeListener);
                 }
             });
+        }
+
+        // Generating is an explicit action with an obvious next step, so land the user
+        // on the generated template instead of leaving them in Proxy or Repeater.
+        this.nucleiTabbedPane.setSelectedComponent(generatorComponent);
+
+        if (!SwingUtils.selectEnclosingTab(this.nucleiTabbedPane)) {
+            generalSettings.logError("Could not bring the Nuclei tab to the front.");
         }
     }
 }
