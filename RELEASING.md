@@ -26,7 +26,10 @@ problem and comment `/resubmit` on that same issue. Do not open a second one.
 Emailing bapps@portswigger.net is no longer part of the process; the portal
 replaced it.
 
-### Required secret
+### Token
 
-`BAPP_SUBMISSION_TOKEN`: a PAT with the `public_repo` scope. `GITHUB_TOKEN`
-cannot be used because both steps act on repositories outside this one.
+Uses the organisation secret `PDTEAMX_CLASSIC_PAT`, so there is nothing to set up.
+
+It has to be a classic PAT belonging to an account outside PortSwigger, because
+both steps act on repositories in another organisation. `GITHUB_TOKEN` cannot be
+used: its permissions are limited to the repository containing the workflow.
