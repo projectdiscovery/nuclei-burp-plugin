@@ -51,7 +51,7 @@ jobs:
           PR_URL: ${{ steps.pr.outputs.url }}
         run: |
           set -euo pipefail
-          summary=$(gh release view "v$VERSION" --json body --jq '.body // empty')
+          summary=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // empty')
           : "${summary:=Release v$VERSION.}"
 
           {
