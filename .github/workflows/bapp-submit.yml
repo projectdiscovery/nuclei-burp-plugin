@@ -27,7 +27,7 @@ jobs:
       - name: Open the update pull request on the PortSwigger fork
         id: pr
         env:
-          GH_TOKEN: ${{ secrets.BAPP_SUBMISSION_TOKEN }}
+          GH_TOKEN: ${{ secrets.PDTEAMX_CLASSIC_PAT }}
           VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
@@ -46,7 +46,7 @@ jobs:
       # line but one. See https://github.com/PortSwigger/extension-portal/blob/main/AGENTS.md
       - name: Submit the update to the extension portal
         env:
-          GH_TOKEN: ${{ secrets.BAPP_SUBMISSION_TOKEN }}
+          GH_TOKEN: ${{ secrets.PDTEAMX_CLASSIC_PAT }}
           VERSION: ${{ inputs.version }}
           PR_URL: ${{ steps.pr.outputs.url }}
         run: |
