@@ -23,8 +23,19 @@
  *
  */
 
-package burp;
+package io.projectdiscovery.burp;
 
+import burp.api.montoya.BurpExtension;
+import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.core.Range;
+import burp.api.montoya.http.HttpService;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.responses.HttpResponse;
+import burp.api.montoya.persistence.Preferences;
+import burp.api.montoya.ui.contextmenu.ContextMenuEvent;
+import burp.api.montoya.ui.contextmenu.ContextMenuItemsProvider;
+import burp.api.montoya.ui.contextmenu.InvocationType;
+import burp.api.montoya.ui.contextmenu.MessageEditorHttpRequestResponse;
 import io.projectdiscovery.nuclei.gui.*;
 import io.projectdiscovery.nuclei.gui.settings.SettingsPanel;
 import io.projectdiscovery.nuclei.model.*;
@@ -40,38 +51,44 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class BurpExtender implements burp.IBurpExtender {
+public class NucleiExtension implements BurpExtension {
 
+    private static final String EXTENSION_NAME = "Nuclei";
     private static final String GENERATE_CONTEXT_MENU_TEXT = "Generate template";
-
     private static final String GENERATOR_TAB_NAME = "Generator";
+    private static final String CONFIGURATION_TAB_NAME = "Configuration";
+
+    private static final int HTTP_DEFAULT_PORT = 80;
+    private static final int HTTPS_DEFAULT_PORT = 443;
 
     private Map<String, String> yamlFieldDescriptionMap = new HashMap<>();
     private JTabbedPane nucleiTabbedPane;
 
     @Override
-    public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
-        callbacks.setExtensionName("Nuclei");
+    public void initialize(MontoyaApi api) {
+        api.extension().setName(EXTENSION_NAME);
 
+        final Preferences preferences = api.persistence().preferences();
         final GeneralSettings generalSettings = new GeneralSettings.Builder()
-                .withOutputConsumer(callbacks::printOutput)
-                .withErrorConsumer(callbacks::printError)
-                .withExtensionSettingSaver(callbacks::saveExtensionSetting)
-                .withExtensionSettingLoader(callbacks::loadExtensionSetting)
+                .withOutputConsumer(api.logging()::logToOutput)
+                .withErrorConsumer(api.logging()::logToError)
+                .withExtensionSettingSaver(preferences::setString)
+                .withExtensionSettingLoader(preferences::getString)
                 .build();
 
         try {
-            callbacks.addSuiteTab(createConfigurationTab(generalSettings));
+            api.userInterface().registerSuiteTab(EXTENSION_NAME, createConfigurationTab(generalSettings));
 
             initializeNucleiYamlSchema(generalSettings);
 
-            callbacks.registerContextMenuFactory(createContextMenuFactory(generalSettings, callbacks.getHelpers()));
+            api.userInterface().registerContextMenuItemsProvider(createContextMenuItemsProvider(generalSettings));
         } catch (Throwable e) {
             JOptionPane.showMessageDialog(null, "There was an error while trying to initialize the plugin. Please check the logs.", "An error occurred", JOptionPane.ERROR_MESSAGE);
             generalSettings.logError("Error while trying to initialize the plugin", e);
@@ -87,85 +104,103 @@ public class BurpExtender implements burp.IBurpExtender {
         }
     }
 
-    private ITab createConfigurationTab(GeneralSettings generalSettings) {
-        return new ITab() {
-            @Override
-            public String getTabCaption() {
-                return "Nuclei";
-            }
+    private Component createConfigurationTab(GeneralSettings generalSettings) {
+        final JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab(CONFIGURATION_TAB_NAME, new SettingsPanel(generalSettings));
 
-            @Override
-            public Component getUiComponent() {
-                final JTabbedPane tabbedPane = new JTabbedPane();
-                tabbedPane.addTab("Configuration", new SettingsPanel(generalSettings));
-                tabbedPane.setVisible(true);
+        this.nucleiTabbedPane = tabbedPane;
+        return tabbedPane;
+    }
 
-                BurpExtender.this.nucleiTabbedPane = tabbedPane;
-                return tabbedPane;
+    private ContextMenuItemsProvider createContextMenuItemsProvider(GeneralSettings generalSettings) {
+        // Not a functional interface: every ContextMenuItemsProvider method has a default implementation.
+        return new ContextMenuItemsProvider() {
+            @Override
+            public List<Component> provideMenuItems(ContextMenuEvent event) {
+                return NucleiExtension.this.createMenuItems(generalSettings, event);
             }
         };
     }
 
-    private IContextMenuFactory createContextMenuFactory(GeneralSettings generalSettings, IExtensionHelpers extensionHelpers) {
-        return (IContextMenuInvocation invocation) -> {
-            List<JMenuItem> menuItems = null;
+    private List<Component> createMenuItems(GeneralSettings generalSettings, ContextMenuEvent event) {
+        final Optional<HttpRequestResponse> selectedRequestResponse = getPrimaryRequestResponse(event);
+        if (selectedRequestResponse.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-            final IHttpRequestResponse[] selectedMessages = invocation.getSelectedMessages();
-            if (selectedMessages.length > 0) {
+        final HttpRequestResponse requestResponse = selectedRequestResponse.get();
 
-                final IHttpRequestResponse requestResponse = selectedMessages[0];
-                final byte[] requestBytes = requestResponse.getRequest();
-                final URL targetUrlWithPath = extensionHelpers.analyzeRequest(requestResponse.getHttpService(), requestBytes).getUrl();
-                final URL targetUrl;
-                try {
-                    targetUrl = new URL(targetUrlWithPath.getProtocol(), targetUrlWithPath.getHost(), targetUrlWithPath.getPort(), "/");
-                    final int[] selectionBounds = invocation.getSelectionBounds();
+        final URL targetUrl;
+        try {
+            targetUrl = getBaseUrl(requestResponse);
+        } catch (MalformedURLException e) {
+            generalSettings.logError(e.getMessage());
+            return Collections.emptyList();
+        }
 
-                    switch (invocation.getInvocationContext()) {
-                        case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST:
-                        case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_REQUEST: {
-                            menuItems = createMenuItemsFromHttpRequest(generalSettings, targetUrl, requestBytes, selectionBounds, extensionHelpers);
-                            break;
-                        }
-                        case IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_RESPONSE:
-                        case IContextMenuInvocation.CONTEXT_MESSAGE_VIEWER_RESPONSE: {
-                            menuItems = createMenuItemsFromHttpResponse(generalSettings, targetUrl, requestResponse, selectionBounds, extensionHelpers);
-                            break;
-                        }
-                        case IContextMenuInvocation.CONTEXT_INTRUDER_PAYLOAD_POSITIONS: {
-                            final String request = extensionHelpers.bytesToString(requestBytes);
-                            menuItems = generateIntruderTemplate(generalSettings, targetUrl, request);
-                            break;
-                        }
-                        case IContextMenuInvocation.CONTEXT_PROXY_HISTORY: {
-                            final String[] requests = Arrays.stream(selectedMessages).map(IHttpRequestResponse::getRequest).map(extensionHelpers::bytesToString).toArray(String[]::new);
+        final int[] selectionBounds = getSelectionBounds(event);
+        final List<JMenuItem> menuItems;
 
-                            final Http templateRequests = new Http();
-                            templateRequests.setRaw(requests);
-                            menuItems = new ArrayList<>(List.of(createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, templateRequests), GENERATE_CONTEXT_MENU_TEXT)));
-
-                            final Set<JMenuItem> addToTabMenuItems = createAddRequestToTabContextMenuItems(generalSettings, requests);
-                            if (!addToTabMenuItems.isEmpty()) {
-                                final JMenu addRequestToTabMenu = new JMenu("Add request to");
-                                addToTabMenuItems.forEach(addRequestToTabMenu::add);
-                                menuItems.add(addRequestToTabMenu);
-                            }
-
-                            break;
-                        }
-                    }
-                } catch (MalformedURLException e) {
-                    generalSettings.logError(e.getMessage());
-                }
+        switch (event.invocationType()) {
+            case MESSAGE_EDITOR_REQUEST:
+            case MESSAGE_VIEWER_REQUEST: {
+                menuItems = createMenuItemsFromHttpRequest(generalSettings, targetUrl, requestResponse.request().toString(), selectionBounds);
+                break;
             }
-            return menuItems;
-        };
+            case MESSAGE_EDITOR_RESPONSE:
+            case MESSAGE_VIEWER_RESPONSE: {
+                menuItems = createMenuItemsFromHttpResponse(generalSettings, targetUrl, requestResponse, selectionBounds);
+                break;
+            }
+            case INTRUDER_PAYLOAD_POSITIONS: {
+                menuItems = generateIntruderTemplate(generalSettings, targetUrl, requestResponse.request().toString());
+                break;
+            }
+            case PROXY_HISTORY: {
+                menuItems = createMenuItemsFromProxyHistory(generalSettings, targetUrl, event.selectedRequestResponses());
+                break;
+            }
+            default: {
+                menuItems = Collections.emptyList();
+            }
+        }
+
+        return new ArrayList<>(menuItems);
     }
 
-    private List<JMenuItem> createMenuItemsFromHttpRequest(GeneralSettings generalSettings, URL targetUrl, byte[] requestBytes, int[] selectionBounds, IExtensionHelpers extensionHelpers) {
-        final String request = extensionHelpers.bytesToString(requestBytes);
+    /**
+     * Message editor and viewer contexts carry a single message, whereas table based contexts such as
+     * the proxy history carry a selection, so both have to be consulted.
+     */
+    private static Optional<HttpRequestResponse> getPrimaryRequestResponse(ContextMenuEvent event) {
+        return event.messageEditorRequestResponse()
+                    .map(MessageEditorHttpRequestResponse::requestResponse)
+                    .or(() -> event.selectedRequestResponses().stream().findFirst());
+    }
 
-        final JMenuItem generateTemplateContextMenuItem = createTemplateWithHttpRequestContextMenuItem(generalSettings, requestBytes, targetUrl);
+    private static int[] getSelectionBounds(ContextMenuEvent event) {
+        return event.messageEditorRequestResponse()
+                    .flatMap(MessageEditorHttpRequestResponse::selectionOffsets)
+                    .map(range -> new int[]{range.startIndexInclusive(), range.endIndexExclusive()})
+                    .orElse(new int[]{0, 0});
+    }
+
+    private static URL getBaseUrl(HttpRequestResponse requestResponse) throws MalformedURLException {
+        final HttpService httpService = requestResponse.httpService();
+        if (httpService == null) {
+            throw new MalformedURLException("The selected message has no associated HTTP service.");
+        }
+
+        final boolean secure = httpService.secure();
+        final int port = httpService.port();
+        // Leave the default port out, so the generated target stays the short form
+        final int urlPort = (secure && port == HTTPS_DEFAULT_PORT) || (!secure && port == HTTP_DEFAULT_PORT) ? -1 : port;
+
+        return new URL(secure ? "https" : "http", httpService.host(), urlPort, "/");
+    }
+
+    private List<JMenuItem> createMenuItemsFromHttpRequest(GeneralSettings generalSettings, URL targetUrl, String request, int[] selectionBounds) {
+        final JMenuItem generateTemplateContextMenuItem = createTemplateWithHttpRequestContextMenuItem(generalSettings, request, targetUrl);
         final JMenuItem generateIntruderTemplateMenuItem = createIntruderTemplateMenuItem(generalSettings, targetUrl, request, selectionBounds);
 
         final List<JMenuItem> menuItems = new ArrayList<>(Arrays.asList(generateTemplateContextMenuItem, generateIntruderTemplateMenuItem));
@@ -180,26 +215,48 @@ public class BurpExtender implements burp.IBurpExtender {
         return menuItems;
     }
 
-    private JMenuItem createIntruderTemplateMenuItem(GeneralSettings generalSettings, URL targetUrl, String request, int[] selectionBounds) {
-        final JMenuItem generateIntruderTemplateMenuItem;
-        final int startSelectionIndex = selectionBounds[0];
-        final int endSelectionIndex = selectionBounds[1];
-        if (endSelectionIndex - startSelectionIndex > 0) {
-            generateIntruderTemplateMenuItem = createContextMenuItem(() -> {
-                final StringBuilder requestModifier = new StringBuilder(request);
-                requestModifier.insert(startSelectionIndex, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
-                requestModifier.insert(endSelectionIndex + 1, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
-
-                generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Http.AttackType.batteringram);
-            }, "Generate Intruder Template");
-        } else {
-            generateIntruderTemplateMenuItem = null;
+    private List<JMenuItem> createMenuItemsFromHttpResponse(GeneralSettings generalSettings, URL targetUrl, HttpRequestResponse requestResponse, int[] selectionBounds) {
+        if (!requestResponse.hasResponse()) {
+            return Collections.emptyList();
         }
-        return generateIntruderTemplateMenuItem;
+
+        final HttpResponse response = requestResponse.response();
+        final TemplateMatcher contentMatcher = TemplateUtils.createContentMatcher(response.toByteArray().getBytes(), response.bodyOffset(), selectionBounds, NucleiExtension::bytesToString);
+
+        final JMenuItem generateTemplateContextMenuItem = createContextMenuItem(() -> generateTemplate(generalSettings, contentMatcher, targetUrl, requestResponse), GENERATE_CONTEXT_MENU_TEXT);
+
+        final List<JMenuItem> menuItems;
+        final String[] request = {requestResponse.request().toString()};
+        final Set<JMenuItem> addToTabMenuItems = createAddMatcherToTabContextMenuItems(generalSettings, contentMatcher, request);
+        if (addToTabMenuItems.isEmpty()) {
+            menuItems = List.of(generateTemplateContextMenuItem);
+        } else {
+            final JMenu addMatcherToTabMenu = new JMenu("Add matcher to");
+            addToTabMenuItems.forEach(addMatcherToTabMenu::add);
+            menuItems = Arrays.asList(generateTemplateContextMenuItem, addMatcherToTabMenu);
+        }
+
+        return menuItems;
     }
 
-    private static TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
-        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance(generalSettings);
+    private List<JMenuItem> createMenuItemsFromProxyHistory(GeneralSettings generalSettings, URL targetUrl, List<HttpRequestResponse> selectedRequestResponses) {
+        final String[] requests = selectedRequestResponses.stream()
+                                                          .map(requestResponse -> requestResponse.request().toString())
+                                                          .toArray(String[]::new);
+
+        final Http templateRequests = new Http();
+        templateRequests.setRaw(requests);
+
+        final List<JMenuItem> menuItems = new ArrayList<>(List.of(createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, templateRequests), GENERATE_CONTEXT_MENU_TEXT)));
+
+        final Set<JMenuItem> addToTabMenuItems = createAddRequestToTabContextMenuItems(generalSettings, requests);
+        if (!addToTabMenuItems.isEmpty()) {
+            final JMenu addRequestToTabMenu = new JMenu("Add request to");
+            addToTabMenuItems.forEach(addRequestToTabMenu::add);
+            menuItems.add(addRequestToTabMenu);
+        }
+
+        return menuItems;
     }
 
     private static Set<JMenuItem> createAddRequestToTabContextMenuItems(GeneralSettings generalSettings, String[] requests) {
@@ -216,31 +273,28 @@ public class BurpExtender implements burp.IBurpExtender {
                         .findFirst();
     }
 
-    private JMenuItem createTemplateWithHttpRequestContextMenuItem(GeneralSettings generalSettings, byte[] requestBytes, URL targetUrl) {
+    private JMenuItem createTemplateWithHttpRequestContextMenuItem(GeneralSettings generalSettings, String request, URL targetUrl) {
         final Http requests = new Http();
-        requests.setRaw(requestBytes);
+        requests.setRaw(request);
         return createContextMenuItem(() -> generateTemplate(generalSettings, targetUrl, requests), GENERATE_CONTEXT_MENU_TEXT);
     }
 
-    private List<JMenuItem> createMenuItemsFromHttpResponse(GeneralSettings generalSettings, URL targetUrl, IHttpRequestResponse requestResponse, int[] selectionBounds, IExtensionHelpers extensionHelpers) {
-        final byte[] responseBytes = requestResponse.getResponse();
-        final IResponseInfo responseInfo = extensionHelpers.analyzeResponse(responseBytes);
-        final TemplateMatcher contentMatcher = TemplateUtils.createContentMatcher(responseBytes, responseInfo.getBodyOffset(), selectionBounds, extensionHelpers::bytesToString);
+    private JMenuItem createIntruderTemplateMenuItem(GeneralSettings generalSettings, URL targetUrl, String request, int[] selectionBounds) {
+        final JMenuItem generateIntruderTemplateMenuItem;
+        final int startSelectionIndex = selectionBounds[0];
+        final int endSelectionIndex = selectionBounds[1];
+        if (endSelectionIndex - startSelectionIndex > 0) {
+            generateIntruderTemplateMenuItem = createContextMenuItem(() -> {
+                final StringBuilder requestModifier = new StringBuilder(request);
+                requestModifier.insert(startSelectionIndex, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
+                requestModifier.insert(endSelectionIndex + 1, TemplateUtils.INTRUDER_PAYLOAD_MARKER);
 
-        final JMenuItem generateTemplateContextMenuItem = createContextMenuItem(() -> generateTemplate(generalSettings, contentMatcher, targetUrl, requestResponse, extensionHelpers), GENERATE_CONTEXT_MENU_TEXT);
-
-        final List<JMenuItem> menuItems;
-        final String[] request = {extensionHelpers.bytesToString(requestResponse.getRequest())};
-        final Set<JMenuItem> addToTabMenuItems = createAddMatcherToTabContextMenuItems(generalSettings, contentMatcher, request);
-        if (addToTabMenuItems.isEmpty()) {
-            menuItems = List.of(generateTemplateContextMenuItem);
+                generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Http.AttackType.batteringram);
+            }, GENERATE_CONTEXT_MENU_TEXT + " with payload");
         } else {
-            final JMenu addMatcherToTabMenu = new JMenu("Add matcher to");
-            addToTabMenuItems.forEach(addMatcherToTabMenu::add);
-            menuItems = Arrays.asList(generateTemplateContextMenuItem, addMatcherToTabMenu);
+            generateIntruderTemplateMenuItem = createContextMenuItem(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Http.AttackType.batteringram), GENERATE_CONTEXT_MENU_TEXT + " with payload");
         }
-
-        return menuItems;
+        return generateIntruderTemplateMenuItem;
     }
 
     private static Set<JMenuItem> createAddMatcherToTabContextMenuItems(GeneralSettings generalSettings, TemplateMatcher contentMatcher, String[] httpRequest) {
@@ -284,6 +338,10 @@ public class BurpExtender implements burp.IBurpExtender {
         }).collect(Collectors.toSet());
     }
 
+    private static TemplateGeneratorTabContainer getTemplateGeneratorContainerInstance(GeneralSettings generalSettings) {
+        return generalSettings.isDetachedGeneratorWindow() ? TemplateGeneratorWindow.getInstance(generalSettings) : TemplateGeneratorEmbeddedContainer.getInstance(generalSettings);
+    }
+
     private List<JMenuItem> generateIntruderTemplate(GeneralSettings generalSettings, URL targetUrl, String request) {
         final List<JMenuItem> menuItems;
         if (request.chars().filter(c -> c == TemplateUtils.INTRUDER_PAYLOAD_MARKER).count() <= 2) {
@@ -302,16 +360,10 @@ public class BurpExtender implements burp.IBurpExtender {
         return menuItem;
     }
 
-    private void generateTemplate(GeneralSettings generalSettings, TemplateMatcher contentMatcher, URL targetUrl, IHttpRequestResponse requestResponse, IExtensionHelpers helpers) {
-        final byte[] responseBytes = requestResponse.getResponse();
-        final byte[] requestBytes = requestResponse.getRequest();
-
-        final IResponseInfo responseInfo = helpers.analyzeResponse(responseBytes);
-        final int statusCode = responseInfo.getStatusCode();
-
+    private void generateTemplate(GeneralSettings generalSettings, TemplateMatcher contentMatcher, URL targetUrl, HttpRequestResponse requestResponse) {
         final Http requests = new Http();
-        requests.setRaw(requestBytes);
-        requests.setMatchers(contentMatcher, new Status(statusCode));
+        requests.setRaw(requestResponse.request().toString());
+        requests.setMatchers(contentMatcher, new Status((int) requestResponse.response().statusCode()));
 
         generateTemplate(generalSettings, targetUrl, requests);
     }
@@ -375,5 +427,12 @@ public class BurpExtender implements burp.IBurpExtender {
         if (!SwingUtils.selectEnclosingTab(this.nucleiTabbedPane)) {
             generalSettings.logError("Could not bring the Nuclei tab to the front.");
         }
+    }
+
+    /**
+     * Mirrors Burp's own byte to string mapping, where every byte maps to one character.
+     */
+    private static String bytesToString(byte[] bytes) {
+        return new String(bytes, StandardCharsets.ISO_8859_1);
     }
 }
