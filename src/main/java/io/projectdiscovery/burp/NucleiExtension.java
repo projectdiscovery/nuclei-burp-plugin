@@ -203,7 +203,11 @@ public class NucleiExtension implements BurpExtension {
         final JMenuItem generateTemplateContextMenuItem = createTemplateWithHttpRequestContextMenuItem(generalSettings, request, targetUrl);
         final JMenuItem generateIntruderTemplateMenuItem = createIntruderTemplateMenuItem(generalSettings, targetUrl, request, selectionBounds);
 
-        final List<JMenuItem> menuItems = new ArrayList<>(Arrays.asList(generateTemplateContextMenuItem, generateIntruderTemplateMenuItem));
+        final List<JMenuItem> menuItems = new ArrayList<>();
+        menuItems.add(generateTemplateContextMenuItem);
+        if (generateIntruderTemplateMenuItem != null) {
+            menuItems.add(generateIntruderTemplateMenuItem);
+        }
 
         final Set<JMenuItem> addToTabMenuItems = createAddRequestToTabContextMenuItems(generalSettings, new String[]{request});
         if (!addToTabMenuItems.isEmpty()) {
@@ -292,7 +296,7 @@ public class NucleiExtension implements BurpExtension {
                 generateIntruderTemplate(generalSettings, targetUrl, requestModifier.toString(), Http.AttackType.batteringram);
             }, GENERATE_CONTEXT_MENU_TEXT + " with payload");
         } else {
-            generateIntruderTemplateMenuItem = createContextMenuItem(() -> generateIntruderTemplate(generalSettings, targetUrl, request, Http.AttackType.batteringram), GENERATE_CONTEXT_MENU_TEXT + " with payload");
+            generateIntruderTemplateMenuItem = null;
         }
         return generateIntruderTemplateMenuItem;
     }
