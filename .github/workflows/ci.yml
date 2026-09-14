@@ -2,7 +2,9 @@ name: Release
 
 on:
   release:
-    types: [ created ]
+    # Not 'created': GitHub does not fire that for draft releases, so publishing a
+    # prepared draft would leave the release without a jar.
+    types: [ published ]
 
 permissions:
   contents: write
