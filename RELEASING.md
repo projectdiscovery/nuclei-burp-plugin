@@ -28,7 +28,7 @@ replaced it.
 
 ### Token
 
-Uses the organisation secret `PDTEAMX_PAT`, so there is nothing to set up.
+Uses the organisation secret `PDTEAMX_CLASSIC_PAT`, so there is nothing to set up.
 
 It has to be a classic PAT belonging to an account outside PortSwigger, because
 both steps act on repositories in another organisation. `GITHUB_TOKEN` cannot be
