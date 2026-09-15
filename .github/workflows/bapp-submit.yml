@@ -54,6 +54,10 @@ jobs:
           summary=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // empty')
           : "${summary:=Release v$VERSION.}"
 
+          # The issue is created on another repository, where a bare '#123' would
+          # resolve against that repository instead of this one.
+          summary=$(printf '%s' "$summary" | sed -E "s@(^|[^[:alnum:]/_-])#([0-9]+)@\1$GITHUB_REPOSITORY#\2@g")
+
           {
             printf '### Pull request URL\n\n%s\n\n' "$PR_URL"
             printf '### Version number\n\n%s\n\n' "$VERSION"
